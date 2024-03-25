@@ -1,0 +1,114 @@
+#
+# base.dict .... makedict.sh sample dictionary template
+#
+
+    org 0
+//
+// inner interpreter
+//
+opcode colon
+opcode semi
+opcode next
+opcode run 
+opcode execute
+
+//
+// primitives .. thread instructions
+//
+opcode bra
+opcode bne
+opcode literal
+
+//
+// primitives ... memory access
+//
+opcode @ atfetch
+opcode c@ bytefetch
+opcode ! exclamation
+opcode c! bytedeposite
+//
+// ,(comma) ... put a word to the dict entry, cell_inc to (here_addr)
+//
+opcode , comma
+//
+// stack operations
+//
+opcode dup 
+opcode over
+opcode drop
+opcode swap
+opcode rot
+// -----------------------
+// binary operators
+//
+opcode + add
+opcode - sub
+opcode * mul
+opcode / div
+// -------------------------------
+// print words
+// -------------------------------
+//
+// .(period) (n -- )... print a number
+//
+opcode . period
+opcode cr
+//
+// space ... print a space char
+//
+opcode space
+//
+// bl ( -- #' ') put a space char on the stack
+//
+opcode bl
+//
+// typeb (addr --) ... print a word string, till a space encounters
+//
+opcode typeb
+//
+// types (addr --)
+//
+opcode types
+//
+// type0 (addr n -- )
+//
+opcode type0
+
+opcode base
+opcode last
+//
+// h
+//
+opcode h 
+//
+// logical binary operators
+//
+opcode and
+opcode or
+opcode xor
+opcode not
+//
+// low level I/O
+//
+opcode emit
+opcode key
+opcode ?key q_key
+//
+// compilers
+//
+
+//
+// create ... read a word from input stream and 
+//            put it to the end-of-dictionary
+//
+opcode create
+//
+// STATE, _STATE
+//
+opcode state
+//
+// [, ]
+//
+opcode [ start_compile
+opcode ] end_compile
+opcode >in in_stream
