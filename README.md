@@ -16,8 +16,10 @@ Forth処理系、内部インタプリタと最低限の定義を実行するス
 
 * [設計情報、「ワードリスト」](DESIGN.md)
 * ソースコードは `src`の下にあります。
-* ビルドは`build`の下で`make`コマンドを実行すればOKです。シェルスクリプト実行が必須ですので、Linux/Unix環境でお試しください。Bash前提ではないので、FreeBSD上でも実行できるはずです。
-* 実行はコマンドを起動してください
+* ビルドは`build`の下で`make`コマンドを実行すればOKです。シェルスクリプト実行が必須ですので、Linux/Unix環境でお試しください。
+* Bash前提ではないので、FreeBSD上でも実行できるはずです。
+* gawk前提となってしまいました。申し訳ないです。
+* 実行はコマンド`cpnr`を起動してください
 
 ```
 NAME
@@ -29,21 +31,28 @@ SYNOPSIS
 DESCRIPTION
     A forth interpreter writtend C.
 
-    It start with very limited definitions, including inner/outer interpreter, 
-    definitions of `:`(colon), `;` and some dictionary handling words.
+    It start with very limited definitions, including inner/outer 
+    interpreter, definitions of `:`(colon), `;` and some dictionary
+    handling words.
 
-    files are interpreted in turn, usually the first argument specify a meaningful forth word definitions.  After parsing all of the argument files, it enters an outer interpreter prompted with " OK".
+    files are interpreted in turn, usually the first argument 
+    specify a meaningful forth word definitions.  After parsing
+    all of the argument files, it enters an outer interpreter 
+    prompted with " OK".
 
-    More detail description, available words are specified in SPECS.md'
+    More detail description, available words are specified 
+    in SPECS.md'
 ```
 
 * [ワード仕様](SPECS.md)
 
 ## 動機
 
-特定のCPUに依らない実装を作る。Forth処理系の場合、内部インタプリタ(または、スレッドコード(threaded code)処理系<sup>1,</sup>)を仮想的なCPUの機械語として表現する。あるターゲットCPUの機械語を使い、この仮想的なCPUエミュレータを用意すれば、さまざまなCPU上で動かすことができる。効率はともかく。移植の立ち上がりはよいだろう。
+特定のCPUに依らない実装を作る。Forth処理系の場合、内部インタプリタ(または、スレッドコード(threaded code)処理系<sup>1,</sup>)を仮想的なCPUの機械語として表現する。あるターゲットCPUの機械語を使い、この仮想的なCPUエミュレータを用意すれば、さまざまなCPU上で動かすことができる。実行性能・効率はともかく。移植の立ち上がりはよいだろう。
 
 仮想的CPUのエミュレータをC言語で記述すれば、高速なPC上でエミュレートも簡単だし、C言語が動くターゲットCPU上での動作も容易になる。C言語で開発できる環境ならForthを移植して使う必要もないやんかというツッコミも当然あるのだが、それはいったん脇に置いておく。
+
+以上は単純化した「動機」であり、詳細は別途記述する([MOTIVATION.md](MOTIVATION.md))
 
 ## きっかけ
 
