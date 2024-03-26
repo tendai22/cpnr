@@ -91,6 +91,8 @@ BEGIN {
     printf "do_%s:\n", name
     if (flag) {
         printf "    .dw     do_colon\n"
+    } else {
+        printf "    .dw     .+2\n"
     }
     # print body
     n = split(body, a, /\|/)
