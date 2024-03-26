@@ -63,15 +63,17 @@ CODEワード定義は以下の通り(big endian)
 
 ```
     110A 0342 5241  HEAD "BRA"
-    110C 1100       LINK e_0004
-    110E 1110       DW .+2
-    1110 C006       M_BRA
-    1112 C002       M_NEXT
+    110C 2020
+    110E 1100       LINK e_0004
+    1110 1112       DW .+2
+    1112 C006       M_BRA
+    1114 C002       M_NEXT
 ```
 
 ```
-    1114 0342 4E45  HEAD "BNE"
-    1118 110A       LINK e_0005
+    1116 0342 4E45  HEAD "BNE"
+    111A 2020
+    111C 110A       LINK e_0005
     111E 1120       DW .+2
     1120 C005       M_BNE
     1122 C002       M_NEXT
