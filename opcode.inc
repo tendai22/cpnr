@@ -4,6 +4,7 @@ opcode["m_next"]    = 0xc002
 opcode["m_run"]     = 0xc003
 opcode["m_semi"]    = 0xc004
 opcode["m_bnz"]     = 0xc005
+opcode["m_bne"]     = 0xc005
 opcode["m_bra"]     = 0xc006
 opcode["m_add"] = 0xc007
 opcode["m_and"] = 0xc008
