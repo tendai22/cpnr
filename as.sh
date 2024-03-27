@@ -11,6 +11,7 @@ do  case "$f" in
         b
     }' |
     awk '#
+    @include "opcode.inc"
     function eval(s, c, n){
         gsub(/\./, pc, s)
 	    c = "awk '\''BEGIN{print " s "}'\''"
@@ -55,21 +56,42 @@ do  case "$f" in
         return pc
     }
     # main actions
-    BEGIN {
-        opcode["m_colon"]   = 0xc001
-        opcode["m_next"]    = 0xc002    
-        opcode["m_run"]     = 0xc003
-        opcode["m_semi"]    = 0xc004
-        opcode["m_bnz"]     = 0xc005
-        opcode["m_bne"]     = 0xc005
-        opcode["m_bra"]     = 0xc006
-        pass2 = 0
-    }
+    #BEGIN {
+    #    opcode["m_colon"]   = 0xc001
+    #    opcode["m_next"]    = 0xc002    
+    #    opcode["m_run"]     = 0xc003
+    #    opcode["m_semi"]    = 0xc004
+    #    opcode["m_bnz"]     = 0xc005
+    #    opcode["m_bne"]     = 0xc005
+    #    opcode["m_bra"]     = 0xc006
+    #    pass2 = 0
+    #}
     /^PASS2/{
         print $0
         pass2 = 1
         pc = org
         linebase = NR
+        # resolve equ reference
+        for (k in label) {
+            s = label[k]
+            while (s !~ /^[0-9][0-9]*/ && s !~ /^$/) {
+                print s
+                s = label[s]
+            }
+            if (s ~ /^$/) {
+                continue
+            }
+            v = s
+            s = k
+            s = label[k]
+            while (s !~ /^[0-9][0-9]*/ && s !~ /^$/) {
+                print "s:" s
+                s0 = s
+                s = label[s]
+                label[s0] = v
+                print "label[" s0 "] = " sprintf("%04X", v)
+            }
+        }
     }
     $1 ~ /^Label:/ {
         label[$2] = pc
@@ -81,6 +103,13 @@ do  case "$f" in
         next
     }
     $1 ~ /^\.global/ {
+        next
+    }
+    $1 ~ /^.equ/ {
+        s = gensub(/,$/,"", "g", $2)
+        v= gensub(/,$/,"", "g", $3)
+        label[s] = v
+        print ".equ " s " " v
         next
     }
     $1 ~ /^.head/ {
