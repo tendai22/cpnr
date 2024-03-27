@@ -1,16 +1,33 @@
 #! /bin/sh
 for f
 do  case "$f" in
-    '*.s')  ;;
-    *)  echo "usage $0 files.s ..." >&2;;
+    *.s)  ;;
+    *)  echo "$2: usage $0 files.s ..." >&2; exit 2;;
     esac
     ( cat "$f"; echo "PASS2"; cat "$f") |
     sed '#
     /^[^: ][^: ]*:/{
         s/^\([^: ][^: ]*\):.*$/Label: \1/
         b
-    }' |
+    }
+    s/\/\*.*\*\// /
+    ' |
     awk '#
+    @include "opcode.inc"
+    function expand(k,n,v){
+        n = k
+        while (n !~ /^[0-9]+/ && n !~ /^$/) {
+            v = label[n]
+            print "n:" n ",v:" v
+            n = v
+        }
+        if (label[k] > 0) {
+            print "k:" k ",n:" n
+            label[k] = n
+        }
+        print "-> label[" k "] = " label[k]
+        return n
+    }
     function eval(s, c, n){
         gsub(/\./, pc, s)
 	    c = "awk '\''BEGIN{print " s "}'\''"
@@ -70,8 +87,9 @@ do  case "$f" in
         pass2 = 1
         pc = org
         linebase = NR
+        next
     }
-    $1 ~ /^Label:/ {
+    $1 ~ /^Label:/ && $2 ~ /^[A-Za-z_][A-Za-z0-9_]+/ {
         label[$2] = pc
         next
     }
@@ -81,6 +99,9 @@ do  case "$f" in
         next
     }
     $1 ~ /^\.global/ {
+        next
+    }
+    $1 ~ /^\.section/ {
         next
     }
     $1 ~ /^.head/ {
@@ -109,6 +130,14 @@ do  case "$f" in
             n = label[$2]
             if (n ~ /^$/) {
                 n = eval($2)
+            } else {
+                # macro expansion
+                if (n !~ /^[0-9]+/ && n !~ /^$/) {
+                    n = expand($2)
+                }
+                if (n > 0) {
+                    print "label[" $2 "] = " n "," label[$2]
+                }
             }
         }
         if (pass2) {
@@ -119,6 +148,12 @@ do  case "$f" in
             printf "%04X %04X %s\n", pc, n, $0
         }
         pc += 2
+        next
+    }
+    $1 ~ /^\.equ/ {
+        gsub(/,$/,"",$2)
+        gsub(/,$/,"",$3)
+        label[$2] = $3
         next
     }
     /^ *$/{
@@ -139,8 +174,9 @@ do  case "$f" in
         next
     }
     END {
+        print label["entry_head"]
         for (k in label) {
-            printf "%s: %04X\n", k, label[k]
+            printf "%-20s %04X\n", k ":", label[k]
         }
     }
     '

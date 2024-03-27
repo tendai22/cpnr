@@ -13,7 +13,7 @@ case "$ORG" in
 esac
 # prefix
 cat <<EOF
-    /*.org   $ORG dict_top */
+    .org   0x1000
     .section DICT
 dict:
     .dw   dict
