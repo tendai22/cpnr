@@ -18,14 +18,14 @@ do  case "$f" in
         n = k
         while (n !~ /^[0-9]+/ && n !~ /^$/) {
             v = label[n]
-            print "n:" n ",v:" v
+            #print "n:" n ",v:" v
             n = v
         }
         if (label[k] > 0) {
-            print "k:" k ",n:" n
-            label[k] = n
+            #print "k:" k ",n:" n
+            #label[k] = n
         }
-        print "-> label[" k "] = " label[k]
+        #print "-> label[" k "] = " label[k]
         return n
     }
     function eval(s, c, n){
@@ -136,7 +136,7 @@ do  case "$f" in
                     n = expand($2)
                 }
                 if (n > 0) {
-                    print "label[" $2 "] = " n "," label[$2]
+                    #print "label[" $2 "] = " n "," label[$2]
                 }
             }
         }
@@ -176,8 +176,9 @@ do  case "$f" in
     END {
         print label["entry_head"]
         for (k in label) {
-            printf "%-20s %04X\n", k ":", label[k]
+            printf "%-20s %04X\n", k ":", expand(k) | "sort"
         }
     }
-    '
+    ' |
+    sed '1,/^PASS2/d'
 done
