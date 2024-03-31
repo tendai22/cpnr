@@ -1,10 +1,7 @@
 #! /bin/sh
 
 # makedic.sh ... generate Forth Dictionary assembler source file
-SRC="base.dict"
-
-#org
-ORG=`cat "$SRC" |sed -n '/^[     ]*org/{
+ORG=`cat "$@" |sed -n '/^[     ]*org/{
     s/^[     ]*org[     ][  ]*\([^  ][^     ]*\).*$/\1/p
     q
 }'`
@@ -26,15 +23,9 @@ last_addr:
 tail_addr:
     .dw  entry_end
 
-    /* extern word cfa's */
-    .global do_word
-    .global do_accept
-    .global do__read_ch
-    .global do_number
-    .global do_find
 EOF
 # dict definitions
-cat ${SRC} |
+cat "$@" |
 # preprocessor
 awk '#
 /^opcode/ {
