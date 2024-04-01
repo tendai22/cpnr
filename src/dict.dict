@@ -2,7 +2,13 @@
 # base.dict .... makedict.sh sample dictionary template
 #
 
-    org 0
+    org 0x1000
+//
+// nop, halt
+//
+opcode nop
+opcode halt
+
 //
 // inner interpreter
 //

@@ -41,7 +41,11 @@ typedef struct _ctx {
     word_t al;      // accumulator high, low
     word_t pc;
     int    ss_flag;
-    word_t var[MAX_VARIABLE]; // user variable array
+    // user variables
+    word_t last;    // latest established entry top
+    word_t h;       // dictionary pointer
+    word_t tib;     // text input buffer, used in accept
+    word_t ntib;    // #tib, current index in tib,
     word_t stack[STACK_SIZE];
     word_t rstack[STACK_SIZE];
     word_t bp[BPTBL_SIZE];
@@ -63,7 +67,7 @@ extern char *MEMptr(context_t *cx, word_t addr);
 extern char *str(mem_t *c_ptr);
 extern void do_halt(void);
 extern void do_debugger(context_t *cx);
-extern void machine_code(context_t *cx, word_t code);
+extern int  machine_code(context_t *cx, word_t code);
 extern void monitor(context_t *cx);
 extern void do_mainloop(context_t *cx);
 extern void reset(context_t *cx);

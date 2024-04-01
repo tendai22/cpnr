@@ -27,6 +27,7 @@ static void initialize_ctx(context_t *cx)
     reset(cx);      // initialize cx->pc
     memset(&cx->stack[0], 0, STACK_SIZE);
     memset(&cx->rstack[0], 0, STACK_SIZE);
+    cx->tib = 0x4000;
 }
 
 
