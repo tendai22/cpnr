@@ -29,6 +29,7 @@ void do_word(context_t *cx)
     int n;
     delim = cx->stack[cx->sp];
     tib = MEMptr(cx, cx->tib);
+    // skip if the first is space
      ( == ' ') {
         while ()
     }

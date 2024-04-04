@@ -48,7 +48,7 @@ typedef struct _ctx {
     word_t ntib;    // #tib, current index in tib,
     word_t stack[STACK_SIZE];
     word_t rstack[STACK_SIZE];
-    word_t bp[BPTBL_SIZE];
+    word_t bp[BPTBL_SIZE];      // break point table
 } context_t;
 
 #define HERE 1
