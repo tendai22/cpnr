@@ -41,6 +41,9 @@ typedef struct _ctx {
     word_t al;      // accumulator high, low
     word_t pc;
     int    ss_flag;
+    // input-stream, raw c pointer
+    uint8_t *p;
+    word_t rest;
     // user variables
     word_t last;    // latest established entry top
     word_t h;       // dictionary pointer

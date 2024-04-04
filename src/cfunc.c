@@ -7,13 +7,41 @@
 #include "machine.h"
 
 //
-// do_accept: (addr n+ -- addr n)
+// get_instream
+//
+int get_instream(context_t *cx)
+{
+    if (cx->p == 0 || cx->rest == 0)
+        return 0;   // eof
+    cx->rest --;
+    return *(cx->p)++
+}
+
+//
+// do_accept: ( -- )
 //
 void do_accept(context_t *cx)
 {
-    char *buf = MEMptr(cx, cx->tib);
+    static int outer_flag = true;
+
+    if (cx->p && cx->rest > 0) {
+        return;
+    }
+    // now in-stream buffer emnty, refill it    
+    char *buf = MEMptr(cx, cx->s0);
     int size = 80, n;
-    fgets (buf, size - 1, stdin);
+    if (outer_flag) {
+        if (gets_outer(buf, size - 1) != 0)
+            ;
+        else {
+            // outer data expires
+            outer_flag = 0;
+        }
+    }
+    if (outer_flag == 0) {
+        do_prompt(cx);
+        fgets (buf, size - 1, stdin);
+    }
     n = strlen(buf);
     if (buf[n - 1] != ' ') && n < 80) {
         buf[n++] = ' ';
@@ -25,18 +53,30 @@ void do_accept(context_t *cx)
 
 void do_word(context_t *cx)
 {
-    char delim, *tib, *p;
-    int n;
-    delim = cx->stack[cx->sp];
-    tib = MEMptr(cx, cx->tib);
+    char delim, *tib, *p, *here, *h0;
+    word_t wp;
+    int n, c;
+    delim = tos(cx);
+    here = h0 = MEMptr(cx, cx->h);
     // skip if the first is space
-     ( == ' ') {
-        while ()
+    if ((c = get_instream(cx)) == 0) {
+        // end-of-file
+        tos(cx) = 0;
+        return;
+    } else if (c == delim) {
+        while ((c = get_instream(cx)) == delim)
+            ;   // skip delimiters
+        if (c == 0) {
+            tos(cx) = 0;
+            return;
+        }
     }
-    p = index(tib, delim);
-    if (p == 0) {
-        return 0;
-    }
-    // copy it tocounterd 
-
+    // now c has neither delim nor eof
+    here++;     // keep the first count char
+    do {
+        *here++ = c;
+    } while ((c = get_instream(cx)) != 0 && c != delim);
+    *here++ = delim;   // trailing delim char
+    *h0 = here - h0;        // count byte
+    tos(cx) = h0;
 }

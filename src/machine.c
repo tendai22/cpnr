@@ -100,8 +100,6 @@ void do_execute (context_t *cx)
     do_machine(cx);
 }
 
-
-
 void do_mainloop(context_t *cx)
 {
     while (1) {
@@ -111,6 +109,7 @@ void do_mainloop(context_t *cx)
             do_push(cx, ' ');     // push delimiter
             do_word(cx);
             if (tos(cx) == 0) {
+                do_accept(cx);
                 continue;
             }
             continue;   // word debug
