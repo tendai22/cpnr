@@ -86,6 +86,7 @@ extern int gets_outer(char *buf, int size);
 extern void do_print_status(context_t *cx);
 extern void do_print_s0(context_t *cx);
 extern void do_print_here(context_t *cx);
+extern void print_cstr(context_t *cx, char *title, word_t addr);
 
 // outer interpreter
 extern int do_accept(context_t *cx);

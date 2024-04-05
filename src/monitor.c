@@ -103,6 +103,19 @@ void do_print_here(context_t *cx)
     fprintf(stderr, "\n");
 }
 
+void print_cstr(context_t *cx, char *title, word_t addr)
+{
+    char *p = MEMptr(cx, addr);
+    int n = *p++;
+    if (title && *title)
+        fprintf(stderr, "%s:", title);
+    fprintf(stderr, "%04X:[%d ", addr, n);
+    for (int i = 0; i < n; ++i) {
+        fprintf(stderr, "%c", *p++);
+    }
+    fprintf(stderr, "]\n");
+}
+
 // debugger
 
 void do_debugger(context_t *cx)

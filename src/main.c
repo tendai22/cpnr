@@ -131,6 +131,8 @@ int main (int ac, char **av)
     int n;
     context_t _ctx, *cx;
 
+    // init source file args
+    init_outer_buf(ac - 1, av + 1);
     // initialize ctx
     while (1) {
         cx = &_ctx;

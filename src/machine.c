@@ -149,16 +149,15 @@ int do_mainloop(context_t *cx)
         do_print_s0(cx);
         while (1) {
             do_push(cx, ' ');     // push delimiter
-            do_print_status(cx);
             do_word(cx);
-            do_print_status(cx);
-            do_print_here(cx);
             if (tos(cx) == 0) {
                 if (do_accept(cx) == EOF)
                     return -1;
                 do_print_s0(cx);
                 continue;
             }
+            print_cstr(cx, "H", cx->h);
+            do_pop(cx);
             continue;   // word debug
             do_dup(cx);
             do_find(cx);

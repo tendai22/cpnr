@@ -17,7 +17,7 @@ int get_instream(context_t *cx)
         return 0;   // eof
     cx->rest --;
     c = *(cx->p)++;
-    fprintf(stderr, "(%c)", c);
+    //fprintf(stderr, "(%c)", c);
     return c;
 }
 
@@ -63,7 +63,7 @@ int do_accept(context_t *cx)
 }
 
 //
-// do_word: 
+// do_word: (delim -- addr)
 //
 void do_word(context_t *cx)
 {
@@ -89,7 +89,7 @@ void do_word(context_t *cx)
     here++;     // keep the first count char
     do {
         *here++ = c;
-        fprintf(stderr, "[%c]", c);
+        //fprintf(stderr, "[%c]", c);
     } while ((c = get_instream(cx)) != 0 && c != delim);
     *here = delim;   // trailing delim char, not counted
     *h0 = here - h0 - 1;        // count byte
