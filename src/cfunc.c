@@ -35,14 +35,13 @@ int do_accept(context_t *cx)
     char *buf = MEMptr(cx, cx->s0);
     int size = 80, n;
     if (outer_flag) {
-        if (gets_outer(buf, size - 1) != 0)
-            ;
-        else {
+        if (gets_outer(buf, size - 1) == 0) {
             // outer data expires
             outer_flag = 0;
         }
     }
     if (outer_flag == 0) {
+        // input from keyboard
         do_prompt(cx);
         if (fgets (buf, size - 1, stdin) == 0) {
             fprintf(stderr, "eof\n");
