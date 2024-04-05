@@ -25,12 +25,53 @@ static void initialize_ctx(context_t *cx)
     cx->ah = 0;
     cx->al = 0;
     reset(cx);      // initialize cx->pc
-    memset(&cx->stack[0], 0, STACK_SIZE);
-    memset(&cx->rstack[0], 0, STACK_SIZE);
-    cx->tib = 0x4000;
+    memset(&cx->stack[0], 0, 2* STACK_SIZE);
+    memset(&cx->rstack[0], 0, 2* STACK_SIZE);
+    cx->s0 = S0_ADDR;
+    cx->h = RAMSTART;
+    cx->last = 0;
 }
 
+//
+// 
+//
+static char **filenames;
+static int filenames_length;
+static FILE *fp;
 
+void init_outer_buf(int ac, char **av)
+{
+    filenames = av;
+}
+
+int gets_outer(char *buf, int size)
+{
+    while (1) {
+        if (filenames == 0 || filenames[0] == 0) {
+            filenames = 0;
+            buf[0] = 0;
+            return 0;
+        }
+        if (fp == 0) {
+            if ((fp = fopen(filenames[0], "r")) == 0) {
+                fprintf(stderr, "gets_outer: cannot open %s, no file input any more\n", filenames[0]);
+                filenames = 0;
+                buf[0] = 0;
+                return 0;
+            }
+            // now file input established
+        }
+        if (fgets(buf, size, fp) != 0) {
+            fprintf(stderr, "gets_outer: read: %s\n", buf);
+            return 1; // ok, read a line and return
+        }
+        // try to open next file
+        fclose(fp);
+        fp = 0;
+        filenames++;
+        // loop again, open next file and try to read the 1st line
+    }
+}
 //
 //  counted-stringをC言語文字列にコピーする
 //
@@ -45,33 +86,8 @@ char *str(mem_t *c_str)
     return buf;
 }
 
-/*
-void do_catch(context_t *cx)
-{
-    int result;
-    result = setjmp(cx->env);    // no disclimination
-}
-*/
-// do_abort
-// If the flag is true, types out the last word interpreted, followed by the
-// text. Also clears the user's stacks and returns control to the terminal. If
-//false, takes no action.
-/*
-void do_abort(context_t *cx, const char *mes)
-{
-    char *p;
-    if (tos(cx)) {
-        p = str(MEMptr(cx, cx->var[LAST]));      // entry top, word name
-        fprintf(stderr, "%s %s\n", p, mes);
-    }
-    longjmp(cx->env, tos(cx));
-}
 
-void do_halt(void)
-{
-    longjmp(cx->env, 99);
-}
-*/
+
 // do_push
 
 void do_push(context_t *cx, word_t value)
@@ -84,10 +100,12 @@ void do_dup(context_t *cx)
     do_push(cx, cx->stack[cx->sp]);
 }
 
+/*
 word_t tos(context_t *cx)
 {
     return cx->stack[cx->sp];
 }
+*/
 
 // do_accept: read one line
 
@@ -117,7 +135,8 @@ int main (int ac, char **av)
     while (1) {
         cx = &_ctx;
         initialize_ctx(cx);
-        monitor(cx);
+        if (monitor(cx) < 0)
+            break;
     }
 }
 

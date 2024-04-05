@@ -4,6 +4,7 @@
 //
 
 #include <stdio.h>
+#include <string.h>
 #include "machine.h"
 
 //
@@ -11,21 +12,24 @@
 //
 int get_instream(context_t *cx)
 {
+    int c;
     if (cx->p == 0 || cx->rest == 0)
         return 0;   // eof
     cx->rest --;
-    return *(cx->p)++
+    c = *(cx->p)++;
+    fprintf(stderr, "(%c)", c);
+    return c;
 }
 
 //
 // do_accept: ( -- )
 //
-void do_accept(context_t *cx)
+int do_accept(context_t *cx)
 {
-    static int outer_flag = true;
+    static int outer_flag = 1;
 
     if (cx->p && cx->rest > 0) {
-        return;
+        return 0;
     }
     // now in-stream buffer emnty, refill it    
     char *buf = MEMptr(cx, cx->s0);
@@ -40,17 +44,27 @@ void do_accept(context_t *cx)
     }
     if (outer_flag == 0) {
         do_prompt(cx);
-        fgets (buf, size - 1, stdin);
+        if (fgets (buf, size - 1, stdin) == 0) {
+            fprintf(stderr, "eof\n");
+            return EOF;
+        }
     }
     n = strlen(buf);
-    if (buf[n - 1] != ' ') && n < 80) {
-        buf[n++] = ' ';
-        buf[n] = '\0';
+    while (0 < n && (buf[n - 1] == '\n' || buf[n - 1] == '\r')) {
+        buf[--n] = ' ';
     }
-    cx->stack[--cx->sp] = ptr2MEM(cx, buf);
-    cx->stack[--cx->sp] = n;
+    if (buf[n - 1] != ' ' && n < 79) {
+        buf[n] = ' ';
+        buf[n + 1] = '\0';
+    }
+    cx->p = buf;
+    cx->rest = n;
+    return 0;
 }
 
+//
+// do_word: 
+//
 void do_word(context_t *cx)
 {
     char delim, *tib, *p, *here, *h0;
@@ -75,8 +89,14 @@ void do_word(context_t *cx)
     here++;     // keep the first count char
     do {
         *here++ = c;
+        fprintf(stderr, "[%c]", c);
     } while ((c = get_instream(cx)) != 0 && c != delim);
-    *here++ = delim;   // trailing delim char
-    *h0 = here - h0;        // count byte
-    tos(cx) = h0;
+    *here = delim;   // trailing delim char, not counted
+    *h0 = here - h0 - 1;        // count byte
+    tos(cx) = cx->h;
+}
+
+void do_prompt(context_t *cx)
+{
+    fprintf(stderr, " ok\n");
 }

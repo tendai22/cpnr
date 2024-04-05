@@ -53,7 +53,7 @@ void do_pushr(context_t *cx, word_t value)
 {
     if (--cx->rs < 0) {
         fprintf(stderr, "rstack underflow at pc:%04X ip:%04X\n", cx->pc, cx->ip);
-        do_halt();
+        do_halt(cx);
     }
     cx->rstack[cx->rs] = value;
 }
@@ -63,9 +63,23 @@ word_t do_popr(context_t *cx)
     word_t value = cx->rstack[cx->rs];
     if (++cx->rs >= STACK_SIZE) {
         fprintf(stderr, "rstack overflow at pc:%04X ip:%04X\n", cx->pc, cx->ip);
-        do_halt();
+        do_halt(cx);
     }
     return value;
+}
+
+word_t do_pop(context_t *cx)
+{
+    cx->sp++;
+    if (cx->sp > 256) {
+        fprintf(stderr, "stack underflow at pc:%04X ip:%04X\n", cx->pc, cx->ip);
+        do_halt(cx);
+    }
+}
+
+void do_halt(context_t *cx)
+{
+    cx->halt_flag = 1;
 }
 
 void do_machine(context_t *cx)
@@ -88,6 +102,10 @@ void do_machine(context_t *cx)
         code = peekMEM(cx, cx->pc);
         if (machine_code(cx, code) != 0)
             break;
+        if (cx->halt_flag) {
+            fprintf(stderr,"halt:\n");
+            break;
+        }
     }
 }
 
@@ -95,21 +113,50 @@ void do_execute (context_t *cx)
 {
     // start inter interpreter
     cx->wa = do_pop(cx);
-    m_run(cx);
+    // code of m_run(cx);
+    cx->ca = peekMEM(cx, cx->wa);
+    cx->wa += 2;
+    cx->pc = cx->ca;
     // do infinite loop
     do_machine(cx);
 }
 
-void do_mainloop(context_t *cx)
+void do_catch(context_t *cx)
+{
+    int result;
+    result = setjmp(cx->env);    // no disclimination
+}
+// do_abort
+// If the flag is true, types out the last word interpreted, followed by the
+// text. Also clears the user's stacks and returns control to the terminal. If
+//false, takes no action.
+void do_abort(context_t *cx, const char *mes)
+{
+    char *p;
+    if (tos(cx)) {
+        p = str(MEMptr(cx, cx->last));      // entry top, word name
+        fprintf(stderr, "%s %s\n", p, mes);
+    }
+    longjmp(cx->env, tos(cx));
+}
+
+int do_mainloop(context_t *cx)
 {
     while (1) {
         do_catch(cx);
-        do_accept(cx);
+        if (do_accept(cx) == EOF)
+            return -1;
+        do_print_s0(cx);
         while (1) {
             do_push(cx, ' ');     // push delimiter
+            do_print_status(cx);
             do_word(cx);
+            do_print_status(cx);
+            do_print_here(cx);
             if (tos(cx) == 0) {
-                do_accept(cx);
+                if (do_accept(cx) == EOF)
+                    return -1;
+                do_print_s0(cx);
                 continue;
             }
             continue;   // word debug

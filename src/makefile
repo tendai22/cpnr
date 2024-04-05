@@ -16,7 +16,9 @@ all: cpnr dict.X
 .dict.list:
 	sh makedict.sh
 
-COBJS=main.o machine.o monitor.o
+COBJS=main.o machine.o monitor.o cfunc.o
+
+main.o machine.o monitor.o cfunc.o: machine.h
 
 cpnr: $(COBJS)
 	cc -o cpnr $(COBJS)

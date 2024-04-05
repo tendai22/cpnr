@@ -24,6 +24,11 @@ typedef uint8_t mem_t;    // ROM/RAM memory array for the target machine
 #define RAMSTART 0x4000
 #define RAMSIZE 0x4000
 
+//
+// memory map
+//
+#define S0_ADDR      0x7800
+
 extern mem_t rom[];
 extern mem_t ram[];
 
@@ -40,6 +45,7 @@ typedef struct _ctx {
     word_t ah;
     word_t al;      // accumulator high, low
     word_t pc;
+    int    halt_flag;
     int    ss_flag;
     // input-stream, raw c pointer
     uint8_t *p;
@@ -47,8 +53,7 @@ typedef struct _ctx {
     // user variables
     word_t last;    // latest established entry top
     word_t h;       // dictionary pointer
-    word_t tib;     // text input buffer, used in accept
-    word_t ntib;    // #tib, current index in tib,
+    word_t s0;      // end of stack, or input line buffer
     word_t stack[STACK_SIZE];
     word_t rstack[STACK_SIZE];
     word_t bp[BPTBL_SIZE];      // break point table
@@ -66,25 +71,39 @@ extern void pokeMEM_b(context_t *cx, word_t addr, word_t value);
 extern char *MEMptr(context_t *cx, word_t addr);
 
 
-// esternal functions
+// external functions
 extern char *str(mem_t *c_ptr);
-extern void do_halt(void);
+extern void do_halt(context_t *cx);
 extern void do_debugger(context_t *cx);
-extern int  machine_code(context_t *cx, word_t code);
-extern void monitor(context_t *cx);
-extern void do_mainloop(context_t *cx);
+extern int machine_code(context_t *cx, word_t code);
+extern int monitor(context_t *cx);
+extern int do_mainloop(context_t *cx);
 extern void reset(context_t *cx);
+
+extern int gets_outer(char *buf, int size);
+
+// monitor
+extern void do_print_status(context_t *cx);
+extern void do_print_s0(context_t *cx);
+extern void do_print_here(context_t *cx);
+
+// outer interpreter
+extern int do_accept(context_t *cx);
+extern void do_word(context_t *cx);
+extern void do_find(context_t *cx);
+extern void do_number(context_t *cx);
+extern void do_prompt(context_t *cx);
 
 extern void do_catch(context_t *cx);
 extern void do_abort(context_t *cx, const char *message);
 extern void do_push(context_t *cx, word_t value);
 extern void do_pushr(context_t *cx, word_t value);
 extern void do_dup(context_t *cx);
-extern void do_halt(void);
-extern word_t tos(context_t *cx);
+//extern word_t tos(context_t *cx);
 extern word_t do_pop(context_t *cx);
 extern word_t do_popr(context_t *cx);
 
+#define tos(cx) ((cx)->stack[(cx)->sp])
 
 // machine code
 extern void m_pushr(context_t *cx, word_t value);
