@@ -174,11 +174,13 @@ int do_mainloop(context_t *cx)
     }
 }
 
+static int opcode_base = 0xc000;
+
 int machine_code(context_t *cx, word_t code)
 {
     word_t addr;
     // machine code
-    if ((code & 0xc000) != 0xc000) {
+    if ((code & 0xf000) != opcode_base) {
 undefined:
         fprintf(stderr, "machine_code: undefined instruction: %04X at %04X\n", code, cx->pc);
         return -1;
