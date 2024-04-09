@@ -21,8 +21,8 @@ opcode execute
 //
 // primitives .. thread instructions
 //
-opcode bra
-opcode bne
+opcode jmp
+opcode jnz
 opcode literal
 
 //
@@ -70,15 +70,15 @@ opcode bl
 //
 // typeb (addr --) ... print a word string, till a space encounters
 //
-opcode typeb
+//opcode typeb
 //
 // types (addr --)
 //
-opcode types
+//opcode types
 //
-// type0 (addr n -- )
+// type (addr n -- )
 //
-opcode type0
+opcode type
 
 opcode base
 opcode last
@@ -98,7 +98,7 @@ opcode not
 //
 opcode emit
 opcode key
-opcode ?key q_key
+//opcode key? key_q
 //
 // compilers
 //
@@ -115,6 +115,6 @@ opcode state
 //
 // [, ]
 //
-opcode [ start_compile
-opcode ] end_compile
-opcode >in in_stream
+//opcode [ start_compile
+//opcode ] end_compile
+//opcode >in in_stream

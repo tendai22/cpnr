@@ -29,8 +29,8 @@ typedef uint8_t mem_t;    // ROM/RAM memory array for the target machine
 //
 #define S0_ADDR      0x7800
 
-extern mem_t rom[];
-extern mem_t ram[];
+#define MEMSIZE 65536
+extern mem_t mem[];
 
 #define STACK_SIZE 256
 #define BPTBL_SIZE 16
@@ -50,10 +50,11 @@ typedef struct _ctx {
     // input-stream, raw c pointer
     uint8_t *p;
     word_t rest;
-    // user variables
+    // user variables, start from 0xa000, members hold its address
     word_t last;    // latest established entry top
     word_t h;       // dictionary pointer
     word_t s0;      // end of stack, or input line buffer
+    word_t state;   // state for compiling/interpreting
     word_t stack[STACK_SIZE];
     word_t rstack[STACK_SIZE];
     word_t bp[BPTBL_SIZE];      // break point table

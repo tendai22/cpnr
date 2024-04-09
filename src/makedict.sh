@@ -151,5 +151,6 @@ END {
     print ""
     print "entry_end:"
     printf "    .equ entry_head, entry_%03d\n", --nels
+    print "    .end"
 }
 '

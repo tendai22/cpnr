@@ -72,21 +72,18 @@ do  case "$f" in
         return pc
     }
     # main actions
-    #BEGIN {
-    #    opcode["m_colon"]   = 0xc001
-    #    opcode["m_next"]    = 0xc002    
-    #    opcode["m_run"]     = 0xc003
-    #    opcode["m_semi"]    = 0xc004
-    #    opcode["m_bnz"]     = 0xc005
-    #    opcode["m_bne"]     = 0xc005
-    #    opcode["m_bra"]     = 0xc006
-    #    pass2 = 0
-    #}
+    BEGIN {
+        stderr = "/dev/tty"
+    }
     /^PASS2/{
         print $0
         pass2 = 1
         pc = org
         linebase = NR
+        end_flag = 0;
+        next
+    }
+    end_flag == 1{
         next
     }
     $1 ~ /^Label:/ && $2 ~ /^[A-Za-z_][A-Za-z0-9_]+/ {
@@ -142,7 +139,7 @@ do  case "$f" in
         }
         if (pass2) {
             if (n ~ /^$/) {
-                print "ERROR: " NR - linebase ": label " $2 ", not defined"
+                print "ERROR: " NR - linebase ": label " $2 ", not defined" >> stderr
                 next
             }
             printf "%04X %04X %s\n", pc, n, $0
@@ -156,13 +153,18 @@ do  case "$f" in
         label[$2] = $3
         next
     }
+    $1 ~ /^\.end *$/{
+        end_flag = 1
+        print "              end"
+        next
+    }
     /^ *$/{
         print
         next
     }
     { 
         if (opcode[$1] ~ /^$/) {
-            print "ERROR: " NR - linebase ": opcode " $0 ", not defined"
+            print "ERROR: " NR - linebase ": opcode " $0 ", not defined" >> stderr
             next
         }
         s = opcode[$1]

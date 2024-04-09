@@ -7,24 +7,24 @@ NAME=cpnr
 
 ALL=dict.X
 
-all: cpnr dict.X 
+all: cpnr dict.list 
 
-.list.X:
+dict.X: dict.list
 	sh dump.sh $< > $@
-.s.list:
+dict.list: dict.s
 	sh as.sh $< > $@
-.dict.list:
-	sh makedict.sh
+dict.s: dict.dict opcode.inc makedict.sh
+	sh makedict.sh $< > $@
 
-COBJS=main.o machine.o monitor.o cfunc.o
+opcode.inc: opcode.c makeopcode.sh
+	sh makeopcode.sh $< > $@
+
+COBJS=main.o machine.o monitor.o cfunc.o 
 
 main.o machine.o monitor.o cfunc.o: machine.h
 
 cpnr: $(COBJS)
 	cc -o cpnr $(COBJS)
-
-dict.list: $(AOBJS)
-	sh as.sh $(AOBJS) > dict.list
 
 .f.X:
 	$(F2X) -o $*.X $*.f

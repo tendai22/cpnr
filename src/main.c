@@ -100,6 +100,41 @@ void do_dup(context_t *cx)
     do_push(cx, cx->stack[cx->sp]);
 }
 
+void init_dict(void)
+{
+    static char *lower_hex = "0123456789abcdef";
+    static char *upper_hex = "0123456789ABCDEF";
+    char *filename = "dict.X", *p;
+    FILE *fp = fopen(filename, "r");
+    word_t addr = 0;
+
+    if (fp == 0) {
+        fprintf(stderr, "no dict file: %s\n", filename);
+        return;
+    }
+    // read it
+    int value;
+    while ((c = fgetc(fp)) != EOF) {
+        if (c == ' ')
+            continue;
+        if (c == '=') {
+            // do address
+            if ((value = fgethex(fp)) == -1)
+                continue;
+            if (value < 0 || MEMSIZE <= value)
+                continue;
+            addr = value;
+        }
+        if ((p = index(lower_hex, c)) || (p = index(upper_hex, c))) {
+            ungetc(c, fp);
+            value = fgethex(fp);
+
+        }
+    }
+
+
+}
+
 /*
 word_t tos(context_t *cx)
 {
@@ -137,6 +172,7 @@ int main (int ac, char **av)
     while (1) {
         cx = &_ctx;
         initialize_ctx(cx);
+        init_dict();
         if (monitor(cx) < 0)
             break;
     }
