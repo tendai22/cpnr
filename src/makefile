@@ -7,7 +7,7 @@ NAME=cpnr
 
 ALL=dict.X
 
-all: cpnr dict.list 
+all: cpnr dict.X
 
 dict.X: dict.list
 	sh dump.sh $< > $@

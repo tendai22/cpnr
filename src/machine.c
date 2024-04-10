@@ -51,12 +51,12 @@ void do_pushr(context_t *cx, word_t value)
         fprintf(stderr, "rstack underflow at pc:%04X ip:%04X\n", cx->pc, cx->ip);
         do_halt(cx);
     }
-    cx->rstack[cx->rs] = value;
+    word_mem(cx->rs) = value;
 }
 
 word_t do_popr(context_t *cx)
 {
-    word_t value = cx->rstack[cx->rs];
+    word_t value = word_mem(cx->rs);
     if (++cx->rs >= STACK_SIZE) {
         fprintf(stderr, "rstack overflow at pc:%04X ip:%04X\n", cx->pc, cx->ip);
         do_halt(cx);
@@ -110,7 +110,7 @@ void do_execute (context_t *cx)
     // start inter interpreter
     cx->wa = do_pop(cx);
     // code of m_run(cx);
-    cx->ca = peekMEM(cx, cx->wa);
+    cx->ca = word_mem(cx->wa);
     cx->wa += 2;
     cx->pc = cx->ca;
     // do infinite loop
@@ -155,7 +155,7 @@ int do_mainloop(context_t *cx)
                 do_print_s0(cx);
                 continue;
             }
-            print_cstr(cx, "H", cx->h);
+            print_cstr(cx, "H", word_mem(H_ADDR));
             do_pop(cx);
             do_dup(cx);
             do_find(cx);

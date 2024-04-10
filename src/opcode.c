@@ -10,7 +10,7 @@ static int opcode_base = 0xc000;
 int machine_code(context_t *cx, word_t code)
 {
     word_t addr, *wp, w, n;
-    char *p, c;
+    mem_t *p, c;
     // machine code
     if ((code & 0xf000) != opcode_base) {
 undefined:
@@ -57,7 +57,7 @@ undefined:
         break;
     case 8: // m_state
         // interpret/compile state user variable
-        do_push(cx, cx->state);
+        do_push(cx, mem[STATE_ADDR]);
         cx->pc += 2;
         break;
     case 9: // m_create
@@ -95,15 +95,15 @@ undefined:
         cx->pc += 2;
         break;
     case 16: // m_h
-        do_push(cx, cx->h);
+        do_push(cx, mem[H_ADDR]);
         cx->pc += 2;
         break;
     case 17: // m_last
-        do_push(cx, cx->last);
+        do_push(cx, mem[LAST_ADDR]);
         cx->pc += 2;
         break;
     case 18: // m_base
-        w = peekMEM(cx, cx->base);
+        w = mem[BASE_ADDR];
         do_push(cx, w);
         cx->pc += 2;
         break;
@@ -196,7 +196,7 @@ undefined:
     case 35: // m_exclamation
         w = do_pop(cx);
         word_mem(w) = do_pop(cx);
-        fprintf(stderr, "mem[%04x] = %04x\n", w, word_mem(w))
+        fprintf(stderr, "mem[%04x] = %04x\n", w, word_mem(w));
         cx->pc += 2;
         break;
     case 36: // m_bytefetch

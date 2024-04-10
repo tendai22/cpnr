@@ -85,11 +85,11 @@ void do_print_status(context_t *cx)
     fprintf(stderr, "\n");
     fprintf(stderr, "SP: ");
     for (int i = 254; i >= cx->sp; i -= 2) {
-        fprintf(stderr, " %04X", cx->stack[i]);
+        fprintf(stderr, " %04X", word_mem(i));
     }
     fprintf(stderr, "  RS: ");
     for (int i = 254; i >= cx->rs; i -= 2) {
-        fprintf(stderr, " %04X", cx->rstack[i]);
+        fprintf(stderr, " %04X", word_mem(i));
     }
     fprintf(stderr, "\n");
 }
@@ -97,7 +97,7 @@ void do_print_status(context_t *cx)
 void do_print_s0(context_t *cx)
 {
     char *p = &mem[mem[S0_ADDR]];
-    fprintf(stderr, "S0:%04X: ", mem[S0_ADDR]);
+    fprintf(stderr, "S0:%04X: ", word_mem(S0_ADDR));
     for (int i = 0; i < 16; ++i)
         fprintf(stderr, "%02X ", *p++);
     fprintf(stderr, "\n");
@@ -106,7 +106,7 @@ void do_print_s0(context_t *cx)
 void do_print_here(context_t *cx)
 {
     char *p = &mem[mem[H_ADDR]];
-    fprintf(stderr, "H:%04X: ", mem[H_ADDR]);
+    fprintf(stderr, "H:%04X: ", word_mem(H_ADDR));
     for (int i = 0; i < 16; ++i)
         fprintf(stderr, "%02X ", *p++);
     fprintf(stderr, "\n");
@@ -114,14 +114,12 @@ void do_print_here(context_t *cx)
 
 void print_cstr(context_t *cx, char *title, word_t addr)
 {
-    char *p = mem[addr];
+    char *p = &mem[addr];
     int n = *p++;
     if (title && *title)
         fprintf(stderr, "%s:", title);
     fprintf(stderr, "%04X:[%d ", addr, n);
-    for (int i = 0; i < n; ++i) {
-        fprintf(stderr, "%c", *p++);
-    }
+    fprintf(stderr, "%.*s", n, p);
     fprintf(stderr, "]\n");
 }
 

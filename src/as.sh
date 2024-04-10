@@ -57,7 +57,7 @@ do  case "$f" in
     function outit(pc, str, pass2, code, n, m, s, first){
         first = 1
         while (length(str) > 0) {
-            s = substr(str, 1, 4)
+            s = substr(str, 1, 2)
             if (first) {
                 ostr = sprintf("%04X %s %s", pc, s, code)
                 first = 0
@@ -67,7 +67,7 @@ do  case "$f" in
             if (pass2)
                 print ostr
             pc += length(s) / 2
-            str = substr(str, 5)
+            str = substr(str, 3)
         }
         return pc
     }

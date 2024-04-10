@@ -32,8 +32,7 @@ int do_accept(context_t *cx)
         return 0;
     }
     // now in-stream buffer emnty, refill it
-    word_t *wp = &mem[S0_ADDR];
-    char *buf = &mem[*wp];
+    char *buf = &mem[mem[S0_ADDR]];
     int size = 80, n;
     if (outer_flag) {
         if (gets_outer(buf, size - 1) == 0) {
@@ -71,7 +70,7 @@ void do_word(context_t *cx)
     word_t wp;
     int n, c;
     delim = tos(cx);
-    here = h0 = &mem[mem[H_ADDR]];
+    here = h0 = &mem[word_mem(H_ADDR)];
     // skip if the first is space
     if ((c = get_instream(cx)) == 0) {
         // end-of-file
@@ -93,7 +92,35 @@ void do_word(context_t *cx)
     } while ((c = get_instream(cx)) != 0 && c != delim);
     *here = delim;   // trailing delim char, not counted
     *h0 = here - h0 - 1;        // count byte
-    tos(cx) = cx->h;
+    tos(cx) = word_mem(H_ADDR);
+}
+
+static word_t link_addr(word_t entry)
+{
+    mem_t *p;
+    word_t link;
+    int n;
+    p = &mem[entry];
+    n = *p & 0x1f;
+    return entry + n + (n & 1) + 2;
+}
+
+static word_t prev_entry(word_t link)
+{
+    link = word_mem(link_addr(link));
+    return link;
+}
+
+static word_t code_addr(word_t entry)
+{
+    word_t addr = link_addr(entry);
+    return addr + 2;
+}
+
+static word_t param_addr(word_t entry)
+{
+    word_t addr = link_addr(entry);
+    return addr + 4;
 }
 
 // do_find: find a entry whose name is the same
@@ -103,7 +130,37 @@ void do_word(context_t *cx)
 //            xt -1 (find, immediate))
 void do_find(context_t *cx)
 {
-
+    mem_t *p;
+    word_t link = word_mem(LAST_ADDR);
+    word_t addr1 = word_mem(H_ADDR);
+    word_t xt;
+    int n3 = mem[addr1], n2, n1;
+    print_cstr(cx, "H", addr1);
+    for (; link ; link = prev_entry(link)) {
+        print_cstr(cx, NULL, link);
+        n1 = mem[link] & 0x1f;
+        if (n1 != n3)
+            continue;
+        do_push(cx, addr1);
+        do_push(cx, n1);
+        do_push(cx, link);
+        do_dash_text(cx);
+        n2 = do_pop(cx);
+        if (n1 != n2)
+            continue;
+        // match
+        break;
+    }
+    if (link == 0) {
+        do_push(cx, 0);
+    } else {
+        xt = word_mem(code_addr(link));
+        do_push(cx, xt);
+        if (mem[addr1] & 0x80)
+            do_push(cx, -1);
+        else
+            do_push(cx, 1);
+    }
 }
 
 
@@ -129,7 +186,7 @@ void do_emit(context_t *cx, word_t w)
 
 void do_create(context_t *cx)
 {
-    char *p, *q;
+    mem_t *p, *q;
     word_t w;
     int count, n;
     // read a word to put it at the last of dictionary, pointed last, here
@@ -139,7 +196,7 @@ void do_create(context_t *cx)
     p = &mem[mem[H_ADDR]];
     count = *p;
     n = (count + 1) + ((count + 1) % 2);
-    fprintf(stderr, "create: head = %04x, count = %d, n = %d\n", *h_wp, count, n);
+    fprintf(stderr, "create: head = %04x, count = %d, n = %d\n", mem[H_ADDR], count, n);
     // put link pointer
     w = mem[LAST_ADDR];
     p += n;

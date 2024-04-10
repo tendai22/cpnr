@@ -27,13 +27,6 @@ static void initialize_ctx(context_t *cx)
     cx->ah = 0;
     cx->al = 0;
     reset(cx);      // initialize cx->pc
-    memset(&cx->stack[0], 0, 2* STACK_SIZE);
-    memset(&cx->rstack[0], 0, 2* STACK_SIZE);
-    cx->last = USER(0);
-    cx->h = USER(1);
-    cx->s0 = USER(2);
-    cx->state = USER(3);
-    cx->base = USER(4);
 }
 
 //
@@ -96,12 +89,12 @@ char *str(mem_t *c_str)
 
 void do_push(context_t *cx, word_t value)
 {
-    cx->stack[--(cx->sp)] = value;
+    word_mem(--(cx->sp)) = value;
 }
 
 void do_dup(context_t *cx)
 {
-    do_push(cx, cx->stack[cx->sp]);
+    do_push(cx, word_mem(cx->sp));
 }
 
 //
@@ -148,7 +141,7 @@ void init_dict(context_t *cx)
 {
     char *filename = "dict.X", *p;
     FILE *fp = fopen(filename, "r");
-    int c;
+    int c, n, i;
     word_t addr = 0, *wp;
 
     if (fp == 0) {
@@ -176,12 +169,24 @@ void init_dict(context_t *cx)
             if (max < addr)
                 max = addr;
         }
-        if (to_hex(c) >= 0) {
-            ungetc(c, fp);
-            value = fgethex(fp);
-            fprintf(stderr, "[%04X %04X]\n", addr, value);
-            *((word_t *)&(mem[addr])) = value;
-            addr += 2;
+        if ((i = to_hex(c)) >= 0) {
+            n = 1;
+            value = i;
+            while ((c = fgetc(fp)) != EOF && (i = to_hex(c)) >= 0) {
+                value = value * 16 + i;
+                n++;
+            }
+            if (c != EOF && i < 0)
+                ungetc(c, fp);
+            if (n > 2) {
+                fprintf(stderr, "[%04X %04X]\n", addr, value);
+                *((word_t *)&(mem[addr])) = value;
+                addr += 2;
+            } else {
+                fprintf(stderr, "[%04X %02X]\n", addr, value);
+                mem[addr] = value;
+                addr++;
+            }
         }
     }
     int first = 1;
@@ -197,11 +202,19 @@ void init_dict(context_t *cx)
     }
     fprintf(stderr, "\n");
     // init user vars
-    mem[LAST_ADDR] = mem[min + 2];
-    mem[H_ADDR] = mem[min + 4];
-    fprintf(stderr "last: %04x, h: %04x\n", mem[LAST_ADDR], mem[H_ADDR]);
+    word_mem(LAST_ADDR) = word_mem(min + 4);
+    word_mem(H_ADDR) = word_mem(min + 2);
+    fprintf(stderr, "last: %04x, h: %04x\n", word_mem(LAST_ADDR), word_mem(H_ADDR));
 }
 
+// initialize mem[] array, mainly user variables
+
+void init_mem(context_t *cx)
+{
+    word_mem(S0_ADDR) = DSTACK_END;  // s0 line buffer
+    word_mem(STATE_ADDR) = 0;    // interpretive mode
+    word_mem(BASE_ADDR) = 10;     // DECIMAL mode
+}
 /*
 word_t tos(context_t *cx)
 {
@@ -236,6 +249,7 @@ int main (int ac, char **av)
         cx = &_ctx;
         initialize_ctx(cx);
         init_dict(cx);
+        init_mem(cx);
         if (monitor(cx) < 0)
             break;
     }

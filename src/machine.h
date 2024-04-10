@@ -104,7 +104,7 @@ extern word_t do_popr(context_t *cx);
 extern void do_create(context_t *cx);
 extern void do_emit(context_t *cx, word_t w);
 
-#define tos(cx) ((cx)->stack[(cx)->sp])
+#define tos(cx) word_mem(cx->sp)
 
 // machine code
 extern void m_pushr(context_t *cx, word_t value);
