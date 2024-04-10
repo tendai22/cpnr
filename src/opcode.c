@@ -9,7 +9,8 @@ static int opcode_base = 0xc000;
 
 int machine_code(context_t *cx, word_t code)
 {
-    word_t addr;
+    word_t addr, *wp, w, n;
+    char *p, c;
     // machine code
     if ((code & 0xf000) != opcode_base) {
 undefined:
@@ -30,11 +31,11 @@ undefined:
         // falling down
     case 3: // m_next
     do_next_label:
-        cx->wa = peekMEM(cx, cx->ip);
+        cx->wa = word_mem(cx->ip);
         cx->ip += 2;
         // falling down
     case 4: // m_run
-        cx->ca = peekMEM(cx, cx->wa);
+        cx->ca = word_mem(cx->wa);
         cx->wa += 2;
         cx->pc = cx->ca;
         break;
@@ -51,8 +52,7 @@ undefined:
         // falling down
     case 7: // m_jmp 
         // unconditional bra in thread
-        cx->pc += 2;
-        addr = peekMEM(cx, cx->pc);
+        addr = word_mem(cx->pc + 2);
         cx->pc = addr;
         break;
     case 8: // m_state
@@ -71,27 +71,27 @@ undefined:
         break;
     case 11: // m_emit
         // put one byte to screen
-        c = do_pop(cx);
-        do_emit(cx, c):
+        w = do_pop(cx);
+        do_emit(cx, w);
         cx->pc += 2;
         break;
     case 12: // m_not
-        cx->stack[cx->sp] = !tos(cx);
+        word_mem(cx->sp) = !tos(cx);
         cx->pc += 2;
         break;
     case 13: // m_xor
-        c = do_pop(cx);
-        cx->stack[cx->sp] = tos(cx) ^ c;
+        w = do_pop(cx);
+        word_mem(cx->sp) = tos(cx) ^ w;
         cx->pc += 2;
         break;
     case 14: // m_or
-        c = do_pop(cx);
-        cx->stack[cx->sp] = tos(cx) | c;
+        w = do_pop(cx);
+        word_mem(cx->sp) = tos(cx) | w;
         cx->pc += 2;
         break;
     case 15: // m_and
-        c = do_pop(cx);
-        cx->stack[cx->sp] = tos(cx) & c;
+        w = do_pop(cx);
+        word_mem(cx->sp) = tos(cx) & w;
         cx->pc += 2;
         break;
     case 16: // m_h
@@ -103,14 +103,14 @@ undefined:
         cx->pc += 2;
         break;
     case 18: // m_base
-        c = pokeMEM(cx, cx->base);
-        do_push(cx, c);
+        w = peekMEM(cx, cx->base);
+        do_push(cx, w);
         cx->pc += 2;
         break;
     case 19: // m_type
         n = do_pop(cx);
         addr = do_pop(cx);
-        p = MEMptr(cx, addr);
+        p = &mem[addr];
         while (n-- > 0)
             do_emit(cx, *p++);
         cx->pc += 2;
@@ -129,50 +129,50 @@ undefined:
         cx->pc += 2;
         break;
     case 23: // m_period
-        c = do_pop(cx);
-        printf("%d", c);
+        w = do_pop(cx);
+        printf("%d", w);
         cx->pc += 2;
         break;
     case 24: // m_div
-        c = do_pop(cx);
-        cx->stack[cx->sp] = tos(cx) / c;
+        w = do_pop(cx);
+        word_mem(cx->sp) = tos(cx) / w;
         cx->pc += 2;
         break;
     case 25: // m_mul
-        c = do_pop(cx);
-        cx->stack[cx->sp] = tos(cx) * c;
+        w = do_pop(cx);
+        word_mem(cx->sp) = tos(cx) * w;
         cx->pc += 2;
         break;
     case 26: // m_sub
-        c = do_pop(cx);
-        cx->stack[cx->sp] = tos(cx) - c;
+        w = do_pop(cx);
+        word_mem(cx->sp) = tos(cx) - w;
         cx->pc += 2;
         break;
     case 27: // m_add
-        c = do_pop(cx);
-        cx->stack[cx->sp] = tos(cx) + c;
+        w = do_pop(cx);
+        word_mem(cx->sp) = tos(cx) + w;
         cx->pc += 2;
         break;
      case 28: // m_rot
-        c = cx->stack[cx->sp - 2];
-        cx->stack[cx->sp - 2] = cx->stack[cx->sp - 1];
-        cx->stack[cx->sp - 1] = cx->stack[cx->sp];
-        cx->stack[cx->sp] = c;
+        w = word_mem(cx->sp - 4);
+        word_mem(cx->sp - 4) = word_mem(cx->sp - 2);
+        word_mem(cx->sp - 2) = word_mem(cx->sp);
+        word_mem(cx->sp) = w;
         cx->pc += 2;
         break;
     case 29: // m_swap
-        c = cx->stack[cx->sp - 1];
-        cx->stack[cx->sp - 1] = tos(cx);
-        cx->stack[cx->sp] = c;
-        cx->cp += 2;
+        w = word_mem(cx->sp - 2);
+        word_mem(cx->sp - 2) = tos(cx);
+        word_mem(cx->sp) = w;
+        cx->pc += 2;
         break;
     case 30: // m_drop
         do_pop(cx);
         cx->pc += 2;
         break;
     case 31: // m_over
-        c = cx->stack[cx->sp - 1];
-        do_push(cx, c);
+        w = word_mem(cx->sp - 2);
+        do_push(cx, w);
         cx->pc += 2;
         break;
     case 32: // m_dup
@@ -181,35 +181,38 @@ undefined:
         cx->pc += 2;
         break;
     case 33: // m_comma
-        c = tos(cx);
-        wp = MEMptr(cx, cx->h);
-        *(*wp)++ = c;
+        w = tos(cx);
+        fprintf(stderr, "m_comma: addr = %04x, value = %04x\n", *wp, w);
+        mem[mem[H_ADDR]] = w;
+        mem[H_ADDR] += 2;
         cx->pc += 2;
         break;
     case 34: // m_bytedeposite
-        p = MEMptr_b(cx, do_pop(cx))
-        *p = tos(cx);
+        w = do_pop(cx);
+        mem[w] = do_pop(cx);
+        fprintf(stderr, "mem[%04x] = %04x\n", w, mem[w]);
         cx->pc += 2;
         break;
     case 35: // m_exclamation
-        wp = MEMptr(cx, do_pop(cx))
-        *wp = tos(cx);
+        w = do_pop(cx);
+        word_mem(w) = do_pop(cx);
+        fprintf(stderr, "mem[%04x] = %04x\n", w, word_mem(w))
         cx->pc += 2;
         break;
     case 36: // m_bytefetch
-        p = MEMptr_b(cx, do_pop(cx));
-        cx->stack[cx->sp] = *p;
+        c = mem[do_pop(cx)];
+        word_mem(cx->sp) = c;
         cx->pc += 2;
         break;
     case 37: // m_atfetch
-        wp = MEMptr(cx, do_pop(cx));
-        cx->stack[cx->sp] = *wp;
+        w = word_mem(do_pop(cx));
+        word_mem(cx->sp) = w;
         cx->pc += 2;
         break;
     case 38: // m_literal
         cx->pc += 2;
-        c = peekMEM(cx, cx->pc);
-        do_push(cx, c);
+        w = word_mem(cx->pc);
+        do_push(cx, w);
         cx->pc += 2;
         break;
     case 39: // m_execute

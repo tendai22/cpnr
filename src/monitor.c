@@ -43,7 +43,9 @@ int getcmd(void)
         return GO_CMD;
     }
     recover_mode();
-    return c;
+    if (c == '\r')
+        c = '\n';
+    return c == 4 ? -1 : c;
 }
 
 int monitor (context_t *cx)
@@ -54,16 +56,23 @@ int monitor (context_t *cx)
         fprintf(stderr, "]");
         fflush(stderr);
         c = getcmd();
-        if (c < 0)
+        if (c < 0) {
+            fprintf(stderr, "\n");
             return -1;
+        }
+        if (c == '\n') {
+            fprintf(stderr, "\n");
+            continue;
+        }
         if (c == GO_CMD) {
             if (do_mainloop(cx) < 0)
                 return -1;
         } else if (c == 'r') {
+            fprintf(stderr, "\nreset done\n");
             reset(cx);
         } else {
             // not found
-            fprintf(stderr, "monitor: bad command %02x\n", c);
+            fprintf(stderr, "monitor: bad command \"%c\"\n", c);
         }
     }
 }
@@ -87,8 +96,8 @@ void do_print_status(context_t *cx)
 
 void do_print_s0(context_t *cx)
 {
-    char *p = MEMptr(cx, cx->s0);
-    fprintf(stderr, "S0:%04X: ", cx->s0);
+    char *p = &mem[mem[S0_ADDR]];
+    fprintf(stderr, "S0:%04X: ", mem[S0_ADDR]);
     for (int i = 0; i < 16; ++i)
         fprintf(stderr, "%02X ", *p++);
     fprintf(stderr, "\n");
@@ -96,8 +105,8 @@ void do_print_s0(context_t *cx)
 
 void do_print_here(context_t *cx)
 {
-    char *p = MEMptr(cx, cx->h);
-    fprintf(stderr, "H:%04X: ", cx->h);
+    char *p = &mem[mem[H_ADDR]];
+    fprintf(stderr, "H:%04X: ", mem[H_ADDR]);
     for (int i = 0; i < 16; ++i)
         fprintf(stderr, "%02X ", *p++);
     fprintf(stderr, "\n");
@@ -105,7 +114,7 @@ void do_print_here(context_t *cx)
 
 void print_cstr(context_t *cx, char *title, word_t addr)
 {
-    char *p = MEMptr(cx, addr);
+    char *p = mem[addr];
     int n = *p++;
     if (title && *title)
         fprintf(stderr, "%s:", title);

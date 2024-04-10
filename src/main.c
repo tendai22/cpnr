@@ -15,6 +15,8 @@ void reset(context_t *cx)
     cx->pc = ROMSTART;
 }
 
+#define USER(n) (0x4000+(n))
+
 static void initialize_ctx(context_t *cx)
 {
     cx->ip = 0;
@@ -27,9 +29,11 @@ static void initialize_ctx(context_t *cx)
     reset(cx);      // initialize cx->pc
     memset(&cx->stack[0], 0, 2* STACK_SIZE);
     memset(&cx->rstack[0], 0, 2* STACK_SIZE);
-    cx->s0 = S0_ADDR;
-    cx->h = RAMSTART;
-    cx->last = 0;
+    cx->last = USER(0);
+    cx->h = USER(1);
+    cx->s0 = USER(2);
+    cx->state = USER(3);
+    cx->base = USER(4);
 }
 
 //
@@ -100,22 +104,61 @@ void do_dup(context_t *cx)
     do_push(cx, cx->stack[cx->sp]);
 }
 
-void init_dict(void)
+//
+// init_dict
+//
+
+// to_hex(int c)
+// return its hex value if the char c is one of hex chars,
+// otherwise return -1
+static int to_hex(int c)
 {
     static char *lower_hex = "0123456789abcdef";
     static char *upper_hex = "0123456789ABCDEF";
+    const char *p;
+    if ((p = index(lower_hex, c))) {
+        return p - lower_hex;
+    }
+    if ((p = index(upper_hex, c))) {
+        return p - upper_hex;
+    }
+    return -1;
+}
+
+//
+// fgethex(fp)
+// read hex string to convert it in positive hex value,
+// otherwise return -1
+static int fgethex(FILE *fp)
+{
+    int value = 0, c = -1, n = -1, valid_flag = 0;
+    while ((c = fgetc(fp)) != EOF && (n = to_hex(c)) >= 0) {
+        valid_flag = 1;
+        value = value * 16 + n;
+    }
+    if (c != EOF && n < 0)
+        ungetc(c, fp);
+    if (valid_flag)
+        return value;
+    else 
+        return -1;
+}
+
+void init_dict(context_t *cx)
+{
     char *filename = "dict.X", *p;
     FILE *fp = fopen(filename, "r");
-    word_t addr = 0;
+    int c;
+    word_t addr = 0, *wp;
 
     if (fp == 0) {
         fprintf(stderr, "no dict file: %s\n", filename);
         return;
     }
     // read it
-    int value;
+    int value, min = 0xffff, max = 0;
     while ((c = fgetc(fp)) != EOF) {
-        if (c == ' ')
+        if (c == ' ' || c == '\r' || c == '\n')
             continue;
         if (c == '=') {
             // do address
@@ -123,16 +166,40 @@ void init_dict(void)
                 continue;
             if (value < 0 || MEMSIZE <= value)
                 continue;
-            addr = value;
+            if (addr != value) {
+                fprintf(stderr, "addr value = %04x\n", value);
+                addr = value;
+            }
+            // min, max
+            if (addr < min)
+                min = addr;
+            if (max < addr)
+                max = addr;
         }
-        if ((p = index(lower_hex, c)) || (p = index(upper_hex, c))) {
+        if (to_hex(c) >= 0) {
             ungetc(c, fp);
             value = fgethex(fp);
-
+            fprintf(stderr, "[%04X %04X]\n", addr, value);
+            *((word_t *)&(mem[addr])) = value;
+            addr += 2;
         }
     }
-
-
+    int first = 1;
+    fprintf(stderr, "init_dict: min = %04x, max=%04x\n", min, max);
+    for (int i = min; i <= max; i += 2) {
+        if (first || (i % 16) == 0) {
+            fprintf(stderr, "%04X: ", i);
+            first = 0;
+        }
+        fprintf(stderr, "%04X ", *((word_t *)&(mem[i])));
+        if ((i % 16) == 14)
+            fprintf(stderr, "\n");
+    }
+    fprintf(stderr, "\n");
+    // init user vars
+    mem[LAST_ADDR] = mem[min + 2];
+    mem[H_ADDR] = mem[min + 4];
+    fprintf(stderr "last: %04x, h: %04x\n", mem[LAST_ADDR], mem[H_ADDR]);
 }
 
 /*
@@ -146,11 +213,7 @@ word_t tos(context_t *cx)
 
 // do_word: cut a word to top-of-dictionary
 
-// do_find: find a entry whose name is the same
-//   as top-of-directory
-// (c-addr -- 0     (not found)
-//            xt 1  (find, normak)
-//            xt -1 (find, immediate))
+
 
 // do_execute: invoke xt on tos
 // (xt -- )
@@ -172,7 +235,7 @@ int main (int ac, char **av)
     while (1) {
         cx = &_ctx;
         initialize_ctx(cx);
-        init_dict();
+        init_dict(cx);
         if (monitor(cx) < 0)
             break;
     }

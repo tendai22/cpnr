@@ -19,7 +19,7 @@ dict.s: dict.dict opcode.inc makedict.sh
 opcode.inc: opcode.c makeopcode.sh
 	sh makeopcode.sh $< > $@
 
-COBJS=main.o machine.o monitor.o cfunc.o 
+COBJS=main.o machine.o monitor.o cfunc.o opcode.o
 
 main.o machine.o monitor.o cfunc.o: machine.h
 

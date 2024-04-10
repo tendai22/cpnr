@@ -27,10 +27,25 @@ typedef uint8_t mem_t;    // ROM/RAM memory array for the target machine
 //
 // memory map
 //
-#define S0_ADDR      0x7800
+#define DICT_START    0x1000
+#define USER_START    0x4000
+#define STACK_END     0xff00
 
+// stack area
+#define DSTACK_END    STACK_END
+#define RSTACK_END    (DSTACK_END-0x100)
+
+// user variables
+#define LAST_ADDR     USER_START
+#define H_ADDR        (USER_START+2)
+#define S0_ADDR       (USER_START+4)
+#define STATE_ADDR    (USER_START+6)
+#define BASE_ADDR     (USER_START+8)
+ 
 #define MEMSIZE 65536
 extern mem_t mem[];
+
+#define word_mem(addr) (*((word_t *)&mem[addr]))
 
 #define STACK_SIZE 256
 #define BPTBL_SIZE 16
@@ -50,27 +65,8 @@ typedef struct _ctx {
     // input-stream, raw c pointer
     uint8_t *p;
     word_t rest;
-    // user variables, start from 0xa000, members hold its address
-    word_t last;    // latest established entry top
-    word_t h;       // dictionary pointer
-    word_t s0;      // end of stack, or input line buffer
-    word_t state;   // state for compiling/interpreting
-    word_t stack[STACK_SIZE];
-    word_t rstack[STACK_SIZE];
     word_t bp[BPTBL_SIZE];      // break point table
 } context_t;
-
-#define HERE 1
-#define BASE 2
-#define STATE 3
-#define LAST 4
-
-// machine memory
-extern word_t peekMEM(context_t *cx, word_t addr);
-extern void pokeMEM(context_t *cx, word_t addr, word_t value);
-extern void pokeMEM_b(context_t *cx, word_t addr, word_t value);
-extern char *MEMptr(context_t *cx, word_t addr);
-
 
 // external functions
 extern char *str(mem_t *c_ptr);
@@ -104,6 +100,9 @@ extern void do_dup(context_t *cx);
 //extern word_t tos(context_t *cx);
 extern word_t do_pop(context_t *cx);
 extern word_t do_popr(context_t *cx);
+
+extern void do_create(context_t *cx);
+extern void do_emit(context_t *cx, word_t w);
 
 #define tos(cx) ((cx)->stack[(cx)->sp])
 
