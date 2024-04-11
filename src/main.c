@@ -22,8 +22,8 @@ static void initialize_ctx(context_t *cx)
     cx->ip = 0;
     cx->wa = 0;
     cx->ca = 0;
-    cx->rs = STACK_SIZE;
-    cx->sp = STACK_SIZE;
+    cx->rs = RSTACK_END;
+    cx->sp = DSTACK_END;
     cx->ah = 0;
     cx->al = 0;
     reset(cx);      // initialize cx->pc
@@ -89,7 +89,8 @@ char *str(mem_t *c_str)
 
 void do_push(context_t *cx, word_t value)
 {
-    word_mem(--(cx->sp)) = value;
+    cx->sp -= 2;
+    word_mem(cx->sp) = value;
 }
 
 void do_dup(context_t *cx)

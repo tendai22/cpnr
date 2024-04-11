@@ -152,17 +152,23 @@ static word_t param_addr(word_t entry)
 void do_compare(context_t *cx)
 {
     // ( c-addr1 u1 c-addr2 u2 -- n)
-    word_t u1, u2;
+    word_t u1, u2, w1, w2;
     mem_t *p1, *p2;
     int result, n;
 
     u2 = do_pop(cx);
-    p2 = &mem[do_pop(cx)];
+    w2 = do_pop(cx);
+    p2 = &mem[w2];
     u1 = do_pop(cx);
-    p1 = &mem[do_pop(cx)];
+    w1 = do_pop(cx);
+    p1 = &mem[w1];
     // compare logically
     n = u1 < u2 ? u1 : u2;
     result = strncmp(p1, p2, n);
+    if (result > 0)
+        result = 1;
+    if (result < 0)
+        result = -1;
     if (result == 0) {
         // one string may includes the other,
         // in such a case, they do not "equal"
@@ -184,22 +190,23 @@ void do_find(context_t *cx)
 {
     mem_t *p;
     word_t link = word_mem(LAST_ADDR);
-    word_t addr1 = word_mem(H_ADDR);
+    word_t addr1 = do_pop(cx);
     word_t xt;
     int n3 = mem[addr1], n2, n1;
     print_cstr(cx, "H", addr1);
     for (; link ; link = prev_entry(link)) {
-        print_cstr(cx, NULL, link);
+        //print_cstr(cx, NULL, link);
         n1 = mem[link] & 0x1f;
         if (n1 != n3)
             continue;
-        do_push(cx, addr1);
+        fprintf(stderr, "find: %04x %d %04x %d\n", addr1, n3, link, n1);
+        do_push(cx, addr1+1);
         do_push(cx, n3);
-        do_push(cx, link);
+        do_push(cx, link+1);
         do_push(cx, n1);
         do_compare(cx);
         n2 = do_pop(cx);
-        if (n1 != n2)
+        if (n2)
             continue;
         // match
         break;
@@ -207,13 +214,33 @@ void do_find(context_t *cx)
     if (link == 0) {
         do_push(cx, 0);
     } else {
-        xt = word_mem(code_addr(link));
+        xt = code_addr(link);
         do_push(cx, xt);
         if (mem[addr1] & 0x80)
             do_push(cx, -1);
         else
             do_push(cx, 1);
     }
+    print_stack(cx);
+}
+
+//
+// do_number (addr -- n r)
+// addrのカウント付き文字列を数値に変換する。BASEは見ない。sscanfの%i変換に
+// 依る。すなわち、先頭が 0x または 0Xの場合は16進数変換、0の場合は8進変換、
+// その他は10進変換となる。
+// 結果はnとして置かれ、その上に変換結果rが返される。rが0の場合は変換成功
+// である。
+void do_number(context_t *cx)
+{
+    int value, r;
+    mem_t *p = &mem[do_pop(cx)];
+    int count = *p++;
+    fprintf(stderr, "number:[%d %.*s]", count, count, p);
+    r = sscanf(p, "%i", &value) == 1 ? 0 : -1;
+    fprintf(stderr, " -> %d %d\n", value, r);
+    do_push(cx, value);
+    do_push(cx, r);
 }
 
 

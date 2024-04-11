@@ -46,6 +46,7 @@ typedef uint8_t mem_t;    // ROM/RAM memory array for the target machine
 extern mem_t mem[];
 
 #define word_mem(addr) (*((word_t *)&mem[addr]))
+#define ptr2addr(p) ((word_t)((p)-&mem[0]))
 
 #define STACK_SIZE 256
 #define BPTBL_SIZE 16
@@ -84,6 +85,7 @@ extern void do_print_status(context_t *cx);
 extern void do_print_s0(context_t *cx);
 extern void do_print_here(context_t *cx);
 extern void print_cstr(context_t *cx, char *title, word_t addr);
+extern void print_stack(context_t *cx);
 
 // outer interpreter
 extern int do_accept(context_t *cx);

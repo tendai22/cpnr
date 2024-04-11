@@ -47,7 +47,8 @@ void pokeMEM_b(context_t *cx, word_t addr, word_t value)
 // pushr, popr
 void do_pushr(context_t *cx, word_t value)
 {
-    if (--cx->rs < 0) {
+    cx->rs -= 2;
+    if (cx->rs < 0) {
         fprintf(stderr, "rstack underflow at pc:%04X ip:%04X\n", cx->pc, cx->ip);
         do_halt(cx);
     }
@@ -57,7 +58,8 @@ void do_pushr(context_t *cx, word_t value)
 word_t do_popr(context_t *cx)
 {
     word_t value = word_mem(cx->rs);
-    if (++cx->rs >= STACK_SIZE) {
+    cx->rs += 2;
+    if (cx->rs >= RSTACK_END) {
         fprintf(stderr, "rstack overflow at pc:%04X ip:%04X\n", cx->pc, cx->ip);
         do_halt(cx);
     }
@@ -66,11 +68,13 @@ word_t do_popr(context_t *cx)
 
 word_t do_pop(context_t *cx)
 {
-    cx->sp++;
-    if (cx->sp > 256) {
+    word_t value = word_mem(cx->sp);
+    cx->sp += 2;
+    if (cx->sp > DSTACK_END) {
         fprintf(stderr, "stack underflow at pc:%04X ip:%04X\n", cx->pc, cx->ip);
         do_halt(cx);
     }
+    return value;
 }
 
 void do_halt(context_t *cx)
@@ -95,7 +99,8 @@ void do_machine(context_t *cx)
         }
         // no break occurs
         // do one instruction
-        code = peekMEM(cx, cx->pc);
+        code = word_mem(cx->pc);
+        do_print_status(cx);
         if (machine_code(cx, code) != 0)
             break;
         if (cx->halt_flag) {
@@ -147,25 +152,28 @@ int do_mainloop(context_t *cx)
             return -1;
         do_print_s0(cx);
         while (1) {
+            print_stack(cx);
             do_push(cx, ' ');     // push delimiter
-            do_word(cx);
+            do_word(cx);    // (delim -- addr)
             if (tos(cx) == 0) {
+                do_pop(cx); // discard it
                 if (do_accept(cx) == EOF)
                     return -1;
                 do_print_s0(cx);
                 continue;
             }
             print_cstr(cx, "H", word_mem(H_ADDR));
-            do_pop(cx);
-            do_dup(cx);
+            print_stack(cx);
             do_find(cx);
-            continue;
-            if (tos(cx) != 0) {
+            //if (do_pop(cx))
+            //    do_pop(cx); // clear the result of do_find
+            //continue;
+            if (do_pop(cx) != 0) {
                 do_execute(cx);
             } else {
-                do_number(cx);
-                do_dup(cx);
-                if (tos(cx) != 0) {
+                do_push(cx, word_mem(H_ADDR));
+                do_number(cx);  // (addr -- n r)
+                if (do_pop(cx) != 0) {
                     do_abort(cx, " not found\n");
                 }
             }
