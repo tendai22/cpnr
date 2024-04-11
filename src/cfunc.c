@@ -123,6 +123,58 @@ static word_t param_addr(word_t entry)
     return addr + 4;
 }
 
+// do_compare ... adopted from dpan94
+// COMPARE ( c-addr1 u1 c-addr2 u2 -- n)
+
+// Compare the string specified by c-addr1 u1 to the string specified
+// by c-addr2 u2. The strings are compared, beginning at the given 
+// addresses, character by character, up to the length of the shorter
+// string or until a difference is found. If the two strings are 
+// identical, n is zero. If the two strings are identical up to the
+// length of the shorter string, n is minus-one (-1) if u1 is less 
+// than u2 and one (1) otherwise. If the two strings are not
+// identical up to the length of the shorter string, n is
+// minus-one (-1) if the first non-matching character in the string
+// specified by c-addr1 u1 has a lesser numeric value than the 
+// corresponding character in the string specified by c-addr2 u2 and
+// one (1) otherwise
+
+// c-addr1 u1で指定された文字列と、c-addr2 u2で指定された文字列を比較する。
+// 文字列は、指定されたアドレスから始まり、一文字ずつ、短い方の文字列の長さまで、
+// または違いが見つかるまで比較される。もし2つの文字列が同一の場合、nは0である。
+// 2つの文字列が短い方の文字列の長さまで同じ場合、nは、u1がu2より小さければ
+// マイナス1（-1）、そうでなければ1（1）である。2つの文字列が短い方の文字列の
+// 長さまで同じでない場合、nは、c-addr1 u1で指定される文字列の最初の文字が
+// 一致しない場合はマイナス1 (-1)となる。c-addr1 u1 で指定される文字列の
+// 最初のマッチしない文字が、 c-addr2 u2 で指定される文字列の対応する文字
+// よりも小さい数値を持つ場合、 n はマイナス1 (-1) となり、そうでない
+// 場合は1 (1) となる。
+void do_compare(context_t *cx)
+{
+    // ( c-addr1 u1 c-addr2 u2 -- n)
+    word_t u1, u2;
+    mem_t *p1, *p2;
+    int result, n;
+
+    u2 = do_pop(cx);
+    p2 = &mem[do_pop(cx)];
+    u1 = do_pop(cx);
+    p1 = &mem[do_pop(cx)];
+    // compare logically
+    n = u1 < u2 ? u1 : u2;
+    result = strncmp(p1, p2, n);
+    if (result == 0) {
+        // one string may includes the other,
+        // in such a case, they do not "equal"
+        if (u1 < u2)
+            result = -1;
+        else if (u1 > u2)
+            result = 1;
+    }
+    fprintf(stderr, "compare: [%d %.*s][%d %.*s] -> %d\n", u1, u1, p1, u2, u2, p2, result);
+    do_push(cx, result);
+}
+
 // do_find: find a entry whose name is the same
 //   as top-of-directory
 // (c-addr -- 0     (not found)
@@ -142,9 +194,10 @@ void do_find(context_t *cx)
         if (n1 != n3)
             continue;
         do_push(cx, addr1);
-        do_push(cx, n1);
+        do_push(cx, n3);
         do_push(cx, link);
-        do_dash_text(cx);
+        do_push(cx, n1);
+        do_compare(cx);
         n2 = do_pop(cx);
         if (n1 != n2)
             continue;
