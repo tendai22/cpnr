@@ -212,9 +212,22 @@ void init_dict(context_t *cx)
 
 void init_mem(context_t *cx)
 {
+    mem_t *p;
     word_mem(S0_ADDR) = DSTACK_END;  // s0 line buffer
     word_mem(STATE_ADDR) = 0;    // interpretive mode
     word_mem(BASE_ADDR) = 10;     // DECIMAL mode
+    // get 'halt' entry address
+    p = &mem[word_mem(H_ADDR)];
+    *p++ = strlen("halt");
+    strcpy(p, "halt");
+    do_push(cx, word_mem(H_ADDR));
+    do_find(cx);
+    if (do_pop(cx) == 0) {
+        fprintf(stderr, "init_mem: no halt entry, error\n");
+        return;
+    }
+    word_mem(HALT_ADDR) = do_pop(cx);
+    fprintf(stderr, "init_mem: halt xt = %04X\n", word_mem(HALT_ADDR));
 }
 /*
 word_t tos(context_t *cx)

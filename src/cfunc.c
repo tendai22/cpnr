@@ -177,7 +177,7 @@ void do_compare(context_t *cx)
         else if (u1 > u2)
             result = 1;
     }
-    fprintf(stderr, "compare: [%d %.*s][%d %.*s] -> %d\n", u1, u1, p1, u2, u2, p2, result);
+    //fprintf(stderr, "compare: [%d %.*s][%d %.*s] -> %d\n", u1, u1, p1, u2, u2, p2, result);
     do_push(cx, result);
 }
 
@@ -199,7 +199,7 @@ void do_find(context_t *cx)
         n1 = mem[link] & 0x1f;
         if (n1 != n3)
             continue;
-        fprintf(stderr, "find: %04x %d %04x %d\n", addr1, n3, link, n1);
+        //fprintf(stderr, "find: %04x %d %04x %d\n", addr1, n3, link, n1);
         do_push(cx, addr1+1);
         do_push(cx, n3);
         do_push(cx, link+1);

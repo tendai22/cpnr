@@ -118,6 +118,8 @@ void do_execute (context_t *cx)
     cx->ca = word_mem(cx->wa);
     cx->wa += 2;
     cx->pc = cx->ca;
+    cx->ip = HALT_ADDR;     // ipはxtの置き場を指すようにする。
+                            // それはHALT_ADDRだ。
     // do infinite loop
     do_machine(cx);
 }

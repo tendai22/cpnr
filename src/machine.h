@@ -41,6 +41,7 @@ typedef uint8_t mem_t;    // ROM/RAM memory array for the target machine
 #define S0_ADDR       (USER_START+4)
 #define STATE_ADDR    (USER_START+6)
 #define BASE_ADDR     (USER_START+8)
+#define HALT_ADDR     (USER_START+10)
  
 #define MEMSIZE 65536
 extern mem_t mem[];

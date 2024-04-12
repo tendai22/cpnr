@@ -35,7 +35,7 @@ undefined:
         cx->ip += 2;
         // falling down
     case 4: // m_run
-        cx->ca = word_mem(cx->wa);
+        cx->ca = word_mem(cx->wa);    // WA->CA, seems not @WA->CA
         cx->wa += 2;
         cx->pc = cx->ca;
         break;
