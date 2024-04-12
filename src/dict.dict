@@ -111,10 +111,12 @@ opcode create
 //
 // STATE, _STATE
 //
-opcode state
+opcode _state
 //
 // [, ]
 //
+opcode : start_colondef
+opcode ; end_colondef
 //opcode [ start_compile
 //opcode ] end_compile
 //opcode >in in_stream

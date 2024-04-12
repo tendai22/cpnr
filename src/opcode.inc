@@ -16,8 +16,8 @@ BEGIN {
     ropcode[6 + opcode_base] = "m_jnz"
     opcode["m_jmp"] = 7 + opcode_base
     ropcode[7 + opcode_base] = "m_jmp"
-    opcode["m_state"] = 8 + opcode_base
-    ropcode[8 + opcode_base] = "m_state"
+    opcode["m__state"] = 8 + opcode_base
+    ropcode[8 + opcode_base] = "m__state"
     opcode["m_create"] = 9 + opcode_base
     ropcode[9 + opcode_base] = "m_create"
     opcode["m_key"] = 10 + opcode_base
@@ -80,5 +80,9 @@ BEGIN {
     ropcode[38 + opcode_base] = "m_literal"
     opcode["m_execute"] = 39 + opcode_base
     ropcode[39 + opcode_base] = "m_execute"
+    opcode["m_start_colondef"] = 40 + opcode_base
+    ropcode[40 + opcode_base] = "m_start_colondef"
+    opcode["m_end_colondef"] = 41 + opcode_base
+    ropcode[41 + opcode_base] = "m_end_colondef"
 }
 

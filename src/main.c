@@ -208,26 +208,49 @@ void init_dict(context_t *cx)
     fprintf(stderr, "last: %04x, h: %04x\n", word_mem(LAST_ADDR), word_mem(H_ADDR));
 }
 
+// set xt to a user var
+// name2xt ( -- xt), uses C arg 'name'
+static int name2xt(context_t *cx, char *name)
+{
+    char *p;
+    int n;
+    word_t cstr_addr = word_mem(H_ADDR);
+    // get 'name' entry address
+    p = &mem[cstr_addr];
+    *p++ = n = strlen(name);
+    strncpy(p, name, n);
+    p[n] = ' ';
+    do_push(cx, cstr_addr);
+    do_find(cx);
+    if (do_pop(cx) == 0) {
+        fprintf(stderr, "init_mem: %s: no entry, error\n", name);
+        return -1;
+    }
+    return 0;
+}
+
 // initialize mem[] array, mainly user variables
 
-void init_mem(context_t *cx)
+static int init_mem(context_t *cx)
 {
     mem_t *p;
+    int flag = 0;
     word_mem(S0_ADDR) = DSTACK_END;  // s0 line buffer
     word_mem(STATE_ADDR) = 0;    // interpretive mode
     word_mem(BASE_ADDR) = 10;     // DECIMAL mode
-    // get 'halt' entry address
-    p = &mem[word_mem(H_ADDR)];
-    *p++ = strlen("halt");
-    strcpy(p, "halt");
-    do_push(cx, word_mem(H_ADDR));
-    do_find(cx);
-    if (do_pop(cx) == 0) {
-        fprintf(stderr, "init_mem: no halt entry, error\n");
-        return;
-    }
+    flag |= name2xt(cx, "halt");
     word_mem(HALT_ADDR) = do_pop(cx);
-    fprintf(stderr, "init_mem: halt xt = %04X\n", word_mem(HALT_ADDR));
+    flag |= name2xt(cx, "colon");
+    word_mem(COLON_ADDR) = do_pop(cx);
+    flag |= name2xt(cx, "semi");
+    word_mem(SEMI_ADDR) = do_pop(cx);
+    flag |= name2xt(cx, "literal");
+    word_mem(LITERAL_ADDR) = do_pop(cx);
+    if (flag) {
+        return -1;
+    }
+    fprintf(stderr, "init_mem: halt xt = %04X, semi xt = %04X\n", word_mem(HALT_ADDR), word_mem(SEMI_ADDR));
+    return 0;
 }
 /*
 word_t tos(context_t *cx)
@@ -263,7 +286,8 @@ int main (int ac, char **av)
         cx = &_ctx;
         initialize_ctx(cx);
         init_dict(cx);
-        init_mem(cx);
+        if (init_mem(cx) < 0)
+            break;
         if (monitor(cx) < 0)
             break;
     }

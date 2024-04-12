@@ -171,13 +171,19 @@ int do_mainloop(context_t *cx)
             //    do_pop(cx); // clear the result of do_find
             //continue;
             if (do_pop(cx) != 0) {
-                do_execute(cx);
+                if (word_mem(STATE_ADDR))
+                    do_compile_token(cx);
+                else
+                    do_execute(cx);
             } else {
                 do_push(cx, word_mem(H_ADDR));
                 do_number(cx);  // (addr -- n r)
                 if (do_pop(cx) != 0) {
                     do_abort(cx, " not found\n");
                 }
+                if (word_mem(STATE_ADDR))
+                    do_compile_number(cx);
+                // push value, do nothing
             }
         }
     }

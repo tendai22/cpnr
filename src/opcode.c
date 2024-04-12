@@ -55,9 +55,9 @@ undefined:
         addr = word_mem(cx->pc + 2);
         cx->pc = addr;
         break;
-    case 8: // m_state
+    case 8: // m__state
         // interpret/compile state user variable
-        do_push(cx, mem[STATE_ADDR]);
+        do_push(cx, STATE_ADDR);
         cx->pc += 2;
         break;
     case 9: // m_create
@@ -95,15 +95,15 @@ undefined:
         cx->pc += 2;
         break;
     case 16: // m_h
-        do_push(cx, mem[H_ADDR]);
+        do_push(cx, H_ADDR);
         cx->pc += 2;
         break;
     case 17: // m_last
-        do_push(cx, mem[LAST_ADDR]);
+        do_push(cx, word_mem(LAST_ADDR));
         cx->pc += 2;
         break;
     case 18: // m_base
-        w = mem[BASE_ADDR];
+        w = word_mem(BASE_ADDR);
         do_push(cx, w);
         cx->pc += 2;
         break;
@@ -218,6 +218,14 @@ undefined:
     case 39: // m_execute
         cx->ip = do_pop(cx);
         goto do_next_label;
+    case 40: // m_start_colondef
+        do_start_colondef(cx);
+        cx->pc += 2;
+        break;
+    case 41: // m_end_colondef
+        do_end_colondef(cx);
+        cx->pc += 2;
+        break;
     default:
         goto undefined;
     }

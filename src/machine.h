@@ -42,6 +42,9 @@ typedef uint8_t mem_t;    // ROM/RAM memory array for the target machine
 #define STATE_ADDR    (USER_START+6)
 #define BASE_ADDR     (USER_START+8)
 #define HALT_ADDR     (USER_START+10)
+#define COLON_ADDR    (USER_START+12)
+#define SEMI_ADDR     (USER_START+14)
+#define LITERAL_ADDR  (USER_START+16)
  
 #define MEMSIZE 65536
 extern mem_t mem[];
@@ -104,7 +107,11 @@ extern void do_dup(context_t *cx);
 extern word_t do_pop(context_t *cx);
 extern word_t do_popr(context_t *cx);
 
+extern void do_start_colondef(context_t *cx);
+extern void do_end_colondef(context_t *cx);
 extern void do_create(context_t *cx);
+extern void do_compile_token(context_t *cx);
+extern void do_compile_number(context_t *cx);
 extern void do_emit(context_t *cx, word_t w);
 
 #define tos(cx) word_mem(cx->sp)

@@ -193,13 +193,13 @@ void do_find(context_t *cx)
     word_t addr1 = do_pop(cx);
     word_t xt;
     int n3 = mem[addr1], n2, n1;
-    print_cstr(cx, "H", addr1);
+    print_cstr(cx, "do_find H", addr1);
     for (; link ; link = prev_entry(link)) {
-        //print_cstr(cx, NULL, link);
+        print_cstr(cx, NULL, link);
         n1 = mem[link] & 0x1f;
         if (n1 != n3)
             continue;
-        //fprintf(stderr, "find: %04x %d %04x %d\n", addr1, n3, link, n1);
+        fprintf(stderr, "find: %04x %d %04x %d\n", addr1, n3, link, n1);
         do_push(cx, addr1+1);
         do_push(cx, n3);
         do_push(cx, link+1);
@@ -267,24 +267,62 @@ void do_emit(context_t *cx, word_t w)
 void do_create(context_t *cx)
 {
     mem_t *p, *q;
-    word_t w;
+    word_t w, entry_pos, prev_link, link_pos;
     int count, n;
     // read a word to put it at the last of dictionary, pointed last, here
     do_push(cx, ' ');   // push a space as delimiter for do_word
     do_word(cx); 
     // check its name
-    p = &mem[mem[H_ADDR]];
-    count = *p;
-    n = (count + 1) + ((count + 1) % 2);
-    fprintf(stderr, "create: head = %04x, count = %d, n = %d\n", mem[H_ADDR], count, n);
+    prev_link = word_mem(LAST_ADDR);
+    link_pos = link_addr(word_mem(H_ADDR));
+    fprintf(stderr, "create: head = %04x, link_pos - %04x\n", word_mem(H_ADDR), link_pos);
     // put link pointer
-    w = mem[LAST_ADDR];
-    p += n;
-    *((word_t *)p) = w;
+    word_mem(link_pos) = prev_link;
+    fprintf(stderr, "prev_link: %04x to %04x\n", prev_link, link_pos);
     // uvar last update
-    mem[LAST_ADDR] = mem[H_ADDR];
+    word_mem(LAST_ADDR) = word_mem(H_ADDR);
     // user h update
-    p += 2; // p points parameter field.
-    mem[H_ADDR] = p - &mem[0];    // allot'ed 
+    word_mem(H_ADDR) = link_pos + 2;    // allot'ed 
 }
 
+// entity of colon word, or machine code "m_start_colondef"
+void do_start_colondef(context_t *cx)
+{
+    do_create(cx);
+    // put COLON xt to cfa
+    fprintf(stderr, "start_colondef: begin LAST = %04x, HERE = %04x\n", word_mem(LAST_ADDR), word_mem(H_ADDR));
+    word_mem(word_mem(H_ADDR)) = word_mem(COLON_ADDR);
+    word_mem(H_ADDR) += 2;      // allot'ed
+    // change to compile mode
+    word_mem(STATE_ADDR) = 1;
+    fprintf(stderr, "start_colondef: end   HERE = %04x\n", word_mem(H_ADDR));
+}
+
+void do_end_colondef(context_t *cx)
+{
+    char *p;
+    word_t here_addr = word_mem(H_ADDR);
+    fprintf(stderr, "end_colondef: begin HERE = %04x\n", word_mem(H_ADDR));
+    // put EXIT(SEMI) in on-going dictionary entry
+    word_mem(here_addr) = word_mem(SEMI_ADDR);  // put SEMI xt
+    word_mem(H_ADDR) += 2;
+    // change compile mode
+    word_mem(STATE_ADDR) = 0;   // interpretive mode
+    fprintf(stderr, "end_colondef: end   HERE = %04x\n", word_mem(H_ADDR));
+}
+
+// do_compile_token
+void do_compile_token(context_t *cx)
+{
+    fprintf(stderr, "compile_token: HERE = %04x, token = %04x\n", word_mem(H_ADDR), tos(cx));
+    word_mem(word_mem(H_ADDR)) = do_pop(cx);
+    word_mem(H_ADDR) += 2;
+}
+
+void do_compile_number(context_t *cx)
+{
+    // compile LITERAL and number
+    do_push(cx, word_mem(LITERAL_ADDR));
+    do_compile_token(cx);
+    do_compile_token(cx);    // compile the number on the stack
+}
