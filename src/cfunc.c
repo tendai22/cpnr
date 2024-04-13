@@ -195,11 +195,11 @@ void do_find(context_t *cx)
     int n3 = mem[addr1], n2, n1;
     print_cstr(cx, "do_find H", addr1);
     for (; link ; link = prev_entry(link)) {
-        print_cstr(cx, NULL, link);
+        //print_cstr(cx, NULL, link);
         n1 = mem[link] & 0x1f;
         if (n1 != n3)
             continue;
-        fprintf(stderr, "find: %04x %d %04x %d\n", addr1, n3, link, n1);
+        //fprintf(stderr, "find: %04x %d %04x %d\n", addr1, n3, link, n1);
         do_push(cx, addr1+1);
         do_push(cx, n3);
         do_push(cx, link+1);
@@ -216,7 +216,7 @@ void do_find(context_t *cx)
     } else {
         xt = code_addr(link);
         do_push(cx, xt);
-        if (mem[addr1] & 0x80)
+        if (mem[link] & 0x80)
             do_push(cx, -1);
         else
             do_push(cx, 1);
@@ -271,7 +271,9 @@ void do_create(context_t *cx)
     int count, n;
     // read a word to put it at the last of dictionary, pointed last, here
     do_push(cx, ' ');   // push a space as delimiter for do_word
-    do_word(cx); 
+    do_word(cx);
+    // clear stack
+    do_pop(cx); 
     // check its name
     prev_link = word_mem(LAST_ADDR);
     link_pos = link_addr(word_mem(H_ADDR));
@@ -291,7 +293,9 @@ void do_start_colondef(context_t *cx)
     do_create(cx);
     // put COLON xt to cfa
     fprintf(stderr, "start_colondef: begin LAST = %04x, HERE = %04x\n", word_mem(LAST_ADDR), word_mem(H_ADDR));
-    word_mem(word_mem(H_ADDR)) = word_mem(COLON_ADDR);
+    word_mem(word_mem(H_ADDR)) = word_mem(word_mem(COLON_ADDR));
+        // code address should specify "body of machine code"
+        // so, xt is not sufficient, one more dereferencing is needed
     word_mem(H_ADDR) += 2;      // allot'ed
     // change to compile mode
     word_mem(STATE_ADDR) = 1;
@@ -325,4 +329,57 @@ void do_compile_number(context_t *cx)
     do_push(cx, word_mem(LITERAL_ADDR));
     do_compile_token(cx);
     do_compile_token(cx);    // compile the number on the stack
+}
+
+word_t entry_head(context_t *cx, word_t addr)
+{
+    word_t entry = word_mem(LAST_ADDR), link;
+    mem_t *p;
+    while (addr < entry) {
+        link = link_addr(entry);
+        if ((entry = word_mem(link)) == 0)
+            break;
+        //fprintf(stderr, "[%d %.*s]", ((*p)&0x1f),((*p)&0x1f),(p+1));
+    }
+    return entry;
+}
+
+//
+void dump_last_entry(context_t *cx)
+{
+    word_t last, entry;
+    // dump entry
+    word_t link, here, ip, w;
+    mem_t *p;
+    int n;
+    last = word_mem(LAST_ADDR),
+    link = link_addr(last);
+    here = word_mem(H_ADDR);
+    fprintf(stderr, "dump_last_entry: last = %04x, link = %04x(%04x), here = %04x\n", last, link, word_mem(link), here);
+    // dump it
+    p = &mem[last];
+    n = (*p) & 0x1f;
+    fprintf(stderr, "%04x head [%.*s]", last, n, p+1);
+    if ((*p) & 0xe0)
+        fprintf(stderr, "[%02x]", (*p) * 0xe0);
+    fprintf(stderr, "\n");
+    ip = link;
+    fprintf(stderr, "%04x %04x [link]\n", ip, word_mem(ip));
+    ip += 2;
+    fprintf(stderr, "%04x %04x [code]\n", ip, word_mem(ip));
+    ip += 2;
+    while (ip < here) {
+        entry = entry_head(cx, word_mem(ip));
+        if (entry) {
+            p = &mem[entry];
+            n = (*p) & 0x1f;
+            fprintf(stderr, "%04x %04x (%.*s)\n", ip, entry, n, p+1);
+            if (n == 7 && strncmp(p+1, "literal", n) == 0) {
+                ip += 2;
+                w = word_mem(ip);
+                fprintf(stderr, "%04x %04x (%d)\n", ip, w, w);
+            }
+        }
+        ip += 2;
+    }
 }

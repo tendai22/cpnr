@@ -111,6 +111,8 @@ do  case "$f" in
         if (NF >= 3) {
             if ($3 ~ /immediate/) {
                 n = n + 128
+            } else if ($3 > 32) {
+                n = n + $3
             }
         }
         hex = packit(str)

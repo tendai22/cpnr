@@ -59,7 +59,7 @@ word_t do_popr(context_t *cx)
 {
     word_t value = word_mem(cx->rs);
     cx->rs += 2;
-    if (cx->rs >= RSTACK_END) {
+    if (cx->rs > RSTACK_END) {
         fprintf(stderr, "rstack overflow at pc:%04X ip:%04X\n", cx->pc, cx->ip);
         do_halt(cx);
     }
@@ -120,6 +120,7 @@ void do_execute (context_t *cx)
     cx->pc = cx->ca;
     cx->ip = HALT_ADDR;     // ipはxtの置き場を指すようにする。
                             // それはHALT_ADDRだ。
+    fprintf(stderr, "execute: WA: %04x CA:%04x\n", cx->wa, cx->ca);
     // do infinite loop
     do_machine(cx);
 }
@@ -148,6 +149,7 @@ void do_abort(context_t *cx, const char *mes)
 
 int do_mainloop(context_t *cx)
 {
+    word_t flag;
     while (1) {
         do_catch(cx);
         if (do_accept(cx) == EOF)
@@ -170,8 +172,8 @@ int do_mainloop(context_t *cx)
             //if (do_pop(cx))
             //    do_pop(cx); // clear the result of do_find
             //continue;
-            if (do_pop(cx) != 0) {
-                if (word_mem(STATE_ADDR))
+            if ((flag = do_pop(cx)) != 0) {
+                if (word_mem(STATE_ADDR) && (flag & 0x8000) == 0)
                     do_compile_token(cx);
                 else
                     do_execute(cx);

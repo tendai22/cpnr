@@ -80,18 +80,30 @@ int monitor (context_t *cx)
 // dump
 void do_print_status(context_t *cx)
 {
-    fprintf(stderr, "%04x %04x IP:%04x WA:%04x CA:%04x AH:%04x AL:%04x SP:%04x RS:%04x",
-        cx->pc, word_mem(cx->pc), cx->ip, cx->wa, cx->ca, cx->ah, cx->al, cx->sp, cx->rs);
-    fprintf(stderr, "\n");
-    fprintf(stderr, "SP: ");
+    int first;
+    fprintf(stderr, "%04X %04X IP:%04X WA:%04X CA:%04X SP:%04X RS:%04X ",
+        cx->pc, word_mem(cx->pc), cx->ip, cx->wa, cx->ca, cx->sp, cx->rs);
+    fprintf(stderr, "[");
+    first = 1;
     for (word_t w = DSTACK_END - 2; w >= cx->sp; w -= 2) {
-        fprintf(stderr, " %04X", word_mem(w));
+        if (first) {
+            first = 0;
+        } else {
+            fprintf(stderr, " ");
+        }
+        fprintf(stderr, "%04X", word_mem(w));
     }
-    fprintf(stderr, "  RS: ");
+    fprintf(stderr, "] [");
+    first = 1;
     for (word_t w = RSTACK_END - 2; w >= cx->rs; w -= 2) {
-        fprintf(stderr, " %04X", word_mem(w));
+        if (first) {
+            first = 0;
+        } else {
+            fprintf(stderr, " ");
+        }
+        fprintf(stderr, "%04X", word_mem(w));
     }
-    fprintf(stderr, "\n");
+    fprintf(stderr, "]\n");
 }
 
 void do_print_s0(context_t *cx)
@@ -115,7 +127,7 @@ void do_print_here(context_t *cx)
 void print_cstr(context_t *cx, char *title, word_t addr)
 {
     char *p = &mem[addr];
-    int n = *p++;
+    int n = (*p++) & 0x7f;
     if (title && *title)
         fprintf(stderr, "%s:", title);
     fprintf(stderr, "%04X:[%d ", addr, n);
@@ -132,6 +144,7 @@ void print_stack(context_t *cx)
     }
     fprintf(stderr, "\n");
 }
+
 
 // debugger
 

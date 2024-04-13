@@ -84,5 +84,7 @@ BEGIN {
     ropcode[40 + opcode_base] = "m_start_colondef"
     opcode["m_end_colondef"] = 41 + opcode_base
     ropcode[41 + opcode_base] = "m_end_colondef"
+    opcode["m_dictdump"] = 42 + opcode_base
+    ropcode[42 + opcode_base] = "m_dictdump"
 }
 

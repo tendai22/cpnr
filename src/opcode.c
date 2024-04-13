@@ -176,8 +176,8 @@ undefined:
         cx->pc += 2;
         break;
     case 32: // m_dup
-        c = tos(cx);
-        do_push(cx, c);
+        w = tos(cx);
+        do_push(cx, w);
         cx->pc += 2;
         break;
     case 33: // m_comma
@@ -210,8 +210,8 @@ undefined:
         cx->pc += 2;
         break;
     case 38: // m_literal
-        cx->pc += 2;
-        w = word_mem(cx->pc);
+        w = word_mem(cx->ip);
+        cx->ip += 2;
         do_push(cx, w);
         cx->pc += 2;
         break;
@@ -224,6 +224,10 @@ undefined:
         break;
     case 41: // m_end_colondef
         do_end_colondef(cx);
+        cx->pc += 2;
+        break;
+    case 42: // m_dictdump
+        dump_last_entry(cx);
         cx->pc += 2;
         break;
     default:

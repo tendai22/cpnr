@@ -30,7 +30,7 @@ cat "$@" |
 awk '#
 /^opcode/ {
     name = (NF >= 3) ? $3 : $2
-    print "code",$2,$3
+    print "code",$2,$3,$4
     print "    m_" name
     print "    endcode"
     print ""
@@ -52,10 +52,10 @@ BEGIN {
     precedence = 0
     if (NF > 2) {
         if ($4 ~ /immediate/) {
-            precedence = 32
+            precedence = 128
             name = $3
         } else if ($3 ~ /immediate/) {
-            precedence = 32
+            precedence = 128
         } else if ($3 ~ /level2/) {
             precedence = 64
         } else {

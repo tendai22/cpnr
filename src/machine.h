@@ -113,6 +113,7 @@ extern void do_create(context_t *cx);
 extern void do_compile_token(context_t *cx);
 extern void do_compile_number(context_t *cx);
 extern void do_emit(context_t *cx, word_t w);
+extern void dump_last_entry(context_t *cx);
 
 #define tos(cx) word_mem(cx->sp)
 
