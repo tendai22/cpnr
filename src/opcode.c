@@ -44,17 +44,20 @@ undefined:
         cx->ip = do_popr(cx);
         cx->pc += CELLS;
         break;
-    case 6: // m_jnz 
+    case 6: // m_jz 
         // conditional bra in thread
-        if (tos(cx) == 0) {
-            cx->pc += CELLS;       // skip branch operand
+        if (do_pop(cx) != 0) {
+            cx->ip += CELLS;       // skip branch operand
+            cx->pc += CELLS;
             break;
         }
         // falling down
     case 7: // m_jmp 
         // unconditional bra in thread
-        addr = STAR(cx->pc + 2);
-        cx->pc = addr;
+        addr = STAR(cx->ip);
+        fprintf(stderr, "jmp: ip = %04x, addr = %04x\n", cx->ip, addr);
+        cx->ip = addr;
+        cx->pc += CELLS;
         break;
     case 8: // m__state
         // interpret/compile state user variable
@@ -248,6 +251,10 @@ undefined:
         break;
     case 45: // m_find
         do_find(cx);
+        cx->pc += CELLS;
+        break;
+    case 46: // m_compile
+        do_compile(cx);
         cx->pc += CELLS;
         break;
     default:

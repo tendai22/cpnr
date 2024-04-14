@@ -122,6 +122,7 @@ extern void do_end_colondef(context_t *cx);
 extern void do_create(context_t *cx);
 extern void do_compile_token(context_t *cx);
 extern void do_compile_number(context_t *cx);
+extern void do_compile(context_t *cx);
 extern void do_constant(context_t *cx);
 extern void do_emit(context_t *cx, word_t w);
 extern void dump_entry(context_t *cx);

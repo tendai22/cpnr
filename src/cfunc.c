@@ -161,13 +161,13 @@ void do_word(context_t *cx)
         } while ((c = get_instream(cx)) != 0 && c != delim);
         // get a word
         if (((c = h0[1]) == '(' || c == '\\') && here - h0 == 2) {
-            fprintf(stderr, "comment: \n");
+            //fprintf(stderr, "comment: \n");
             if (c == '(') {
                 while ((c = get_instream(cx)) != 0 && c != ')')
                     ;
                 if (c == ')') {
                     // end-of-comment, try the rest of it
-                    fprintf(stderr, "comment: try again\n");
+                    //fprintf(stderr, "comment: try again\n");
                     here = h0;
                     continue;
                 }
@@ -175,7 +175,7 @@ void do_word(context_t *cx)
                 while ((c = get_instream(cx)) != 0 && c != '\n')
                     ;
             }
-            fprintf(stderr, "comment: end-of-line\n");
+            //fprintf(stderr, "comment: end-of-line\n");
             mem[STAR(H_ADDR)] = 0;
             tos(cx) = 0;
             return;
@@ -447,6 +447,35 @@ void do_compile_number(context_t *cx)
     do_compile_token(cx);    // compile the number on the stack
 }
 
+void do_compile(context_t *cx)
+{
+    int flag;
+    fprintf(stderr, "[COMPILE]: \n");
+    while (1) {
+        do_push(cx, ' ');
+        do_word(cx);
+        if (tos(cx) != 0)
+            break;
+        do_pop(cx); // discard it
+        if (do_accept(cx) == EOF)
+            do_abort(cx, "need a word");
+        print_s0(cx);
+    }
+    //print_cstr(cx, "H", STAR(H_ADDR));
+    //print_stack(cx);
+    do_find(cx);
+    //if (do_pop(cx))
+    //    do_pop(cx); // clear the result of do_find
+    //continue;
+    if ((flag = do_pop(cx)) == 0)
+        do_abort(cx, "not find in [COMPILE]");
+    do_compile_token(cx);
+}
+
+//
+// dictionary entry handling
+//
+
 word_t entry_head(context_t *cx, word_t addr)
 {
     word_t entry = STAR(LAST_ADDR), link;
@@ -501,12 +530,15 @@ void dump_entry(context_t *cx)
     fprintf(stderr, "%04x %04x  [code]\n", ip, STAR(ip));
     ip += CELLS;
     while (ip < tail) {
-        entry = entry_head(cx, STAR(ip));
+        w = STAR(ip);
+        entry = entry_head(cx, w);
         if (entry) {
             p = &mem[entry];
             n = (*p) & 0x1f;
             fprintf(stderr, "%04x %04x (%.*s)\n", ip, entry, n, p+1);
-            if (n == 7 && strncmp(p+1, "literal", n) == 0) {
+            if ((n == 7 && strncmp(p+1, "literal", n) == 0) ||
+                (n == 2 && strncmp(p+1, "jz", n) == 0) ||
+                (n == 3 && strncmp(p+1, "jmp", n) == 0)) {
                 ip += CELLS;
                 w = STAR(ip);
                 fprintf(stderr, "%04x %04x (%d)\n", ip, w, w);

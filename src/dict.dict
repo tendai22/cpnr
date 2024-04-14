@@ -22,7 +22,7 @@ opcode execute
 // primitives .. thread instructions
 //
 opcode jmp
-opcode jnz
+opcode jz
 opcode literal
 
 //
@@ -123,4 +123,4 @@ opcode ; end_colondef immediate
 opcode dd dictdump
 opcode docons
 opcode constant
-
+opcode [compile] compile

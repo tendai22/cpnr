@@ -7,7 +7,7 @@ void init_optable(void)
         optable[3] = "m_next";
         optable[4] = "m_run";
         optable[5] = "m_semi";
-        optable[6] = "m_jnz";
+        optable[6] = "m_jz";
         optable[7] = "m_jmp";
         optable[8] = "m__state";
         optable[9] = "m_create";
@@ -47,4 +47,5 @@ void init_optable(void)
         optable[43] = "m_docons";
         optable[44] = "m_constant";
         optable[45] = "m_find";
+        optable[46] = "m_compile";
 }

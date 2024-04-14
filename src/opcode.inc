@@ -12,8 +12,8 @@ BEGIN {
     ropcode[4 + opcode_base] = "m_run"
     opcode["m_semi"] = 5 + opcode_base
     ropcode[5 + opcode_base] = "m_semi"
-    opcode["m_jnz"] = 6 + opcode_base
-    ropcode[6 + opcode_base] = "m_jnz"
+    opcode["m_jz"] = 6 + opcode_base
+    ropcode[6 + opcode_base] = "m_jz"
     opcode["m_jmp"] = 7 + opcode_base
     ropcode[7 + opcode_base] = "m_jmp"
     opcode["m__state"] = 8 + opcode_base
@@ -92,5 +92,7 @@ BEGIN {
     ropcode[44 + opcode_base] = "m_constant"
     opcode["m_find"] = 45 + opcode_base
     ropcode[45 + opcode_base] = "m_find"
+    opcode["m_compile"] = 46 + opcode_base
+    ropcode[46 + opcode_base] = "m_compile"
 }
 

@@ -92,31 +92,34 @@ void do_abort(context_t *cx, const char *mes)
         fprintf(stderr, "%.*s %s\n", count, p+1, mes);
     }
     longjmp(cx->env, tos(cx));
+    fprintf(stderr, "after longjmp\n");
 }
 
 int do_mainloop(context_t *cx)
 {
     word_t flag;
-    int count;
+    int count, result;
     while (1) {
+        // do_catch
         do_catch(cx);
+        if ((result = setjmp(cx->env)) != 0) {
+            // reset input stream
+            reset_instream(cx);
+            cx->sp = DSTACK_END;
+            cx->rs = RSTACK_END;
+        }
         count = 0;
-        fprintf(stderr, "x count = %d\n", count++);
         if (do_accept(cx) == EOF)
             return -1;
-        fprintf(stderr, "y count = %d\n", count++);
         print_s0(cx);
-        fprintf(stderr, "z count = %d\n", count++);
         while (1) {
             //print_stack(cx);
             do_push(cx, ' ');     // push delimiter
             do_word(cx);    // (delim -- addr)
-            fprintf(stderr, "a count = %d\n", count++);
             if (tos(cx) == 0) {
                 do_pop(cx); // discard it
                 if (do_accept(cx) == EOF)
                     return -1;
-                fprintf(stderr, "b count = %d\n", count++);
                 print_s0(cx);
                 continue;
             }
@@ -137,12 +140,10 @@ int do_mainloop(context_t *cx)
                 if (do_pop(cx) != 0) {
                     do_push(cx, 1);
                     do_abort(cx, "not found\n");
-                    fprintf(stderr, "b count = %d\n", count++);
-                    break;
+                    //fprintf(stderr, "b count = %d\n", count++);
+                    //break;
                 }
-                fprintf(stderr, "c count = %d\n", count++);
                 if (STAR(STATE_ADDR)) {
-                    fprintf(stderr, "d count = %d\n", count++);
                     do_compile_number(cx);
                     // push value, do nothing
                 }

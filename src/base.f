@@ -13,6 +13,9 @@
 STACK_END constant DSTACK_END
 DSTACK_END 0x100 - constant RSTACK_END
 
+\ CELLS
+2 constant cells
+
 \ uservar address
 USER_START      constant LAST_ADDR
 USER_START  2 + constant H_ADDR
@@ -29,15 +32,16 @@ USER_START 18 + constant DOCONS_ADDR
 : allot H_ADDR @ + H_ADDR ! ;
 : last LAST_ADDR @ ;
 : immediate last c@ 0x80 or last c! ;
+: , ( comma) here ! cells allot ;
 
 \ control structure
-: >mark here ; immediate
-: >resolve here swap ! ; immediate
-: <mark here ; immediate
-: <resolve here ! ; immediate
+: >mark here ;
+: >resolve here swap ! ;
+: <mark here ;
+: <resolve here ! ;
 
 \ if-else-then
-: if jz >mark ;
-: then >resolve ;
+: if literal jz , >mark cells allot ; immediate
+: then >resolve ; immediate
 
 
