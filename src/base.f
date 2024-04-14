@@ -1,0 +1,43 @@
+\ base.f ... cpnr secondary base word definition
+
+\ memory map
+0x1000 constant ROMSTART
+0x2000 constant ROMSIZE
+0x4000 constant RAMSTART
+0x4000 constant RAMSIZE
+
+0x1000 constant DICT_START
+0x4000 constant USER_START
+0xff00 constant STACK_END
+
+STACK_END constant DSTACK_END
+DSTACK_END 0x100 - constant RSTACK_END
+
+\ uservar address
+USER_START      constant LAST_ADDR
+USER_START  2 + constant H_ADDR
+USER_START  4 + constant S0_ADDR
+USER_START  6 + constant STATE_ADDR
+USER_START  8 + constant BASE_ADDR
+USER_START 10 + constant HALT_ADDR
+USER_START 12 + constant COLON_ADDR
+USER_START 14 + constant SEMI_ADDR
+USER_START 16 + constant LITERAL_ADDR
+USER_START 18 + constant DOCONS_ADDR
+
+: here H_ADDR @ ;
+: allot H_ADDR @ + H_ADDR ! ;
+: last LAST_ADDR @ ;
+: immediate last c@ 0x80 or last c! ;
+
+\ control structure
+: >mark here ; immediate
+: >resolve here swap ! ; immediate
+: <mark here ; immediate
+: <resolve here ! ; immediate
+
+\ if-else-then
+: if jz >mark ;
+: then >resolve ;
+
+

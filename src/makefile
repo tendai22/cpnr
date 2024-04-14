@@ -19,9 +19,13 @@ dict.s: dict.dict opcode.inc makedict.sh
 opcode.inc: opcode.c makeopcode.sh
 	sh makeopcode.sh $< > $@
 
+opname.h: opcode.inc gen_opname.sh
+	sh gen_opname.sh opcode.inc > $@
+
 COBJS=main.o machine.o monitor.o cfunc.o opcode.o
 
 main.o machine.o monitor.o cfunc.o: machine.h
+monitor.o: opname.h
 
 cpnr: $(COBJS)
 	cc -o cpnr $(COBJS)

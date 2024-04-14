@@ -121,3 +121,6 @@ opcode ; end_colondef immediate
 //opcode ] end_compile immediate
 //opcode >in in_stream
 opcode dd dictdump
+opcode docons
+opcode constant
+

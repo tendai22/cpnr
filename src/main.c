@@ -41,6 +41,13 @@ void init_outer_buf(int ac, char **av)
     filenames = av;
 }
 
+void reset_outer(void)
+{
+    if (fp)
+        fclose(fp);
+    filenames = 0;
+}
+
 int gets_outer(char *buf, int size)
 {
     while (1) {
@@ -84,19 +91,6 @@ char *str(mem_t *c_str)
 }
 
 
-
-// do_push
-
-void do_push(context_t *cx, word_t value)
-{
-    cx->sp -= 2;
-    word_mem(cx->sp) = value;
-}
-
-void do_dup(context_t *cx)
-{
-    do_push(cx, word_mem(cx->sp));
-}
 
 //
 // init_dict
@@ -161,7 +155,7 @@ void init_dict(context_t *cx)
             if (value < 0 || MEMSIZE <= value)
                 continue;
             if (addr != value) {
-                fprintf(stderr, "addr value = %04x\n", value);
+                //fprintf(stderr, "addr value = %04x\n", value);
                 addr = value;
             }
             // min, max
@@ -180,16 +174,17 @@ void init_dict(context_t *cx)
             if (c != EOF && i < 0)
                 ungetc(c, fp);
             if (n > 2) {
-                fprintf(stderr, "[%04X %04X]\n", addr, value);
-                *((word_t *)&(mem[addr])) = value;
+                //fprintf(stderr, "[%04X %04X]\n", addr, value);
+                STAR(addr) = value; // word write
                 addr += 2;
             } else {
-                fprintf(stderr, "[%04X %02X]\n", addr, value);
-                mem[addr] = value;
+                //fprintf(stderr, "[%04X %02X]\n", addr, value);
+                mem[addr] = value;  // byte write
                 addr++;
             }
         }
     }
+#if 0
     int first = 1;
     fprintf(stderr, "init_dict: min = %04x, max=%04x\n", min, max);
     for (int i = min; i <= max; i += 2) {
@@ -197,15 +192,16 @@ void init_dict(context_t *cx)
             fprintf(stderr, "%04X: ", i);
             first = 0;
         }
-        fprintf(stderr, "%04X ", *((word_t *)&(mem[i])));
+        fprintf(stderr, "%04X ", STAR(i));
         if ((i % 16) == 14)
             fprintf(stderr, "\n");
     }
     fprintf(stderr, "\n");
+#endif
     // init user vars
-    word_mem(LAST_ADDR) = word_mem(min + 4);
-    word_mem(H_ADDR) = word_mem(min + 2);
-    fprintf(stderr, "last: %04x, h: %04x\n", word_mem(LAST_ADDR), word_mem(H_ADDR));
+    STAR(LAST_ADDR) = STAR(min + 4);
+    STAR(H_ADDR) = STAR(min + CELLS);
+    fprintf(stderr, "last: %04x, h: %04x\n", STAR(LAST_ADDR), STAR(H_ADDR));
 }
 
 // set xt to a user var
@@ -214,7 +210,7 @@ static int name2xt(context_t *cx, char *name)
 {
     char *p;
     int n;
-    word_t cstr_addr = word_mem(H_ADDR);
+    word_t cstr_addr = STAR(H_ADDR);
     // get 'name' entry address
     p = &mem[cstr_addr];
     *p++ = n = strlen(name);
@@ -235,21 +231,23 @@ static int init_mem(context_t *cx)
 {
     mem_t *p;
     int flag = 0;
-    word_mem(S0_ADDR) = DSTACK_END;  // s0 line buffer
-    word_mem(STATE_ADDR) = 0;    // interpretive mode
-    word_mem(BASE_ADDR) = 10;     // DECIMAL mode
+    STAR(S0_ADDR) = DSTACK_END;  // s0 line buffer
+    STAR(STATE_ADDR) = 0;    // interpretive mode
+    STAR(BASE_ADDR) = 10;     // DECIMAL mode
     flag |= name2xt(cx, "halt");
-    word_mem(HALT_ADDR) = do_pop(cx);
+    STAR(HALT_ADDR) = do_pop(cx);
     flag |= name2xt(cx, "colon");
-    word_mem(COLON_ADDR) = do_pop(cx);
+    STAR(COLON_ADDR) = do_pop(cx);
     flag |= name2xt(cx, "semi");
-    word_mem(SEMI_ADDR) = do_pop(cx);
+    STAR(SEMI_ADDR) = do_pop(cx);
     flag |= name2xt(cx, "literal");
-    word_mem(LITERAL_ADDR) = do_pop(cx);
+    STAR(LITERAL_ADDR) = do_pop(cx);
+    flag |= name2xt(cx, "docons");
+    STAR(DOCONS_ADDR) = do_pop(cx);
     if (flag) {
         return -1;
     }
-    fprintf(stderr, "init_mem: halt xt = %04X, semi xt = %04X\n", word_mem(HALT_ADDR), word_mem(SEMI_ADDR));
+    fprintf(stderr, "init_mem: halt xt = %04X, semi xt = %04X\n", STAR(HALT_ADDR), STAR(SEMI_ADDR));
     return 0;
 }
 /*
@@ -281,6 +279,7 @@ int main (int ac, char **av)
 
     // init source file args
     init_outer_buf(ac - 1, av + 1);
+    init_optable();
     // initialize ctx
     while (1) {
         cx = &_ctx;

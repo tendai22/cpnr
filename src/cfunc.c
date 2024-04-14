@@ -8,6 +8,72 @@
 #include "machine.h"
 
 //
+// primitive functions
+//
+
+// do_push
+
+void do_push(context_t *cx, word_t value)
+{
+    cx->sp -= 2;
+    STAR(cx->sp) = value;
+}
+
+word_t do_pop(context_t *cx)
+{
+    word_t value = STAR(cx->sp);
+    cx->sp += CELLS;
+    if (cx->sp > DSTACK_END) {
+        fprintf(stderr, "stack underflow at pc:%04X ip:%04X\n", cx->pc, cx->ip);
+        do_halt(cx);
+    }
+    return value;
+}
+
+// pushr, popr
+void do_pushr(context_t *cx, word_t value)
+{
+    cx->rs -= CELLS;
+    if (cx->rs < 0) {
+        fprintf(stderr, "rstack underflow at pc:%04X ip:%04X\n", cx->pc, cx->ip);
+        do_halt(cx);
+    }
+    STAR(cx->rs) = value;
+}
+
+word_t do_popr(context_t *cx)
+{
+    word_t value = STAR(cx->rs);
+    cx->rs += CELLS;
+    if (cx->rs > RSTACK_END) {
+        fprintf(stderr, "rstack overflow at pc:%04X ip:%04X\n", cx->pc, cx->ip);
+        do_halt(cx);
+    }
+    return value;
+}
+
+void do_halt(context_t *cx)
+{
+    cx->halt_flag = 1;
+}
+
+void do_dup(context_t *cx)
+{
+    do_push(cx, STAR(cx->sp));
+}
+
+//
+// reset_instream ... for cancel rest of imput-stream
+//
+void reset_instream(context_t *cx)
+{
+    fprintf(stderr, "reset_instream:\n");
+    reset_outer();
+    cx->p = 0;
+    cx->rest = 0;
+}
+
+//
 // get_instream
 //
 int get_instream(context_t *cx)
@@ -32,8 +98,10 @@ int do_accept(context_t *cx)
         return 0;
     }
     // now in-stream buffer emnty, refill it
-    char *buf = &mem[mem[S0_ADDR]];
+    char *buf = &mem[STAR(S0_ADDR)];
     int size = 80, n;
+    memset(buf, ' ', size-1);
+    buf[size-1] = '\0';
     if (outer_flag) {
         if (gets_outer(buf, size - 1) == 0) {
             // outer data expires
@@ -70,29 +138,55 @@ void do_word(context_t *cx)
     word_t wp;
     int n, c;
     delim = tos(cx);
-    here = h0 = &mem[word_mem(H_ADDR)];
+    here = h0 = &mem[STAR(H_ADDR)];
     // skip if the first is space
-    if ((c = get_instream(cx)) == 0) {
-        // end-of-file
-        tos(cx) = 0;
-        return;
-    } else if (c == delim) {
-        while ((c = get_instream(cx)) == delim)
-            ;   // skip delimiters
-        if (c == 0) {
+    while (1) {
+        if ((c = get_instream(cx)) == 0) {
+            // end-of-file
             tos(cx) = 0;
             return;
+        } else if (c == delim) {
+            while ((c = get_instream(cx)) == delim)
+                ;   // skip delimiters
+            if (c == 0) {
+                tos(cx) = 0;
+                return;
+            }
         }
+        // now c has neither delim nor eof
+        here++;     // keep the first count char
+        do {
+            *here++ = c;
+            //fprintf(stderr, "[%c]", c);
+        } while ((c = get_instream(cx)) != 0 && c != delim);
+        // get a word
+        if (((c = h0[1]) == '(' || c == '\\') && here - h0 == 2) {
+            fprintf(stderr, "comment: \n");
+            if (c == '(') {
+                while ((c = get_instream(cx)) != 0 && c != ')')
+                    ;
+                if (c == ')') {
+                    // end-of-comment, try the rest of it
+                    fprintf(stderr, "comment: try again\n");
+                    here = h0;
+                    continue;
+                }
+            } else if (c == '\\') {
+                while ((c = get_instream(cx)) != 0 && c != '\n')
+                    ;
+            }
+            fprintf(stderr, "comment: end-of-line\n");
+            mem[STAR(H_ADDR)] = 0;
+            tos(cx) = 0;
+            return;
+         }
+         // got a word, exit the loop
+         break;
     }
-    // now c has neither delim nor eof
-    here++;     // keep the first count char
-    do {
-        *here++ = c;
-        //fprintf(stderr, "[%c]", c);
-    } while ((c = get_instream(cx)) != 0 && c != delim);
+
     *here = delim;   // trailing delim char, not counted
     *h0 = here - h0 - 1;        // count byte
-    tos(cx) = word_mem(H_ADDR);
+    tos(cx) = STAR(H_ADDR);
 }
 
 static word_t link_addr(word_t entry)
@@ -107,14 +201,14 @@ static word_t link_addr(word_t entry)
 
 static word_t prev_entry(word_t link)
 {
-    link = word_mem(link_addr(link));
+    link = STAR(link_addr(link));
     return link;
 }
 
 static word_t code_addr(word_t entry)
 {
     word_t addr = link_addr(entry);
-    return addr + 2;
+    return addr + CELLS;
 }
 
 static word_t param_addr(word_t entry)
@@ -189,11 +283,11 @@ void do_compare(context_t *cx)
 void do_find(context_t *cx)
 {
     mem_t *p;
-    word_t link = word_mem(LAST_ADDR);
+    word_t link = STAR(LAST_ADDR);
     word_t addr1 = do_pop(cx);
     word_t xt;
     int n3 = mem[addr1], n2, n1;
-    print_cstr(cx, "do_find H", addr1);
+    //print_cstr(cx, "do_find H", addr1);
     for (; link ; link = prev_entry(link)) {
         //print_cstr(cx, NULL, link);
         n1 = mem[link] & 0x1f;
@@ -221,7 +315,7 @@ void do_find(context_t *cx)
         else
             do_push(cx, 1);
     }
-    print_stack(cx);
+    //print_stack(cx);
 }
 
 //
@@ -246,6 +340,7 @@ void do_number(context_t *cx)
 
 void do_prompt(context_t *cx)
 {
+    print_stack(cx);
     fprintf(stderr, " ok\n");
 }
 
@@ -275,16 +370,16 @@ void do_create(context_t *cx)
     // clear stack
     do_pop(cx); 
     // check its name
-    prev_link = word_mem(LAST_ADDR);
-    link_pos = link_addr(word_mem(H_ADDR));
-    fprintf(stderr, "create: head = %04x, link_pos - %04x\n", word_mem(H_ADDR), link_pos);
+    prev_link = STAR(LAST_ADDR);
+    link_pos = link_addr(STAR(H_ADDR));
+    //fprintf(stderr, "create: head = %04x, link_pos - %04x\n", STAR(H_ADDR), link_pos);
     // put link pointer
-    word_mem(link_pos) = prev_link;
-    fprintf(stderr, "prev_link: %04x to %04x\n", prev_link, link_pos);
+    STAR(link_pos) = prev_link;
+    //fprintf(stderr, "prev_link: %04x to %04x\n", prev_link, link_pos);
     // uvar last update
-    word_mem(LAST_ADDR) = word_mem(H_ADDR);
+    STAR(LAST_ADDR) = STAR(H_ADDR);
     // user h update
-    word_mem(H_ADDR) = link_pos + 2;    // allot'ed 
+    STAR(H_ADDR) = link_pos + CELLS;    // allot'ed 
 }
 
 // entity of colon word, or machine code "m_start_colondef"
@@ -292,94 +387,132 @@ void do_start_colondef(context_t *cx)
 {
     do_create(cx);
     // put COLON xt to cfa
-    fprintf(stderr, "start_colondef: begin LAST = %04x, HERE = %04x\n", word_mem(LAST_ADDR), word_mem(H_ADDR));
-    word_mem(word_mem(H_ADDR)) = word_mem(word_mem(COLON_ADDR));
+    //fprintf(stderr, "start_colondef: begin LAST = %04x, HERE = %04x\n", STAR(LAST_ADDR), STAR(H_ADDR));
+    STAR(STAR(H_ADDR)) = STAR(STAR(COLON_ADDR));
         // code address should specify "body of machine code"
         // so, xt is not sufficient, one more dereferencing is needed
-    word_mem(H_ADDR) += 2;      // allot'ed
+    STAR(H_ADDR) += CELLS;      // allot'ed
     // change to compile mode
-    word_mem(STATE_ADDR) = 1;
-    fprintf(stderr, "start_colondef: end   HERE = %04x\n", word_mem(H_ADDR));
+    STAR(STATE_ADDR) = 1;
+    //fprintf(stderr, "start_colondef: end   HERE = %04x\n", STAR(H_ADDR));
 }
 
 void do_end_colondef(context_t *cx)
 {
     char *p;
-    word_t here_addr = word_mem(H_ADDR);
-    fprintf(stderr, "end_colondef: begin HERE = %04x\n", word_mem(H_ADDR));
+    word_t here_addr = STAR(H_ADDR);
+    //fprintf(stderr, "end_colondef: begin HERE = %04x\n", STAR(H_ADDR));
     // put EXIT(SEMI) in on-going dictionary entry
-    word_mem(here_addr) = word_mem(SEMI_ADDR);  // put SEMI xt
-    word_mem(H_ADDR) += 2;
+    STAR(here_addr) = STAR(SEMI_ADDR);  // put SEMI xt
+    STAR(H_ADDR) += CELLS;
     // change compile mode
-    word_mem(STATE_ADDR) = 0;   // interpretive mode
-    fprintf(stderr, "end_colondef: end   HERE = %04x\n", word_mem(H_ADDR));
+    STAR(STATE_ADDR) = 0;   // interpretive mode
+    //fprintf(stderr, "end_colondef: end   HERE = %04x\n", STAR(H_ADDR));
+}
+
+// entity of colon word, or machine code "m_start_colondef"
+void do_constant(context_t *cx)
+{
+    word_t w = do_pop(cx);  // const value
+    do_create(cx);
+    // put COLON xt to cfa
+    //fprintf(stderr, "constant: begin LAST = %04x, HERE = %04x\n", STAR(LAST_ADDR), STAR(H_ADDR));
+    STAR(STAR(H_ADDR)) = STAR(STAR(DOCONS_ADDR));
+        // code address should specify "body of machine code"
+        // so, xt is not sufficient, one more dereferencing is needed
+    STAR(H_ADDR) += CELLS;      // allot'ed
+    // change to compile mode
+    STAR(STAR(H_ADDR)) = w;     // set constant 
+    STAR(H_ADDR) += CELLS;      // allot'ed
+    //fprintf(stderr, "constant: end   HERE = %04x\n", STAR(H_ADDR));
 }
 
 // do_compile_token
 void do_compile_token(context_t *cx)
 {
-    fprintf(stderr, "compile_token: HERE = %04x, token = %04x\n", word_mem(H_ADDR), tos(cx));
-    word_mem(word_mem(H_ADDR)) = do_pop(cx);
-    word_mem(H_ADDR) += 2;
+    word_t xt = tos(cx);
+    word_t entry = entry_head(cx, xt);
+    char *p = &mem[entry];
+    fprintf(stderr, "C:%04x %04x (%.*s)\n", STAR(H_ADDR), xt, (*p)&0x1f, p+1);
+    STAR(STAR(H_ADDR)) = do_pop(cx);
+    STAR(H_ADDR) += CELLS;
 }
 
 void do_compile_number(context_t *cx)
 {
     // compile LITERAL and number
-    do_push(cx, word_mem(LITERAL_ADDR));
+    fprintf(stderr, "compile_number:\n");
+    do_push(cx, STAR(LITERAL_ADDR));
     do_compile_token(cx);
     do_compile_token(cx);    // compile the number on the stack
 }
 
 word_t entry_head(context_t *cx, word_t addr)
 {
-    word_t entry = word_mem(LAST_ADDR), link;
+    word_t entry = STAR(LAST_ADDR), link;
     mem_t *p;
     while (addr < entry) {
         link = link_addr(entry);
-        if ((entry = word_mem(link)) == 0)
+        if ((entry = STAR(link)) == 0)
             break;
         //fprintf(stderr, "[%d %.*s]", ((*p)&0x1f),((*p)&0x1f),(p+1));
     }
     return entry;
 }
 
-//
-void dump_last_entry(context_t *cx)
+word_t entry_tail(context_t *cx, word_t addr)
 {
-    word_t last, entry;
+    word_t entry = STAR(LAST_ADDR), link, prev = STAR(H_ADDR);
+    mem_t *p;
+    while (addr < entry) {
+        link = link_addr(entry);
+        prev = entry;
+        fprintf(stderr, "addr = %04X, entry = %04X\n", addr, entry);
+        if ((entry = STAR(link)) == 0)
+            break;
+        //fprintf(stderr, "[%d %.*s]", ((*p)&0x1f),((*p)&0x1f),(p+1));
+    }
+    return prev;
+}
+
+// dump entry (addr -- )
+void dump_entry(context_t *cx)
+{
     // dump entry
-    word_t link, here, ip, w;
+    word_t entry, link, tail, ip, w;
     mem_t *p;
     int n;
-    last = word_mem(LAST_ADDR),
-    link = link_addr(last);
-    here = word_mem(H_ADDR);
-    fprintf(stderr, "dump_last_entry: last = %04x, link = %04x(%04x), here = %04x\n", last, link, word_mem(link), here);
+
+    entry = entry_head(cx, w = do_pop(cx));
+    tail = entry_tail(cx, w);
+    fprintf(stderr, "dump_entry: entry = %04X, tail = %04X\n", entry, tail);
+    link = link_addr(entry);
+    //fprintf(stderr, "dump_last_entry: last = %04x, link = %04x(%04x), here = %04x\n", last, link, STAR(link), here);
     // dump it
-    p = &mem[last];
+    p = &mem[entry];
     n = (*p) & 0x1f;
-    fprintf(stderr, "%04x head [%.*s]", last, n, p+1);
+    fprintf(stderr, "%04x .head [%.*s]", entry, n, p+1);
     if ((*p) & 0xe0)
-        fprintf(stderr, "[%02x]", (*p) * 0xe0);
+        fprintf(stderr, "[%02x]", (*p) & 0xe0);
     fprintf(stderr, "\n");
     ip = link;
-    fprintf(stderr, "%04x %04x [link]\n", ip, word_mem(ip));
-    ip += 2;
-    fprintf(stderr, "%04x %04x [code]\n", ip, word_mem(ip));
-    ip += 2;
-    while (ip < here) {
-        entry = entry_head(cx, word_mem(ip));
+    fprintf(stderr, "%04x %04x  [link]\n", ip, STAR(ip));
+    ip += CELLS;
+    fprintf(stderr, "%04x %04x  [code]\n", ip, STAR(ip));
+    ip += CELLS;
+    while (ip < tail) {
+        entry = entry_head(cx, STAR(ip));
         if (entry) {
             p = &mem[entry];
             n = (*p) & 0x1f;
             fprintf(stderr, "%04x %04x (%.*s)\n", ip, entry, n, p+1);
             if (n == 7 && strncmp(p+1, "literal", n) == 0) {
-                ip += 2;
-                w = word_mem(ip);
+                ip += CELLS;
+                w = STAR(ip);
                 fprintf(stderr, "%04x %04x (%d)\n", ip, w, w);
             }
         }
-        ip += 2;
+        ip += CELLS;
     }
 }
+

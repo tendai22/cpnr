@@ -17,6 +17,11 @@ typedef uint8_t mem_t;    // ROM/RAM memory array for the target machine
 #define BIG_ENDIAN 1
 
 //
+// word/cell size, per byte
+//
+#define CELLS 2
+
+//
 // taget machine ROM/RAM size
 //
 #define ROMSTART 0x1000
@@ -45,12 +50,13 @@ typedef uint8_t mem_t;    // ROM/RAM memory array for the target machine
 #define COLON_ADDR    (USER_START+12)
 #define SEMI_ADDR     (USER_START+14)
 #define LITERAL_ADDR  (USER_START+16)
+#define DOCONS_ADDR   (USER_START+18)
  
 #define MEMSIZE 65536
 extern mem_t mem[];
 
-#define word_mem(addr) (*((word_t *)&mem[addr]))
-#define ptr2addr(p) ((word_t)((p)-&mem[0]))
+#define STAR(addr) (*((word_t *)&mem[addr]))
+#define AMPERSANT(p) ((word_t)((p)-&mem[0]))
 
 #define STACK_SIZE 256
 #define BPTBL_SIZE 16
@@ -83,13 +89,17 @@ extern int do_mainloop(context_t *cx);
 extern void reset(context_t *cx);
 
 extern int gets_outer(char *buf, int size);
+extern void reset_outer(void);
+extern void reset_instream(context_t *cx);
 
 // monitor
 extern void do_print_status(context_t *cx);
-extern void do_print_s0(context_t *cx);
-extern void do_print_here(context_t *cx);
+extern void print_s0(context_t *cx);
 extern void print_cstr(context_t *cx, char *title, word_t addr);
 extern void print_stack(context_t *cx);
+extern const char *opcode_name(word_t mcode);
+extern void init_optable(void);
+extern word_t entry_head(context_t *cx, word_t addr);
 
 // outer interpreter
 extern int do_accept(context_t *cx);
@@ -112,10 +122,11 @@ extern void do_end_colondef(context_t *cx);
 extern void do_create(context_t *cx);
 extern void do_compile_token(context_t *cx);
 extern void do_compile_number(context_t *cx);
+extern void do_constant(context_t *cx);
 extern void do_emit(context_t *cx, word_t w);
-extern void dump_last_entry(context_t *cx);
+extern void dump_entry(context_t *cx);
 
-#define tos(cx) word_mem(cx->sp)
+#define tos(cx) STAR(cx->sp)
 
 // machine code
 extern void m_pushr(context_t *cx, word_t value);

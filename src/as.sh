@@ -36,7 +36,7 @@ do  case "$f" in
 	    return n
     }
     function ascii(s, n){
-        n = index(" !\"#$%&'\''()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvqxyz{|}~", (s ""))
+        n = index(" !\"#$%&'\''()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~", (s ""))
         return n > 0 ? n + 31 : n
     }
     function hex2dec(s){

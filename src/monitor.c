@@ -8,6 +8,19 @@
 #include <unistd.h>
 #include "machine.h"
 
+//
+// optable
+//
+#include "opname.h"
+
+const char *opcode_name(word_t mcode)
+{
+    mcode -= 0xc000;
+    if (mcode > sizeof optable / sizeof (const char *)) {
+        return "*toobig*";
+    }
+    return optable[mcode] ? optable[mcode] : "*undef*";
+}
 
 #define GO_CMD 1
 
@@ -65,8 +78,10 @@ int monitor (context_t *cx)
             continue;
         }
         if (c == GO_CMD) {
-            if (do_mainloop(cx) < 0)
+            if (do_mainloop(cx) < 0) {
+                fprintf(stderr, "do_mainloop: over\n");
                 return -1;
+            }
         } else if (c == 'r') {
             fprintf(stderr, "\nreset done\n");
             reset(cx);
@@ -81,47 +96,38 @@ int monitor (context_t *cx)
 void do_print_status(context_t *cx)
 {
     int first;
-    fprintf(stderr, "%04X %04X IP:%04X WA:%04X CA:%04X SP:%04X RS:%04X ",
-        cx->pc, word_mem(cx->pc), cx->ip, cx->wa, cx->ca, cx->sp, cx->rs);
+    word_t mcode = STAR(cx->pc);
+    if (mcode == 0xc001 || mcode == 0xc003)
+        return;
+    fprintf(stderr, "%04X %04X %12.12s IP:%04X WA:%04X CA:%04X SP:%04X RS:%04X ",
+        cx->pc, STAR(cx->pc), opcode_name(STAR(cx->pc)), cx->ip, cx->wa, cx->ca, cx->sp, cx->rs);
     fprintf(stderr, "[");
     first = 1;
-    for (word_t w = DSTACK_END - 2; w >= cx->sp; w -= 2) {
+    for (word_t w = DSTACK_END - CELLS; w >= cx->sp; w -= CELLS) {
         if (first) {
             first = 0;
         } else {
             fprintf(stderr, " ");
         }
-        fprintf(stderr, "%04X", word_mem(w));
+        fprintf(stderr, "%04X", STAR(w));
     }
     fprintf(stderr, "] [");
     first = 1;
-    for (word_t w = RSTACK_END - 2; w >= cx->rs; w -= 2) {
+    for (word_t w = RSTACK_END - CELLS; w >= cx->rs; w -= CELLS) {
         if (first) {
             first = 0;
         } else {
             fprintf(stderr, " ");
         }
-        fprintf(stderr, "%04X", word_mem(w));
+        fprintf(stderr, "%04X", STAR(w));
     }
     fprintf(stderr, "]\n");
 }
 
-void do_print_s0(context_t *cx)
+void print_s0(context_t *cx)
 {
-    char *p = &mem[mem[S0_ADDR]];
-    fprintf(stderr, "S0:%04X: ", word_mem(S0_ADDR));
-    for (int i = 0; i < 16; ++i)
-        fprintf(stderr, "%02X ", *p++);
-    fprintf(stderr, "\n");
-}
-
-void do_print_here(context_t *cx)
-{
-    char *p = &mem[mem[H_ADDR]];
-    fprintf(stderr, "H:%04X: ", word_mem(H_ADDR));
-    for (int i = 0; i < 16; ++i)
-        fprintf(stderr, "%02X ", *p++);
-    fprintf(stderr, "\n");
+    char *p = &mem[STAR(S0_ADDR)];
+    fprintf(stderr, "S0:%04X: [%.64s]\n", STAR(S0_ADDR), p);
 }
 
 void print_cstr(context_t *cx, char *title, word_t addr)
@@ -137,12 +143,16 @@ void print_cstr(context_t *cx, char *title, word_t addr)
 
 void print_stack(context_t *cx)
 {
-    word_t w = DSTACK_END - 2;
-    fprintf(stderr, "DSP: ");
-    for(word_t w = DSTACK_END - 2; w >= cx->sp; w -= 2) {
-        fprintf(stderr, "%04X ", word_mem(w));
+    word_t w = DSTACK_END - CELLS;
+    int first = 1;
+    fprintf(stderr, "[");
+    for(word_t w = DSTACK_END - CELLS; w >= cx->sp; w -= CELLS) {
+        if (first == 0)
+            fprintf(stderr, " ");
+        first = 0;
+        fprintf(stderr, "%04X", STAR(w));
     }
-    fprintf(stderr, "\n");
+    fprintf(stderr, "]");
 }
 
 

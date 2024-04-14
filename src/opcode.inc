@@ -86,5 +86,11 @@ BEGIN {
     ropcode[41 + opcode_base] = "m_end_colondef"
     opcode["m_dictdump"] = 42 + opcode_base
     ropcode[42 + opcode_base] = "m_dictdump"
+    opcode["m_docons"] = 43 + opcode_base
+    ropcode[43 + opcode_base] = "m_docons"
+    opcode["m_constant"] = 44 + opcode_base
+    ropcode[44 + opcode_base] = "m_constant"
+    opcode["m_find"] = 45 + opcode_base
+    ropcode[45 + opcode_base] = "m_find"
 }
 
