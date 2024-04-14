@@ -43,10 +43,21 @@ USER_START 18 + constant DOCONS_ADDR
 : >mark here ;
 : >resolve here swap ! ;
 : <mark here ;
-: <resolve here ! ;
+: <resolve here ! cells allot ;
 
 \ if-else-then
 : if literal jz , >mark cells allot ; immediate
 : then >resolve ; immediate
 : else literal jmp , >mark cells allot swap >resolve ; immediate
+
+\ do ... loop
+: do ( limit index -- )
+  literal >r , <mark ; immediate
+: i literal r2> dup >r2 ;
+: _loop dup ( limit limit)
+        r2> 1 + dup >r2 ( limit index)
+        > ;
+: loop_ rswap drop drop ;
+: loop literal _loop , literal jz , <resolve literal loop_ , ; immediate
+
 

@@ -124,3 +124,9 @@ opcode dd dictdump
 opcode docons
 opcode constant
 opcode [compile] compile
+opcode r> r2s
+opcode >r s2r
+opcode > gt
+opcode r2> r22s
+opcode >r2 s2r2
+opcode rswap

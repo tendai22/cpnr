@@ -48,4 +48,7 @@ void init_optable(void)
         optable[44] = "m_constant";
         optable[45] = "m_find";
         optable[46] = "m_compile";
+        optable[47] = "m_r2s";
+        optable[48] = "m_s2r";
+        optable[49] = "m_gt";
 }

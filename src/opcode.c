@@ -10,7 +10,7 @@ static int opcode_base = 0xc000;
 
 int machine_code(context_t *cx, word_t code)
 {
-    word_t addr, *wp, w, n;
+    word_t addr, *wp, w, w2, n;
     mem_t *p, c;
     // machine code
     if ((code & 0xf000) != opcode_base) {
@@ -240,7 +240,7 @@ undefined:
     case 43: // m_docons
         // constant runtime routine
         w = STAR(cx->wa);
-        fprintf(stderr, "docons: WA:%04X, w = %04x\n", cx->wa, w);
+        //fprintf(stderr, "docons: WA:%04X, w = %04x\n", cx->wa, w);
         do_push(cx, w);
         cx->pc += CELLS;
         break;
@@ -254,6 +254,38 @@ undefined:
         break;
     case 46: // m_compile
         do_compile(cx);
+        cx->pc += CELLS;
+        break;
+    case 47: // m_r2s
+        w = do_popr(cx);
+        do_push(cx, w);
+        cx->pc += CELLS;
+        break;
+    case 48: // m_s2r
+        w = do_pop(cx);
+        do_pushr(cx, w);
+        cx->pc += CELLS;
+        break;
+    case 49: // m_gt
+        w2 = do_pop(cx);
+        w = tos(cx);
+        tos(cx) = (w > w2) ? -1 : 0 ;
+        cx->pc += CELLS;
+        break;
+    case 50: // r22s
+        w = STAR(cx->rs + CELLS);
+        do_push(cx, w);
+        cx->pc += CELLS;
+        break;       
+    case 51: // s2r2
+        w = do_pop(cx);
+        STAR(cx->rs + CELLS) = w;
+        cx->pc += CELLS;
+        break;
+    case 52: // rswap
+        w = STAR(cx->rs);
+        STAR(cx->rs) = STAR(cx->rs + CELLS);
+        STAR(cx->rs + CELLS) = w;
         cx->pc += CELLS;
         break;
     default:
