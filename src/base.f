@@ -28,13 +28,18 @@ USER_START 14 + constant SEMI_ADDR
 USER_START 16 + constant LITERAL_ADDR
 USER_START 18 + constant DOCONS_ADDR
 
+\ here/allot/last/immediate
 : here H_ADDR @ ;
 : allot H_ADDR @ + H_ADDR ! ;
 : last LAST_ADDR @ ;
 : immediate last c@ 0x80 or last c! ;
 : , ( comma) here ! cells allot ;
 
+\
 \ control structure
+\
+
+\ jump operand mark/resolve
 : >mark here ;
 : >resolve here swap ! ;
 : <mark here ;
@@ -43,5 +48,5 @@ USER_START 18 + constant DOCONS_ADDR
 \ if-else-then
 : if literal jz , >mark cells allot ; immediate
 : then >resolve ; immediate
-
+: else literal jmp , >mark cells allot swap >resolve ; immediate
 

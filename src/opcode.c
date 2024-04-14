@@ -55,7 +55,6 @@ undefined:
     case 7: // m_jmp 
         // unconditional bra in thread
         addr = STAR(cx->ip);
-        fprintf(stderr, "jmp: ip = %04x, addr = %04x\n", cx->ip, addr);
         cx->ip = addr;
         cx->pc += CELLS;
         break;
