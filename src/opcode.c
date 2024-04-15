@@ -159,6 +159,7 @@ undefined:
         cx->pc += CELLS;
         break;
      case 28: // m_rot
+        // (n1 n2 n3 -- n2 n3 n1)
         w = STAR(cx->sp + 2 * CELLS);
         STAR(cx->sp + 2 * CELLS) = STAR(cx->sp + CELLS);
         STAR(cx->sp + CELLS) = STAR(cx->sp);

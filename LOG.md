@@ -388,19 +388,38 @@ do, loopを他のワードで書く方法はすでにあるはず。それを探
 
 ## do ... loop の実装例
 
-eForthあたりかな。
+eForthあたりかな。eForthは`FOR...NEXT`(NEXTはR@をデクリメントして0になれば抜ける)を使い、`DO...LOOP`系はない。
 
-ceForthを見る。「マクロアセンブラ」による独特の記法。
+ふと思いついたのだが、ワード`(loop)`
 
-    BEGIN...AGAIN
-    BEGIN...UNTIL
-    BEGIN...WHILE...REPEAT
-    IF...ELSE...THEN
-    FOR...AFT...THEN...NEXT
+    (loop) (limit delta iaddr)
 
-do ... loop の話が出てこない。FOR(), NEXT() に書かれている。
+を作ればよさそう。limitはDO呼び出し前に置いたものをそのまま使う。LOOP系の中で、delta, index-addr (RSPを置く) を(実行時生成するようなコードをコンパイルして)、(loop)をターゲットワードにコンパイルする、その後ろに `compile jz <resolve`(jzをコンパイルしてオペランドを解決)すればよい。
 
+    : (loop)    (limit delta iaddr -- flag)
+        dup @ rot    ( limit iaddr index delta)
+        +            ( limit iaddr i+d )   
+        dup rot      ( limit i+d i+d iaddr )
+        !            ( limit i+d )
+        swap dup rot ( limit limit i+d )
+        swap >       ( limit -1 if i+d > limit, limit 0 if i+d <= limit )
+        \ falling down to jz
+        ;
 
+    : loop (limit -- limit if loop remains | none if loop exits)
+        compile (literal)
+        1 here ! cells allot
+        compile rsp         ( limit 1 iaddr )
+        compile (loop)
+        compile jz
+        <resolve
+        cells allot
+        r>
+        drop
+        drop                ( discard index (at rsp) and limit)
+        ;
+
+かなり遅そう。C言語プリミティブで書いた方がよさそう。
 
 
 
