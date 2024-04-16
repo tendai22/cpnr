@@ -33,6 +33,7 @@ undefined:
     case 3: // m_next
     do_next_label:
         cx->wa = STAR(cx->ip);
+        print_next(cx, cx->wa);
         cx->ip += CELLS;
         // falling down
     case 4: // m_run

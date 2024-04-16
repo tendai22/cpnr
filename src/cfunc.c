@@ -340,7 +340,7 @@ void do_number(context_t *cx)
 
 void do_prompt(context_t *cx)
 {
-    print_stack(cx);
+    print_dstack(cx);
     fprintf(stderr, " ok\n");
 }
 

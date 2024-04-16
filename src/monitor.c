@@ -92,15 +92,9 @@ int monitor (context_t *cx)
     }
 }
 
-// dump
-void do_print_status(context_t *cx)
+void print_stack(context_t *cx)
 {
     int first;
-    word_t mcode = STAR(cx->pc);
-    if (mcode == 0xc001 || mcode == 0xc003)
-        return;
-    fprintf(stderr, "%04X %04X %12.12s IP:%04X WA:%04X CA:%04X SP:%04X RS:%04X ",
-        cx->pc, STAR(cx->pc), opcode_name(STAR(cx->pc)), cx->ip, cx->wa, cx->ca, cx->sp, cx->rs);
     fprintf(stderr, "[");
     first = 1;
     for (word_t w = DSTACK_END - CELLS; w >= cx->sp; w -= CELLS) {
@@ -121,7 +115,28 @@ void do_print_status(context_t *cx)
         }
         fprintf(stderr, "%04X", STAR(w));
     }
-    fprintf(stderr, "]\n");
+    fprintf(stderr, "]");
+}
+
+void print_next(context_t *cx, word_t xt)
+{
+    char *p = &mem[entry_head(cx, xt)];
+    fprintf(stderr, ":%04X %04X [%-12.*s] ", cx->ip, xt, (*p & 0x1f), (p+1));
+    print_stack(cx);
+    fprintf(stderr, "\n");
+}
+
+// dump
+void do_print_status(context_t *cx)
+{
+    int first;
+    word_t mcode = STAR(cx->pc);
+    if (mcode == 0xc001 || mcode == 0xc003)
+        return;
+    fprintf(stderr, "%04X %04X %-12.12s IP:%04X WA:%04X CA:%04X SP:%04X RS:%04X ",
+        cx->pc, STAR(cx->pc), opcode_name(STAR(cx->pc)), cx->ip, cx->wa, cx->ca, cx->sp, cx->rs);
+    print_stack(cx);
+    fprintf(stderr, "\n");
 }
 
 void print_s0(context_t *cx)
@@ -141,7 +156,7 @@ void print_cstr(context_t *cx, char *title, word_t addr)
     fprintf(stderr, "]\n");
 }
 
-void print_stack(context_t *cx)
+void print_dstack(context_t *cx)
 {
     word_t w = DSTACK_END - CELLS;
     int first = 1;

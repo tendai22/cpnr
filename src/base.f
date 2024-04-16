@@ -55,7 +55,7 @@ USER_START 18 + constant DOCONS_ADDR
 : do ( limit index -- )
   compile >r
   <mark 
-  ; immediate
+  ;
 
 : i r2> ;
 
@@ -78,4 +78,4 @@ USER_START 18 + constant DOCONS_ADDR
     compile r>          \ limit tors )
     compile drop
     compile drop        \ discard index (at rsp) and limit)
-    ; immediate
+    ;

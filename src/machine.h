@@ -97,9 +97,11 @@ extern void do_print_status(context_t *cx);
 extern void print_s0(context_t *cx);
 extern void print_cstr(context_t *cx, char *title, word_t addr);
 extern void print_stack(context_t *cx);
+extern void print_dstack(context_t *cx);
 extern const char *opcode_name(word_t mcode);
 extern void init_optable(void);
 extern word_t entry_head(context_t *cx, word_t addr);
+extern void print_next(context_t *cx, word_t xt);
 
 // outer interpreter
 extern int do_accept(context_t *cx);
