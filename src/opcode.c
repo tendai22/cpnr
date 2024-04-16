@@ -257,14 +257,14 @@ undefined:
         do_compile(cx);
         cx->pc += CELLS;
         break;
-    case 47: // m_r2s
-        w = do_popr(cx);
+    case 47: // m_r22s
+        w = STAR(cx->rs + CELLS);
         do_push(cx, w);
         cx->pc += CELLS;
         break;
-    case 48: // m_s2r
+    case 48: // m_s2r2
         w = do_pop(cx);
-        do_pushr(cx, w);
+        STAR(cx->rs + CELLS) = w;
         cx->pc += CELLS;
         break;
     case 49: // m_gt
@@ -273,20 +273,18 @@ undefined:
         tos(cx) = (w > w2) ? -1 : 0 ;
         cx->pc += CELLS;
         break;
-    case 50: // r22s
-        w = STAR(cx->rs + CELLS);
-        do_push(cx, w);
-        cx->pc += CELLS;
-        break;       
-    case 51: // s2r2
-        w = do_pop(cx);
-        STAR(cx->rs + CELLS) = w;
+    case 50:    // m_rsp
+        do_push(cx, cx->rs);
         cx->pc += CELLS;
         break;
-    case 52: // rswap
+    case 51:    // m_r2s
         w = STAR(cx->rs);
-        STAR(cx->rs) = STAR(cx->rs + CELLS);
-        STAR(cx->rs + CELLS) = w;
+        do_push(cx, w);
+        cx->pc += CELLS;
+        break;
+    case 52: // m_s2r
+        w = do_pop(cx);
+        STAR(cx->rs) = w;
         cx->pc += CELLS;
         break;
     default:

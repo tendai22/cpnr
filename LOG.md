@@ -392,32 +392,30 @@ eForthあたりかな。eForthは`FOR...NEXT`(NEXTはR@をデクリメントし�
 
 ふと思いついたのだが、ワード`(loop)`
 
-    (loop) (limit delta iaddr)
+    (loop) (limit iaddr index delta)
 
 を作ればよさそう。limitはDO呼び出し前に置いたものをそのまま使う。LOOP系の中で、delta, index-addr (RSPを置く) を(実行時生成するようなコードをコンパイルして)、(loop)をターゲットワードにコンパイルする、その後ろに `compile jz <resolve`(jzをコンパイルしてオペランドを解決)すればよい。
 
-    : (loop)    (limit delta iaddr -- flag)
-        dup @ rot    ( limit iaddr index delta)
-        +            ( limit iaddr i+d )   
-        dup rot      ( limit i+d i+d iaddr )
-        !            ( limit i+d )
-        swap dup rot ( limit limit i+d )
-        swap >       ( limit -1 if i+d > limit, limit 0 if i+d <= limit )
+    : (loop)         ( limit limit iaddr index delta -- limit flag )
+        +            ( limit limit iaddr i+d )   
+        dup rot      ( limit limit i+d i+d iaddr )
+        !            ( limit limit i+d )
+        swap >       ( (limit -1) if i+d > limit, (limit 0) if i+d <= limit )
         \ falling down to jz
         ;
 
     : loop (limit -- limit if loop remains | none if loop exits)
-        compile (literal)
-        1 here ! cells allot
-        compile rsp         ( limit 1 iaddr )
-        compile (loop)
+        compile dup         ( limit limit)
+        1 ,                 ( compile 1 as delta)
+        compile rsp         ( limit limit 1 iaddr )
+        compile (loop)      ( limit -1|0)
         compile jz
         <resolve
         cells allot
-        r>
-        drop
-        drop                ( discard index (at rsp) and limit)
-        ;
+        compile r>          ( limit tors )
+        compile drop
+        compile drop        ( discard index (at rsp) and limit)
+        ; immediate
 
 かなり遅そう。C言語プリミティブで書いた方がよさそう。
 

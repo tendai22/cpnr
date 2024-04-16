@@ -29,8 +29,11 @@ cat "$@" |
 # preprocessor
 awk '#
 /^opcode/ {
-    name = (NF >= 3) ? $3 : $2
-    print "code",$2,$3,$4
+    name = (NF > 3) ? $3 : $2
+    if (NF > 3)
+        print "code",$2,$3,$4
+    else if(NF == 4 && $4 ~ /immediate/)
+        print "code",$2,$3,$4
     print "    m_" name
     print "    endcode"
     print ""

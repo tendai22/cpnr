@@ -94,11 +94,17 @@ BEGIN {
     ropcode[45 + opcode_base] = "m_find"
     opcode["m_compile"] = 46 + opcode_base
     ropcode[46 + opcode_base] = "m_compile"
-    opcode["m_r2s"] = 47 + opcode_base
-    ropcode[47 + opcode_base] = "m_r2s"
-    opcode["m_s2r"] = 48 + opcode_base
-    ropcode[48 + opcode_base] = "m_s2r"
+    opcode["m_r22s"] = 47 + opcode_base
+    ropcode[47 + opcode_base] = "m_r22s"
+    opcode["m_s2r2"] = 48 + opcode_base
+    ropcode[48 + opcode_base] = "m_s2r2"
     opcode["m_gt"] = 49 + opcode_base
     ropcode[49 + opcode_base] = "m_gt"
+    opcode["m_rsp"] = 50 + opcode_base
+    ropcode[50 + opcode_base] = "m_rsp"
+    opcode["m_r2s"] = 51 + opcode_base
+    ropcode[51 + opcode_base] = "m_r2s"
+    opcode["m_s2r"] = 52 + opcode_base
+    ropcode[52 + opcode_base] = "m_s2r"
 }
 

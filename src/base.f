@@ -50,14 +50,32 @@ USER_START 18 + constant DOCONS_ADDR
 : then >resolve ; immediate
 : else literal jmp , >mark cells allot swap >resolve ; immediate
 
+
 \ do ... loop
 : do ( limit index -- )
-  literal >r , <mark ; immediate
-: i literal r2> dup >r2 ;
-: _loop dup ( limit limit)
-        r2> 1 + dup >r2 ( limit index)
-        > ;
-: loop_ rswap drop drop ;
-: loop literal _loop , literal jz , <resolve literal loop_ , ; immediate
+  compile >r
+  <mark 
+  ; immediate
 
+: i r2> ;
 
+: (loop)         \ limit limit iaddr index delta -- limit flag )
+    +            \ limit limit iaddr i+d )   
+    dup rot      \ limit limit i+d i+d iaddr )
+    !            \ limit limit i+d )
+    swap >       \ (limit -1) if i+d > limit, (limit 0) if i+d <= limit 
+    \ falling down to jz
+    ;
+
+: loop  \ limit -- limit if loop remains | none if loop exits)
+    compile dup         \ limit limit)
+    1 ,                 \ compile 1 as delta)
+    compile rsp         \ limit limit 1 iaddr )
+    compile (loop)      \ limit -1|0)
+    compile jz
+    <resolve
+    cells allot
+    compile r>          \ limit tors )
+    compile drop
+    compile drop        \ discard index (at rsp) and limit)
+    ; immediate
