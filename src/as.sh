@@ -59,7 +59,7 @@ do  case "$f" in
         while (length(str) > 0) {
             s = substr(str, 1, 2)
             if (first) {
-                ostr = sprintf("%04X %s %s", pc, s, code)
+                ostr = sprintf("%04X %s   %s", pc, s, code)
                 first = 0
             } else {
                 ostr = sprintf("%04X %s", pc, s)

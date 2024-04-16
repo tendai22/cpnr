@@ -29,11 +29,12 @@ cat "$@" |
 # preprocessor
 awk '#
 /^opcode/ {
-    name = (NF > 3) ? $3 : $2
-    if (NF > 3)
-        print "code",$2,$3,$4
-    else if(NF == 4 && $4 ~ /immediate/)
-        print "code",$2,$3,$4
+    n = NF
+    if ($NF ~ /immediate/) {
+        n--
+    }
+    name = (n == 3) ? $3 : $2
+    print "code",$2,$3,$4
     print "    m_" name
     print "    endcode"
     print ""
@@ -77,11 +78,11 @@ BEGIN {
     print ""
     printf "entry_%03d:\n", nels;
     printf "e_%s:\n", name
-    printf "    .head \"%s\"", str
+    printf "    .head   \"%s\"", str
     if (precedence)
         printf " %d", precedence
     print ""
-    printf "    .dw    %s\n", prev_link
+    printf "    .dw     %s\n", prev_link
     printf "do_%s:\n", name
     if (flag) {
         printf "    .dw     do_colon\n"
