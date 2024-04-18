@@ -288,6 +288,14 @@ undefined:
         STAR(cx->rs) = w;
         cx->pc += CELLS;
         break;
+    case 53: // m_start_compile
+        STAR(STATE_ADDR) = 1;
+        cx->pc += CELLS;
+        break;
+    case 54: // m_end_compile
+        STAR(STATE_ADDR) = 0;
+        cx->pc += CELLS;
+        break;
     default:
         goto undefined;
     }

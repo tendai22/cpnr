@@ -54,4 +54,6 @@ void init_optable(void)
         optable[50] = "m_rsp";
         optable[51] = "m_r2s";
         optable[52] = "m_s2r";
+        optable[53] = "m_start_compile";
+        optable[54] = "m_end_compile";
 }

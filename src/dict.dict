@@ -117,8 +117,8 @@ opcode _state
 //
 opcode : start_colondef
 opcode ; end_colondef immediate
-//opcode [ start_compile immediate
-//opcode ] end_compile immediate
+opcode ] start_compile immediate
+opcode [ end_compile immediate
 //opcode >in in_stream
 opcode dd dictdump
 opcode docons

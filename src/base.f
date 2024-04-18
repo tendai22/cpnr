@@ -52,11 +52,6 @@ USER_START 18 + constant DOCONS_ADDR
 
 
 \ do ... loop
-: do ( limit index -- )
-  compile >r
-  <mark 
-  ;
-
 : i r2> ;
 
 : (loop)         \ limit limit iaddr index delta -- limit flag )
@@ -68,14 +63,18 @@ USER_START 18 + constant DOCONS_ADDR
     ;
 
 : loop  \ limit -- limit if loop remains | none if loop exits)
+    ]
     compile dup         \ limit limit)
-    1 ,                 \ compile 1 as delta)
+    1                   \ compile 1 as delta)
     compile rsp         \ limit limit 1 iaddr )
     compile (loop)      \ limit -1|0)
     compile jz
-    <resolve
+    [ <resolve ]
     cells allot
     compile r>          \ limit tors )
     compile drop
     compile drop        \ discard index (at rsp) and limit)
-    ;
+    ; immediate
+
+: do ( limit index -- ) ] compile >r [ <mark ] ; immediate
+

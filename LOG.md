@@ -421,4 +421,3 @@ eForthあたりかな。eForthは`FOR...NEXT`(NEXTはR@をデクリメントし�
 
 
 
-

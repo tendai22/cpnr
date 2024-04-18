@@ -106,5 +106,9 @@ BEGIN {
     ropcode[51 + opcode_base] = "m_r2s"
     opcode["m_s2r"] = 52 + opcode_base
     ropcode[52 + opcode_base] = "m_s2r"
+    opcode["m_start_compile"] = 53 + opcode_base
+    ropcode[53 + opcode_base] = "m_start_compile"
+    opcode["m_end_compile"] = 54 + opcode_base
+    ropcode[54 + opcode_base] = "m_end_compile"
 }
 
