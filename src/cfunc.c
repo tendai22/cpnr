@@ -449,6 +449,18 @@ void do_compile_number(context_t *cx)
 
 void do_compile(context_t *cx)
 {
+    word_t w;
+    mem_t *p;
+    w= STAR(cx->ip);
+    cx->ip += CELLS;
+    STAR(STAR(H_ADDR)) = w;
+    p = &mem[entry_head(cx, w)];
+    fprintf(stderr, "C:%04X %04X (%.*s)\n", STAR(H_ADDR), w, (*p)&0x1f, (p+1));
+    STAR(H_ADDR) += CELLS;
+}
+
+void do_bracompile(context_t *cx)
+{
     int flag;
     fprintf(stderr, "[COMPILE]: \n");
     while (1) {

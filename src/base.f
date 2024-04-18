@@ -27,6 +27,7 @@ USER_START 12 + constant COLON_ADDR
 USER_START 14 + constant SEMI_ADDR
 USER_START 16 + constant LITERAL_ADDR
 USER_START 18 + constant DOCONS_ADDR
+USER_START 20 + constant DEBUG_ADDR
 
 \ here/allot/last/immediate
 : here H_ADDR @ ;
@@ -34,6 +35,9 @@ USER_START 18 + constant DOCONS_ADDR
 : last LAST_ADDR @ ;
 : immediate last c@ 0x80 or last c! ;
 : , ( comma) here ! cells allot ;
+
+: debug DEBUG_ADDR ! ;
+1 debug
 
 \
 \ control structure
@@ -51,30 +55,35 @@ USER_START 18 + constant DOCONS_ADDR
 : else literal jmp , >mark cells allot swap >resolve ; immediate
 
 
+2 debug
+
 \ do ... loop
 : i r2> ;
 
-: (loop)         \ limit limit iaddr index delta -- limit flag )
-    +            \ limit limit iaddr i+d )   
-    dup rot      \ limit limit i+d i+d iaddr )
-    !            \ limit limit i+d )
+: (loop)         \ ( limit limit iaddr index delta -- limit flag )
+    +            \ limit limit iaddr i+d
+    dup rot      \ limit limit i+d i+d iaddr
+    !            \ limit limit i+d
     swap >       \ (limit -1) if i+d > limit, (limit 0) if i+d <= limit 
     \ falling down to jz
     ;
 
 : loop  \ limit -- limit if loop remains | none if loop exits)
-    ]
-    compile dup         \ limit limit)
-    1                   \ compile 1 as delta)
-    compile rsp         \ limit limit 1 iaddr )
+    compile dup         \ limit limit
+    compile rsp         \ limit limit iaddr
+    compile dup         \ limit limit iaddr iaddr
+    compile @           \ limit limit iaddr index
+    compile literal
+    1 here ! cells allot   \ compile 1 as delta)
+                        \ limit limit iaddr index 1 
     compile (loop)      \ limit -1|0)
     compile jz
-    [ <resolve ]
-    cells allot
+    <resolve
     compile r>          \ limit tors )
     compile drop
     compile drop        \ discard index (at rsp) and limit)
     ; immediate
 
-: do ( limit index -- ) ] compile >r [ <mark ] ; immediate
+: do ( limit index -- ) 
+    compile >r <mark ; immediate
 

@@ -33,7 +33,8 @@ undefined:
     case 3: // m_next
     do_next_label:
         cx->wa = STAR(cx->ip);
-        print_next(cx, cx->wa);
+        if (STAR(DEBUG_ADDR))
+            print_next(cx, cx->wa);
         cx->ip += CELLS;
         // falling down
     case 4: // m_run
@@ -136,7 +137,7 @@ undefined:
 #endif //MINIMUM
     case 23: // m_period
         w = do_pop(cx);
-        printf("%d", w);
+        printf("%d", w); fflush(stdout);
         cx->pc += CELLS;
         break;
     case 24: // m_div
@@ -190,7 +191,8 @@ undefined:
 #if !defined(MINIMUM)
     case 33: // m_comma
         w = tos(cx);
-        fprintf(stderr, "m_comma: addr = %04x, value = %04x\n", *wp, w);
+        if (STAR(DEBUG_ADDR))
+            fprintf(stderr, "m_comma: addr = %04x, value = %04x\n", *wp, w);
         mem[STAR(H_ADDR)] = w;
         mem[H_ADDR] += CELLS;
         cx->pc += CELLS;
@@ -199,13 +201,15 @@ undefined:
     case 34: // m_bytedeposite
         w = do_pop(cx);
         mem[w] = do_pop(cx);
-        fprintf(stderr, "mem[%04x] = %04x\n", w, mem[w]);
+        if (STAR(DEBUG_ADDR))
+            fprintf(stderr, "mem[%04x] = %04x\n", w, mem[w]);
         cx->pc += CELLS;
         break;
     case 35: // m_exclamation
         w = do_pop(cx);
         STAR(w) = do_pop(cx);
-        fprintf(stderr, "mem[%04x] = %04x\n", w, STAR(w));
+        if (STAR(DEBUG_ADDR))
+            fprintf(stderr, "mem[%04x] = %04x\n", w, STAR(w));
         cx->pc += CELLS;
         break;
     case 36: // m_bytefetch
@@ -279,13 +283,13 @@ undefined:
         cx->pc += CELLS;
         break;
     case 51:    // m_r2s
-        w = STAR(cx->rs);
+        w = do_popr(cx);
         do_push(cx, w);
         cx->pc += CELLS;
         break;
     case 52: // m_s2r
         w = do_pop(cx);
-        STAR(cx->rs) = w;
+        do_pushr(cx, w);
         cx->pc += CELLS;
         break;
     case 53: // m_start_compile

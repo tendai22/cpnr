@@ -39,7 +39,8 @@ void do_machine(context_t *cx)
         // no break occurs
         // do one instruction
         code = STAR(cx->pc);
-        do_print_status(cx);
+        if (STAR(DEBUG_ADDR) & 1)
+            do_print_status(cx);
         if (machine_code(cx, code) != 0)
             break;
         if (cx->halt_flag) {

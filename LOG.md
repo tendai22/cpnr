@@ -396,28 +396,49 @@ eForthあたりかな。eForthは`FOR...NEXT`(NEXTはR@をデクリメントし�
 
 を作ればよさそう。limitはDO呼び出し前に置いたものをそのまま使う。LOOP系の中で、delta, index-addr (RSPを置く) を(実行時生成するようなコードをコンパイルして)、(loop)をターゲットワードにコンパイルする、その後ろに `compile jz <resolve`(jzをコンパイルしてオペランドを解決)すればよい。
 
-    : (loop)         ( limit limit iaddr index delta -- limit flag )
-        +            ( limit limit iaddr i+d )   
-        dup rot      ( limit limit i+d i+d iaddr )
-        !            ( limit limit i+d )
-        swap >       ( (limit -1) if i+d > limit, (limit 0) if i+d <= limit )
+    : (loop)         \ ( limit limit iaddr index delta -- limit flag )
+        +            \ limit limit iaddr i+d
+        dup rot      \ limit limit i+d i+d iaddr
+        !            \ limit limit i+d
+        swap >       \ (limit -1) if i+d > limit, (limit 0) if i+d <= limit 
         \ falling down to jz
         ;
 
-    : loop (limit -- limit if loop remains | none if loop exits)
-        compile dup         ( limit limit)
-        1 ,                 ( compile 1 as delta)
-        compile rsp         ( limit limit 1 iaddr )
-        compile (loop)      ( limit -1|0)
+    : loop  \ limit -- limit if loop remains | none if loop exits)
+        compile dup         \ limit limit
+        compile rsp         \ limit limit iaddr
+        compile dup         \ limit limit iaddr iaddr
+        compile @           \ limit limit iaddr index
+        compile literal
+        1 here ! cells allot   \ compile 1 as delta)
+                            \ limit limit iaddr index 1 
+        compile (loop)      \ limit -1|0
         compile jz
         <resolve
-        cells allot
-        compile r>          ( limit tors )
+        compile r>          \ limit tors
         compile drop
-        compile drop        ( discard index (at rsp) and limit)
+        compile drop        \ discard index (at rsp) and limit
         ; immediate
 
 かなり遅そう。C言語プリミティブで書いた方がよさそう。
+
+## do ... loop デバッグ
+
+かなり苦労した。がなんとかできた。
+
+    : aho 3 1 do i . loop ;
+
+が動くようになった。ちなみに
+
+    : aho 3 1 do i loop ;
+
+は動かない。loopに入るときは、doを出たときと同じスタックレベル(tosが 3)である必要があるためである。
+
+* `do`, `loop`は、`<mark`, `<resolve` を呼び出し元ワードコンパイル時に実行せねばならないので、コンパイルしてしまってはいけない。これのために即値ワードにせねばならない。これ以外のワードはすべて`compile`を前に置く。
+* `compile` は後ろのトークンをHに書き込む
+* `r>`, `>r` は、rstackのpeekではなく、pushr/poprする。
+
+
 
 
 

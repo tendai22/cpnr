@@ -123,7 +123,7 @@ opcode [ end_compile immediate
 opcode dd dictdump
 opcode docons
 opcode constant
-opcode compile immediate
+opcode compile
 opcode r> r2s
 opcode >r s2r
 opcode > gt

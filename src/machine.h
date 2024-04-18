@@ -51,6 +51,7 @@ typedef uint8_t mem_t;    // ROM/RAM memory array for the target machine
 #define SEMI_ADDR     (USER_START+14)
 #define LITERAL_ADDR  (USER_START+16)
 #define DOCONS_ADDR   (USER_START+18)
+#define DEBUG_ADDR    (USER_START+20)
  
 #define MEMSIZE 65536
 extern mem_t mem[];
