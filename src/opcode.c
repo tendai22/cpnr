@@ -46,15 +46,15 @@ undefined:
         cx->ip = do_popr(cx);
         cx->pc += CELLS;
         break;
-    case 6: // m_jz 
-        // conditional bra in thread
+    case 6: // m_qbranch 
+        // conditional branch in thread
         if (do_pop(cx) != 0) {
             cx->ip += CELLS;       // skip branch operand
             cx->pc += CELLS;
             break;
         }
         // falling down
-    case 7: // m_jmp 
+    case 7: // m_branch 
         // unconditional bra in thread
         addr = STAR(cx->ip);
         cx->ip = addr;

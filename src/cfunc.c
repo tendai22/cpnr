@@ -549,8 +549,8 @@ void dump_entry(context_t *cx)
             n = (*p) & 0x1f;
             fprintf(stderr, "%04x %04x (%.*s)\n", ip, entry, n, p+1);
             if ((n == 7 && strncmp(p+1, "literal", n) == 0) ||
-                (n == 2 && strncmp(p+1, "jz", n) == 0) ||
-                (n == 3 && strncmp(p+1, "jmp", n) == 0)) {
+                (n == 6 && strncmp(p+1, "branch", n) == 0) ||
+                (n == 7 && strncmp(p+1, "?branch", n) == 0)) {
                 ip += CELLS;
                 w = STAR(ip);
                 fprintf(stderr, "%04x %04x (%d)\n", ip, w, w);

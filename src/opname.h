@@ -7,8 +7,8 @@ void init_optable(void)
         optable[3] = "m_next";
         optable[4] = "m_run";
         optable[5] = "m_semi";
-        optable[6] = "m_jz";
-        optable[7] = "m_jmp";
+        optable[6] = "m_qbranch";
+        optable[7] = "m_branch";
         optable[8] = "m__state";
         optable[9] = "m_create";
         optable[10] = "m_key";

@@ -21,8 +21,8 @@ opcode execute
 //
 // primitives .. thread instructions
 //
-opcode jmp
-opcode jz
+opcode branch
+opcode ?branch qbranch
 opcode literal
 
 //

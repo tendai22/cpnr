@@ -44,15 +44,15 @@ USER_START 20 + constant DEBUG_ADDR
 \
 
 \ jump operand mark/resolve
-: >mark here ;
+: >mark here cells allot ;
 : >resolve here swap ! ;
 : <mark here ;
 : <resolve here ! cells allot ;
 
 \ if-else-then
-: if literal jz , >mark cells allot ; immediate
+: if compile ?branch >mark ; immediate
 : then >resolve ; immediate
-: else literal jmp , >mark cells allot swap >resolve ; immediate
+: else compile branch >mark swap >resolve ; immediate
 
 
 2 debug
@@ -65,7 +65,7 @@ USER_START 20 + constant DEBUG_ADDR
     dup rot      \ limit limit i+d i+d iaddr
     !            \ limit limit i+d
     swap >       \ (limit -1) if i+d > limit, (limit 0) if i+d <= limit 
-    \ falling down to jz
+    \ falling down to ?branch
     ;
 
 : loop  \ limit -- limit if loop remains | none if loop exits)
@@ -77,7 +77,7 @@ USER_START 20 + constant DEBUG_ADDR
     1 here ! cells allot   \ compile 1 as delta)
                         \ limit limit iaddr index 1 
     compile (loop)      \ limit -1|0)
-    compile jz
+    compile ?branch
     <resolve
     compile r>          \ limit tors )
     compile drop
@@ -86,4 +86,24 @@ USER_START 20 + constant DEBUG_ADDR
 
 : do ( limit index -- ) 
     compile >r <mark ; immediate
+
+\ begin ... until
+: begin <mark ; immediate
+: until ( flag -- )
+   compile ?branch <resolve 
+   ; immediate
+
+ \ begin ... f while ... repeat
+ : while ( f -- )
+   compile ?branch >mark ; immediate
+: repeat ( -- )
+   compile branch
+   swap <resolve 
+   >resolve ; immediate
+
+\ test words
+: test1 3 begin dup . cr 1 - dup not until drop ;
+: test2 3 begin dup while dup . cr 1 - repeat drop ;
+
+
 

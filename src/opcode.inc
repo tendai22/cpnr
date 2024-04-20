@@ -12,10 +12,10 @@ BEGIN {
     ropcode[4 + opcode_base] = "m_run"
     opcode["m_semi"] = 5 + opcode_base
     ropcode[5 + opcode_base] = "m_semi"
-    opcode["m_jz"] = 6 + opcode_base
-    ropcode[6 + opcode_base] = "m_jz"
-    opcode["m_jmp"] = 7 + opcode_base
-    ropcode[7 + opcode_base] = "m_jmp"
+    opcode["m_qbranch"] = 6 + opcode_base
+    ropcode[6 + opcode_base] = "m_qbranch"
+    opcode["m_branch"] = 7 + opcode_base
+    ropcode[7 + opcode_base] = "m_branch"
     opcode["m__state"] = 8 + opcode_base
     ropcode[8 + opcode_base] = "m__state"
     opcode["m_create"] = 9 + opcode_base
