@@ -131,3 +131,6 @@ opcode r2> r22s
 opcode >r2 s2r2
 opcode rsp
 opcode +rsp add_rsp
+
+opcode word
+

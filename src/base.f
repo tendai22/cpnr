@@ -143,3 +143,50 @@ USER_START 20 + constant DEBUG_ADDR
             3 1 do i . j . bl emit loop cr
         loop ;
 
+\
+\ create
+\
+
+\ link_addr ( addr -- link-addr )
+: link_addr
+   dup c@      \ addr c
+   31 and      \ addr n (= c&0x1f)
+   dup 1 and   \ addr n (n&1)
+   cells + +   \ addr (n +(n&1)+2)
+   + ;
+
+\ code_addr ( addr -- code-addr )
+   link_addr cells + ;
+
+\ create
+: create
+   32 word drop
+   last              \ last
+   here link_addr    \ last link_pos
+   dup rot swap      \ link_pos last link_pos
+   !                 \ STAR(link_pos) = last 
+   here LAST_ADDR !  \ link_pos
+   2 cells * + H_ADDR !
+   ;
+
+\
+\ does>
+\
+: puship rsp @ ;
+
+: (does)
+   last link_addr cells +  \ code_addr
+   rsp @            \ get semi addr
+   cells +                 \ get colon addr
+   swap !            \ STAR(code_addr) = colon_addr
+   ;
+
+\ does>
+: does>
+   compile (does)
+   compile semi
+   compile colon
+   ; immediate
+
+: constant
+   create , does> @ ;

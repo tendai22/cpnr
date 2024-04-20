@@ -112,5 +112,7 @@ BEGIN {
     ropcode[54 + opcode_base] = "m_end_compile"
     opcode["m_add_rsp"] = 55 + opcode_base
     ropcode[55 + opcode_base] = "m_add_rsp"
+    opcode["m_word"] = 56 + opcode_base
+    ropcode[56 + opcode_base] = "m_word"
 }
 

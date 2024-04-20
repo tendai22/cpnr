@@ -188,16 +188,16 @@ undefined:
         do_push(cx, w);
         cx->pc += CELLS;
         break;
-#if !defined(MINIMUM)
+//#if !defined(MINIMUM)
     case 33: // m_comma
         w = tos(cx);
         if (STAR(DEBUG_ADDR))
             fprintf(stderr, "m_comma: addr = %04x, value = %04x\n", *wp, w);
-        mem[STAR(H_ADDR)] = w;
-        mem[H_ADDR] += CELLS;
+        STAR(STAR(H_ADDR)) = w;
+        STAR(H_ADDR) += CELLS;
         cx->pc += CELLS;
         break;
-#endif //MINUMUM
+//#endif //MINUMUM
     case 34: // m_bytedeposite
         w = do_pop(cx);
         mem[w] = do_pop(cx);
@@ -302,6 +302,10 @@ undefined:
         break;
     case 55: // m_add_rsp
         cx->rs += do_pop(cx);
+        cx->pc += CELLS;
+        break;
+    case 56: // m_word
+        do_word(cx);
         cx->pc += CELLS;
         break;
     default:

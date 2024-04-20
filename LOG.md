@@ -450,5 +450,82 @@ loopの定義では、前処理と後処理の間に jzワードを置かねば�
 
 今回は素直にcompile地獄で固めた。
 
+## do ... loop 作り直し
 
+最初のバージョンでは、limitをデータスタックに残し、indexだけをリターンスタックに置いていた。Forth79を見ると、limit, indexの2つともリターンスタックに置いてもよい、置くのが普通だ、と言っているように見えた。
+
+> loop-sys: loop control parameters.  These include implementation-dependent representations of the current value of the loop index, its upper limit, and a pointer to a termination location where execution continues following an exit from the loop.
+
+私の実装では、loop control parametersをリターンスタックに置いている。なので、limitもまとめておいても良さそうなので。
+
+終端点のポインタもあり得るというのは面白い。上で書いたように、コンパイル中のスレッドコードでloopの次の位置を指す場所を使うこともありだろう。今回は、loopは即時ワードとして`<resolve`でブランチワードのオペランドを計算させているので不要だが、そういう手もあるとは考えていたし、実際に使うことがあると分かったのは収穫だった。
+
+制御構造は
+
+    if ... then
+    if ... else ... then
+    do ... loop
+    begin ... until
+    begin ... while ... repeat
+
+まで作った。次に何を作るか。
+
+## DOES> ... 定義語を定義できるようにしよう
+
+定義語を定義するときは、
+
+* 定義語を定義するときの手続き
+* 新しくできた個々の定義語が実行されるときの手続き
+
+の2種類があり、それをコロン定義するための仕掛けが `DOES>`である。
+
+    : foo create ..(a).. does> ..(b).. ;
+
+(a)の部分が foo xxx で xxxを定義するときに実行する処理で、(b)の部分が出来上がった xxx を実行するときの処理である。
+
+例えば定義語 variable の場合、
+
+    variable xxx
+
+(a): 辞書上に名前xxxを持つエントリヘッドを作成し、1ワード分の空きを作る。  
+(b): 1ワード分の空き(パラメータフィールド)のアドレスをスタックに積んで帰る。
+
+である。
+
+    : variable
+        create cells allot
+        does> ;
+
+(b)部分のコードに入ってくる時点でスタックトップにパラメータフィールドのアドレスがプッシュされているので、does> 節で何も書かなくてよいとなっている。
+
+entry_123:
+    .head "variable"
+    .link entry_122
+    .dw   do_colon
+    .dw   do_create
+    .
+    .(a)
+    .
+    // DOES> part
+    .dw   do_does
+    .dw   do_semi        // end of part (a)
+does_execpart:
+    .dw   do_colon
+    .
+    .(b)
+    .
+    .dw   do_semi
+
+does>は即時ワードで、do_does, do_semi, do_colonを(その定義語のスレッドに)コンパイルする。
+
+do_doesは、その定義語の実行時にターゲットワードのコンパイル処理を行う。
+
+* ターゲットワードの code fieldに、does_execpartアドレスを格納する
+
+例えば、定数定義語 constantは、
+
+    : constant
+        create , does> @ ;
+
+と書けるため、create の後、hはコードフィールドをスキップしてパラメータフィールドまで進めておく必要がある。
 
