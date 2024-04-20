@@ -54,38 +54,61 @@ USER_START 20 + constant DEBUG_ADDR
 : then >resolve ; immediate
 : else compile branch >mark swap >resolve ; immediate
 
-
-2 debug
-
 \ do ... loop
-: i r2> ;
 
-: (loop)         \ ( limit limit iaddr index delta -- limit flag )
-    +            \ limit limit iaddr i+d
-    dup rot      \ limit limit i+d i+d iaddr
-    !            \ limit limit i+d
-    swap >       \ (limit -1) if i+d > limit, (limit 0) if i+d <= limit 
+\ loop-structure: do ... loop 実行構造をリターンスタックに置く
+\ (limit index -- ) .. doでデータスタックから2要素をリターン
+\ スタックに移動させる
+
+\ リターンスタック要素操作用
+
+: r1@
+   2 cells * rsp + @ ;
+: r2@   \ index in a word execution
+   3 cells * rsp + @ ;
+: r1!   \ store a word in index
+   2 cells * rsp + ! ;
+\ : +rsp \ add a word to rsp, defined as opcode
+
+\ limit, index をリターンスタックに移動させる、
+\ >rを使うので逆順になる
+\ do 呼び出し時のリターンアドレスがすでに乗っている。
+\ いったんデータスタックに移し
+\ 3ワードリターンスタックに戻す。
+: (do)  \ ( limit index -- ) ( R: -- index limit )
+   swap
+   r>           \ index limit ret-address
+   rot rot      \ ret-address index limit
+   >r >r >r ;   \ --> limit index ret-address
+: (post-loop) \ restore return stack 
+   3 cells * +rsp ;
+
+: do
+   compile (do)
+   <mark ; immediate
+
+
+: i ( R: index limit ret-addr)
+   r1@ ;
+
+: (loop)         \ ( delta -- )
+    r1@ +        \ new index
+    dup r1!  \ save new index, new index remains
+    r2@         \ index limit
+    >       \ (limit -1) if i+d > limit, (limit 0) if i+d <= limit 
     \ falling down to ?branch
     ;
 
 : loop  \ limit -- limit if loop remains | none if loop exits)
-    compile dup         \ limit limit
-    compile rsp         \ limit limit iaddr
-    compile dup         \ limit limit iaddr iaddr
-    compile @           \ limit limit iaddr index
     compile literal
     1 here ! cells allot   \ compile 1 as delta)
                         \ limit limit iaddr index 1 
     compile (loop)      \ limit -1|0)
     compile ?branch
     <resolve
-    compile r>          \ limit tors )
-    compile drop
-    compile drop        \ discard index (at rsp) and limit)
+    compile (post-loop)
     ; immediate
 
-: do ( limit index -- ) 
-    compile >r <mark ; immediate
 
 \ begin ... until
 : begin <mark ; immediate
@@ -105,5 +128,7 @@ USER_START 20 + constant DEBUG_ADDR
 : test1 3 begin dup . cr 1 - dup not until drop ;
 : test2 3 begin dup while dup . cr 1 - repeat drop ;
 
+: aho 3 1 do i . cr loop ;
+2 debug
 
 

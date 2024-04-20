@@ -43,8 +43,10 @@ void init_outer_buf(int ac, char **av)
 
 void reset_outer(void)
 {
-    if (fp)
+    if (fp) {
         fclose(fp);
+        fp = 0;
+    }
     filenames = 0;
 }
 

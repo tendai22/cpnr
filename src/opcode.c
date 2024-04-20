@@ -300,6 +300,10 @@ undefined:
         STAR(STATE_ADDR) = 0;
         cx->pc += CELLS;
         break;
+    case 55: // m_add_rsp
+        cx->rs += do_pop(cx);
+        cx->pc += CELLS;
+        break;
     default:
         goto undefined;
     }

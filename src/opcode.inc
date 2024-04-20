@@ -110,5 +110,7 @@ BEGIN {
     ropcode[53 + opcode_base] = "m_start_compile"
     opcode["m_end_compile"] = 54 + opcode_base
     ropcode[54 + opcode_base] = "m_end_compile"
+    opcode["m_add_rsp"] = 55 + opcode_base
+    ropcode[55 + opcode_base] = "m_add_rsp"
 }
 

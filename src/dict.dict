@@ -130,7 +130,4 @@ opcode > gt
 opcode r2> r22s
 opcode >r2 s2r2
 opcode rsp
-
-\ test
-: aho 3 1 do i loop ;
-
+opcode +rsp add_rsp
