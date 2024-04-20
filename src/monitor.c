@@ -141,6 +141,8 @@ void do_print_status(context_t *cx)
 
 void print_s0(context_t *cx)
 {
+    if (STAR(DEBUG_ADDR) == 0)
+        return;
     char *p = &mem[STAR(S0_ADDR)];
     fprintf(stderr, "S0:%04X: [%.64s]\n", STAR(S0_ADDR), p);
 }

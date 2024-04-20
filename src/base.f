@@ -66,6 +66,8 @@ USER_START 20 + constant DEBUG_ADDR
    2 cells * rsp + @ ;
 : r2@   \ index in a word execution
    3 cells * rsp + @ ;
+: r3@   \ index in a word execution
+   4 cells * rsp + @ ;
 : r1!   \ store a word in index
    2 cells * rsp + ! ;
 \ : +rsp \ add a word to rsp, defined as opcode
@@ -80,8 +82,10 @@ USER_START 20 + constant DEBUG_ADDR
    r>           \ index limit ret-address
    rot rot      \ ret-address index limit
    >r >r >r ;   \ --> limit index ret-address
-: (post-loop) \ restore return stack 
-   3 cells * +rsp ;
+: (post-loop) \ restore return stack
+   r>
+   2 cells * +rsp 
+   >r ;
 
 : do
    compile (do)
@@ -90,6 +94,8 @@ USER_START 20 + constant DEBUG_ADDR
 
 : i ( R: index limit ret-addr)
    r1@ ;
+: j
+   r3@ ;
 
 : (loop)         \ ( delta -- )
     r1@ +        \ new index
@@ -131,4 +137,9 @@ USER_START 20 + constant DEBUG_ADDR
 : aho 3 1 do i . cr loop ;
 2 debug
 
+\ 2 nested loop
+: baka
+    3 1 do i . bl emit
+            3 1 do i . j . bl emit loop cr
+        loop ;
 
