@@ -6,6 +6,7 @@ void init_optable(void)
         optable[2] = "m_colon";
         optable[3] = "m_next";
         optable[4] = "m_run";
+        optable[57] = "m_startdoes";
         optable[5] = "m_semi";
         optable[6] = "m_qbranch";
         optable[7] = "m_branch";

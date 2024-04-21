@@ -10,6 +10,8 @@ BEGIN {
     ropcode[3 + opcode_base] = "m_next"
     opcode["m_run"] = 4 + opcode_base
     ropcode[4 + opcode_base] = "m_run"
+    opcode["m_startdoes"] = 57 + opcode_base
+    ropcode[57 + opcode_base] = "m_startdoes"
     opcode["m_semi"] = 5 + opcode_base
     ropcode[5 + opcode_base] = "m_semi"
     opcode["m_qbranch"] = 6 + opcode_base

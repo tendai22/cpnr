@@ -68,7 +68,8 @@ int gets_outer(char *buf, int size)
             // now file input established
         }
         if (fgets(buf, size, fp) != 0) {
-            fprintf(stderr, "gets_outer: read: %s\n", buf);
+            if (STAR(DEBUG_ADDR))
+                fprintf(stderr, "gets_outer: read: %s\n", buf);
             return 1; // ok, read a line and return
         }
         // try to open next file
@@ -212,6 +213,7 @@ static int name2xt(context_t *cx, char *name)
 {
     char *p;
     int n;
+    word_t w;
     word_t cstr_addr = STAR(H_ADDR);
     // get 'name' entry address
     p = &mem[cstr_addr];
@@ -224,6 +226,8 @@ static int name2xt(context_t *cx, char *name)
         fprintf(stderr, "init_mem: %s: no entry, error\n", name);
         return -1;
     }
+    //w = code_addr(do_pop(cx));
+    //do_push(cx, w);
     return 0;
 }
 

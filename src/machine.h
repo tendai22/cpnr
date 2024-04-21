@@ -129,6 +129,7 @@ extern void do_compile(context_t *cx);
 extern void do_constant(context_t *cx);
 extern void do_emit(context_t *cx, word_t w);
 extern void dump_entry(context_t *cx);
+extern word_t code_addr(word_t entry);
 
 #define tos(cx) STAR(cx->sp)
 

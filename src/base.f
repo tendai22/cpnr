@@ -29,6 +29,9 @@ USER_START 16 + constant LITERAL_ADDR
 USER_START 18 + constant DOCONS_ADDR
 USER_START 20 + constant DEBUG_ADDR
 
+\ inner interpreter vector
+
+
 \ here/allot/last/immediate
 : here H_ADDR @ ;
 : allot H_ADDR @ + H_ADDR ! ;
@@ -37,7 +40,7 @@ USER_START 20 + constant DEBUG_ADDR
 : , ( comma) here ! cells allot ;
 
 : debug DEBUG_ADDR ! ;
-1 debug
+0 debug
 
 \
 \ control structure
@@ -135,7 +138,7 @@ USER_START 20 + constant DEBUG_ADDR
 : test2 3 begin dup while dup . cr 1 - repeat drop ;
 
 : aho 3 1 do i . cr loop ;
-2 debug
+0 debug
 
 \ 2 nested loop
 : baka
@@ -181,11 +184,15 @@ USER_START 20 + constant DEBUG_ADDR
    swap !            \ STAR(code_addr) = colon_addr
    ;
 
+
+2 debug
+
 \ does>
 : does>
    compile (does)
-   compile semi
-   compile colon
+   SEMI_ADDR @ ,
+   0xc039 ,       \ m_startdoes
+   COLON_ADDR @ cells + ,  \ colon bincode
    ; immediate
 
 : constant

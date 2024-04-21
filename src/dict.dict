@@ -17,6 +17,7 @@ opcode semi
 opcode next
 opcode run 
 opcode execute
+opcode startdoes
 
 //
 // primitives .. thread instructions

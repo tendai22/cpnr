@@ -38,10 +38,15 @@ undefined:
         cx->ip += CELLS;
         // falling down
     case 4: // m_run
+    do_run_label:
         cx->ca = STAR(cx->wa);    // WA->CA, seems not @WA->CA
         cx->wa += CELLS;
         cx->pc = cx->ca;
         break;
+    case 57: // m_startdoes
+        do_push(cx, cx->wa);
+        cx->wa = cx->pc + CELLS;
+        goto do_run_label;
     case 5: // m_semi
         cx->ip = do_popr(cx);
         cx->pc += CELLS;
