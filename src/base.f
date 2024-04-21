@@ -184,9 +184,6 @@ USER_START 20 + constant DEBUG_ADDR
    swap !            \ STAR(code_addr) = colon_addr
    ;
 
-
-2 debug
-
 \ does>
 : does>
    compile (does)
