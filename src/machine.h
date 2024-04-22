@@ -92,6 +92,7 @@ extern void reset(context_t *cx);
 extern int gets_outer(char *buf, int size);
 extern void reset_outer(void);
 extern void reset_instream(context_t *cx);
+extern int get_instream(context_t *cx);
 
 // monitor
 extern void do_print_status(context_t *cx);

@@ -1,5 +1,86 @@
 \ base.f ... cpnr secondary base word definition
 
+\ minimum user variables
+: LAST_ADDR     0x4000 ;
+: H_ADDR        0x4002 ;
+: S0_ADDR       0x4004 ;
+: STATE_ADDR    0x4006 ;
+: BASE_ADDR     0x4008 ;
+: HALT_ADDR     0x400a ;
+: COLON_ADDR    0x400c ;
+: SEMI_ADDR     0x400e ;
+: LITERAL_ADDR  0x4010 ;
+: DOCONS_ADDR   0x4012 ;
+: DEBUG_ADDR    0x4014 ;
+
+: debug DEBUG_ADDR ! ;
+
+0 debug
+
+\ cells
+: cells 2 ;
+
+\ here/allot/last/immediate
+: here H_ADDR @ ;
+: allot H_ADDR @ + H_ADDR ! ;
+: last LAST_ADDR @ ;
+: immediate last c@ 0x80 or last c! ;
+: , ( comma) here ! cells allot ;
+
+\ link_addr ( addr -- link-addr )
+: link_addr
+   dup c@      \ addr c
+   31 and      \ addr n (= c&0x1f)
+   dup 1 and   \ addr n (n&1)
+   cells + +   \ addr (n +(n&1)+2)
+   + ;
+
+\ code_addr ( addr -- code-addr )
+   link_addr cells + ;
+
+\ create
+: create
+   32 word drop
+   last              \ last
+   here link_addr    \ last link_pos
+   dup rot swap      \ link_pos last link_pos
+   !                 \ STAR(link_pos) = last 
+   here LAST_ADDR !  \ link_pos
+   2 cells * + H_ADDR !
+   ;
+
+\
+\ does>
+\
+\ : puship rsp @ ;
+
+: (does)
+   last link_addr cells +  \ code_addr
+   rsp @            \ get semi addr
+   cells +                 \ get colon addr
+   swap !            \ STAR(code_addr) = colon_addr
+   ;
+
+\ does>
+: does>
+   compile (does)
+   SEMI_ADDR @ ,
+   0xc005 ,       \ m_startdoes
+   COLON_ADDR @ cells + ,  \ colon bincode
+   ; immediate
+
+: constant
+   create , does> @ ;
+
+\ test constant
+\ 100 constant foo
+\ foo .
+
+\ constants
+0xff00 constant STACK_END
+STACK_END constant DSTACK_END
+DSTACK_END 0x100 - constant RSTACK_END
+
 \ memory map
 0x1000 constant ROMSTART
 0x2000 constant ROMSIZE
@@ -8,36 +89,12 @@
 
 0x1000 constant DICT_START
 0x4000 constant USER_START
-0xff00 constant STACK_END
-
-STACK_END constant DSTACK_END
-DSTACK_END 0x100 - constant RSTACK_END
-
-\ CELLS
-2 constant cells
 
 \ uservar address
-USER_START      constant LAST_ADDR
-USER_START  2 + constant H_ADDR
-USER_START  4 + constant S0_ADDR
-USER_START  6 + constant STATE_ADDR
-USER_START  8 + constant BASE_ADDR
-USER_START 10 + constant HALT_ADDR
-USER_START 12 + constant COLON_ADDR
-USER_START 14 + constant SEMI_ADDR
-USER_START 16 + constant LITERAL_ADDR
-USER_START 18 + constant DOCONS_ADDR
-USER_START 20 + constant DEBUG_ADDR
 
 \ inner interpreter vector
 
 
-\ here/allot/last/immediate
-: here H_ADDR @ ;
-: allot H_ADDR @ + H_ADDR ! ;
-: last LAST_ADDR @ ;
-: immediate last c@ 0x80 or last c! ;
-: , ( comma) here ! cells allot ;
 
 : debug DEBUG_ADDR ! ;
 0 debug
@@ -150,47 +207,3 @@ USER_START 20 + constant DEBUG_ADDR
 \ create
 \
 
-\ link_addr ( addr -- link-addr )
-: link_addr
-   dup c@      \ addr c
-   31 and      \ addr n (= c&0x1f)
-   dup 1 and   \ addr n (n&1)
-   cells + +   \ addr (n +(n&1)+2)
-   + ;
-
-\ code_addr ( addr -- code-addr )
-   link_addr cells + ;
-
-\ create
-: create
-   32 word drop
-   last              \ last
-   here link_addr    \ last link_pos
-   dup rot swap      \ link_pos last link_pos
-   !                 \ STAR(link_pos) = last 
-   here LAST_ADDR !  \ link_pos
-   2 cells * + H_ADDR !
-   ;
-
-\
-\ does>
-\
-: puship rsp @ ;
-
-: (does)
-   last link_addr cells +  \ code_addr
-   rsp @            \ get semi addr
-   cells +                 \ get colon addr
-   swap !            \ STAR(code_addr) = colon_addr
-   ;
-
-\ does>
-: does>
-   compile (does)
-   SEMI_ADDR @ ,
-   0xc039 ,       \ m_startdoes
-   COLON_ADDR @ cells + ,  \ colon bincode
-   ; immediate
-
-: constant
-   create , does> @ ;

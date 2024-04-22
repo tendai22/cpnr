@@ -13,95 +13,81 @@ opcode halt
 // inner interpreter
 //
 opcode colon
-opcode semi
 opcode next
 opcode run 
-opcode execute
 opcode startdoes
+opcode semi
+opcode execute
 
 //
 // primitives .. thread instructions
 //
+opcode literal
 opcode branch
 opcode ?branch qbranch
-opcode literal
 
 //
 // primitives ... memory access
 //
-opcode @ atfetch
-opcode c@ bytefetch
-opcode ! exclamation
 opcode c! bytedeposite
+opcode ! exclamation
+opcode c@ bytefetch
+opcode @ atfetch
+
+//
+// stack operations
+//
+opcode rot
+opcode swap
+opcode drop
+opcode over
+opcode dup 
+//
+// return stack operation
+//
+opcode rsp
+opcode r> r2s
+opcode >r s2r
+opcode r2> r22s
+opcode >r2 s2r2
+
+//
+// operators
+//
+opcode not
+opcode xor
+opcode or
+opcode and
+opcode / div
+opcode * mul
+opcode - sub
+opcode + add
+opcode > gt
+//
+// i/o primitives
+//
+opcode getch
+opcode emit
+opcode space
+opcode cr
+opcode . period
+//
+// type (addr n -- )
+//
+opcode type
+//
+// user variables
+//
+opcode h 
+opcode last
+opcode base
+opcode bl
 //
 // ,(comma) ... put a word to the dict entry, cell_inc to (here_addr)
 //
 opcode , comma
 //
-// stack operations
-//
-opcode dup 
-opcode over
-opcode drop
-opcode swap
-opcode rot
-// -----------------------
-// binary operators
-//
-opcode + add
-opcode - sub
-opcode * mul
-opcode / div
-// -------------------------------
-// print words
-// -------------------------------
-//
-// .(period) (n -- )... print a number
-//
-opcode . period
-opcode cr
-//
-// space ... print a space char
-//
-opcode space
-//
-// bl ( -- #' ') put a space char on the stack
-//
-opcode bl
-//
-// typeb (addr --) ... print a word string, till a space encounters
-//
-//opcode typeb
-//
-// types (addr --)
-//
-//opcode types
-//
-// type (addr n -- )
-//
-opcode type
-
-opcode base
-opcode last
-//
-// h
-//
-opcode h 
-//
-// logical binary operators
-//
-opcode and
-opcode or
-opcode xor
-opcode not
-//
-// low level I/O
-//
-opcode emit
-opcode key
-//opcode key? key_q
-//
-// compilers
+// compilers/outer interpreter
 //
 
 //
@@ -110,28 +96,27 @@ opcode key
 //
 opcode create
 //
-// STATE, _STATE
-//
-opcode _state
-//
 // [, ]
 //
 opcode : start_colondef
 opcode ; end_colondef immediate
-opcode ] start_compile immediate
-opcode [ end_compile immediate
-//opcode >in in_stream
+
+//
+// dd ... dictdump ( addr -- )
 opcode dd dictdump
+//
+// constant
+//
 opcode docons
 opcode constant
-opcode compile
-opcode r> r2s
-opcode >r s2r
-opcode > gt
-opcode r2> r22s
-opcode >r2 s2r2
-opcode rsp
+
+//
+// compile
+//
+opcode ] start_compile immediate
+opcode [ end_compile immediate
 opcode +rsp add_rsp
-
+// opcode find
+opcode compile
 opcode word
-
+opcode _state
