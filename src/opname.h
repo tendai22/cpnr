@@ -35,6 +35,7 @@ void init_optable(void)
         optable[54] = "m_sub";
         optable[55] = "m_add";
         optable[56] = "m_gt";
+        optable[57] = "m_slashmod";
         optable[64] = "m_getch";
         optable[65] = "m_emit";
         optable[66] = "m_space";

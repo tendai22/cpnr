@@ -63,6 +63,7 @@ opcode * mul
 opcode - sub
 opcode + add
 opcode > gt
+opcode /mod slashmod
 //
 // i/o primitives
 //

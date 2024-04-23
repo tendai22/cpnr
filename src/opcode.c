@@ -215,6 +215,13 @@ undefined:
         tos(cx) = (w > w2) ? -1 : 0 ;
         cx->pc += CELLS;
         break;
+    case 57: // m_slashmod
+        w = do_pop(cx);     // n2
+        w2 = do_pop(cx);    // n1
+        do_push(cx, w2 % w);
+        do_push(cx, w2 / w);
+        cx->pc += CELLS;
+        break;
     //
     // i/o primitives
     //

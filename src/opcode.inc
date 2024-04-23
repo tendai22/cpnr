@@ -68,6 +68,8 @@ BEGIN {
     ropcode[55 + opcode_base] = "m_add"
     opcode["m_gt"] = 56 + opcode_base
     ropcode[56 + opcode_base] = "m_gt"
+    opcode["m_slashmod"] = 57 + opcode_base
+    ropcode[57 + opcode_base] = "m_slashmod"
     opcode["m_getch"] = 64 + opcode_base
     ropcode[64 + opcode_base] = "m_getch"
     opcode["m_emit"] = 65 + opcode_base

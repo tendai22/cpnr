@@ -203,6 +203,8 @@ DSTACK_END 0x100 - constant RSTACK_END
             3 1 do i . j . bl emit loop cr
         loop ;
 
+    
+
 \
 \ accept
 \
@@ -213,10 +215,6 @@ DSTACK_END 0x100 - constant RSTACK_END
    1 +      \ c addr++
    ;
 
-: memset ( c addr n -- )
-   0 do     \ c addr
-      _p++ loop ;
-
 : s0 S0_ADDR @ ;
 
 : dump ( n addr -- )
@@ -224,4 +222,37 @@ DSTACK_END 0x100 - constant RSTACK_END
     do            \ addr
       dup c@ . space
       1 + loop ;
+
+\ fill 
+: fill ( addr n c -- )
+  rot rot  \ c addr n
+  0 do _p++ loop ;
+
+\
+\ pictured output ... numeric formatted
+\
+
+\ nbuf
+: #nb 32 0xe000 + ;
+: #i #nb c@ ;
+: #np #nb dup c@ + ;
+: #i++ #nb dup c@ 1 + c! ; 
+
+\ <# ... prepare numeric conversion
+: <# 
+   1 _#nb c! 
+   #nb 1 + 9 10 32 fill ;
+
+: !#p ( c -- )
+   #nb #i + swap c!
+   #i++ ;
+
+\ i2a ( n -- c )
+   dup 36 > if drop 0 else 
+   dup 10 < if 0x30 + else
+   10 + 0x41 + then then ;
+
+\ : # ( u -- n/10 )
+   mod swap ( n -- n/10 n%10 )
+
 
