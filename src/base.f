@@ -20,6 +20,16 @@
 \ cells
 : cells 2 ;
 
+\
+\ operators
+\
+: > dup < 0= ;
+:
+
+\
+\ dictionary/compilation
+\
+
 \ here/allot/last/immediate
 : here H_ADDR @ ;
 : allot H_ADDR @ + H_ADDR ! ;
@@ -240,7 +250,7 @@ DSTACK_END 0x100 - constant RSTACK_END
 
 \ <# ... prepare numeric conversion
 : <# 
-   1 _#nb c! 
+   1 #nb c! 
    #nb 1 + 9 10 32 fill ;
 
 : !#p ( c -- )
