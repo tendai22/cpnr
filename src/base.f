@@ -204,6 +204,24 @@ DSTACK_END 0x100 - constant RSTACK_END
         loop ;
 
 \
-\ create
+\ accept
 \
+: _p++ ( c addr -- c addr+1 )
+   dup rot  \ addr addr c
+   dup rot  \ addr c c addr
+   c! swap  \ c addr
+   1 +      \ c addr++
+   ;
+
+: memset ( c addr n -- )
+   0 do     \ c addr
+      _p++ loop ;
+
+: s0 S0_ADDR @ ;
+
+: dump ( n addr -- )
+    1 rot swap    \ addr n 1
+    do            \ addr
+      dup c@ . space
+      1 + loop ;
 
