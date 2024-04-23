@@ -251,11 +251,10 @@ DSTACK_END 0x100 - constant RSTACK_END
 : #i-- #nb dup c@ 1 - swap c! ;
 variable #field_addr
 : #field #field_addr @ ;
-variable #base_addr
-: #base #base_addr @ ;
+variable #BASE_ADDR
+: #base #BASE_ADDR @ ;
 
-10 #base_addr !
-8  #field_addr !
+8 #field_addr !
 
 \ <# ... prepare numeric conversion
 : <# 
@@ -272,23 +271,11 @@ variable #base_addr
    10 - 0x41 + then then ;
 
 : # ( u -- n/10 )
-   dup if
+   not if
       #base /mod swap ( n -- n/10 n%10 ) 
       i2a #np c!
       #i-- 
    then ;
-
-: #s ( u -- )
-   begin # dup not until ;
-
-: #> ( -- ) \ print buffer 
-   #field #i do #nb i + c@ emit loop drop ;
-
-: . <# #s #> ;
-
-: #hex 16 #base_addr ! ;
-: #decimal 10 #base_addr ! ;
-: #dec 10 #base_addr ! ;
 
 : xx #field 1 + #nb dump ;
 

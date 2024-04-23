@@ -69,7 +69,7 @@ void do_catch(context_t *cx)
 {
     int result;
     result = setjmp(cx->env);    // no disclimination
-    fprintf(stderr, "setjmp: result = %d\n", result);
+    //fprintf(stderr, "setjmp: result = %d\n", result);
     if (result != 0) {
         // rewind stack
         // reset input stream

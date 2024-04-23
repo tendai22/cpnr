@@ -216,6 +216,7 @@ undefined:
         cx->pc += CELLS;
         break;
     case 57: // m_slashmod
+        // fprintf(stderr, "%04x %d %d /mod ============================\n", cx->ip, w2, w);
         w = do_pop(cx);     // n2
         w2 = do_pop(cx);    // n1
         do_push(cx, w2 % w);

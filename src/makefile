@@ -23,6 +23,7 @@ opname.h: opcode.inc gen_opname.sh
 	sh gen_opname.sh opcode.inc > $@
 
 COBJS=main.o machine.o monitor.o cfunc.o opcode.o
+CFLAGS+=-g
 
 main.o machine.o monitor.o cfunc.o: machine.h
 monitor.o: opname.h
