@@ -229,12 +229,6 @@ DSTACK_END 0x100 - constant RSTACK_END
 
 : s0 S0_ADDR @ ;
 
-: dump ( n addr -- )
-    1 rot swap    \ addr n 1
-    do            \ addr
-      dup c@ . space
-      1 + loop drop ;
-
 \ fill 
 : fill ( addr n c -- )
   rot rot  \ c addr n
@@ -244,7 +238,11 @@ DSTACK_END 0x100 - constant RSTACK_END
 \ pictured output ... numeric formatted
 \
 
-\ nbuf
+\ number conversion buffer
+\ size 32 bytes, right adjustment 
+\ (tail of 32bytes are occupied)
+\ #nb[0]: index
+\ #nb[1-31]: character buffer
 : #nb 32 0xe000 + ;
 : #i #nb c@ ;
 : #np #nb dup c@ + ;
@@ -272,23 +270,44 @@ variable #base_addr
    10 - 0x41 + then then ;
 
 : # ( u -- n/10 )
-   dup if
-      #base /mod swap ( n -- n/10 n%10 ) 
-      i2a #np c!
-      #i-- 
-   then ;
+   #base /mod swap ( n -- n/10 n%10 ) 
+   i2a #np c!
+   #i-- ;
 
 : #s ( u -- )
    begin # dup not until ;
 
-: #> ( -- ) \ print buffer 
-   #field #i do #nb i + c@ emit loop drop ;
+: #> ( -- ) \ return string for `TYPE` 
+   drop #nb #i + #field #i - ;
 
-: . <# #s #> ;
+: hold  ( c -- ) \ append a char to nbuf
+   #np c! #i-- ;
+
+: type ( addr u -- ) \ print a string
+   1 do dup i + c@ emit loop drop ;
+
+: sign ( n xx - n xx ) \ print '-' if n is minus
+   swap dup 0x8000 and if 45 #np c! #i-- then swap ;
+
+: abs dup 0x8000 and if 0 swap - then ;
+
+: . dup abs <# #s sign #> type drop ;
 
 : #hex 16 #base_addr ! ;
 : #decimal 10 #base_addr ! ;
 : #dec 10 #base_addr ! ;
+
+: h2.  \ print hex number
+  <# #hex # # #> type ;
+
+: h4.  \ print hex number
+  <# #hex # # # # #> type ;
+
+: dump ( n addr -- )
+    1 rot swap    \ addr n 1
+    do            \ addr
+      dup c@ h2. space
+      1 + loop drop ;
 
 : xx #field 1 + #nb dump ;
 
