@@ -13,10 +13,15 @@
 : DOCONS_ADDR   0x4012 ;
 : DEBUG_ADDR    0x4014 ;
 
+\ debug
 : debug DEBUG_ADDR ! ;
 0 debug
 
+\ base
 : base BASE_ADDR @ ;
+
+\ signbin
+: signbit 0x8000 ;
 
 \ cells
 : cells 2 ;
@@ -225,12 +230,13 @@ DSTACK_END 0x100 - constant RSTACK_END
 \ we can use '<'
 : 2dup over over ;
 : = - not ;
-: < - 0x8000 and ;
+: < swap > ;
 : 0= 0 = ;
-: <= - dup 0x8000 and swap 0= or ;
+: <= - dup signbit and swap 0= or ;
+: >= swap <= ;
 
-: min 2dup - 0x8000 and not if swap then drop ;
-: max 2dup - 0x8000 and if swap then drop ;
+: min 2dup - signbit and not if swap then drop ;
+: max 2dup - signbit and if swap then drop ;
 : mod /mod drop ;
 
 \
@@ -304,9 +310,9 @@ variable #base_addr
    1 do dup i + c@ emit loop drop ;
 
 : sign ( n xx - n xx ) \ print '-' if n is minus
-   swap dup 0x8000 and if 45 #np c! #i-- then swap ;
+   swap dup signbit and if 45 #np c! #i-- then swap ;
 
-: abs dup 0x8000 and if 0 swap - then ;
+: abs dup signbit and if 0 swap - then ;
 
 : . dup abs <# #s sign #> type drop ;
 
