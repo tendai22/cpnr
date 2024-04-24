@@ -526,7 +526,7 @@ void dump_entry(context_t *cx)
 {
     // dump entry
     word_t entry, link, tail, ip, w;
-    mem_t *p;
+    const mem_t *p;
     int n;
 
     entry = entry_head(cx, w = do_pop(cx));
