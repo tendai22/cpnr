@@ -22,6 +22,11 @@
 : cells 2 ;
 
 \
+\ simple ones
+\
+: 1+ 1 + ;
+
+\
 \ dictionary/compilation
 \
 
@@ -57,7 +62,6 @@
 \
 \ does>
 \
-\ : puship rsp @ ;
 
 : (does)
    last link_addr cells +  \ code_addr
@@ -82,6 +86,13 @@
 \ test constant
 \ 100 constant foo
 \ foo .
+
+\
+\ end of 1st stage definition
+\
+
+: hex 16 BASE_ADDR ! ;
+: decimal 10 BASE_ADDR ! ;
 
 \ constants
 0xff00 constant STACK_END
@@ -158,7 +169,6 @@ DSTACK_END 0x100 - constant RSTACK_END
    compile (do)
    <mark ; immediate
 
-
 : i ( R: index limit ret-addr)
    r1@ ;
 : j
@@ -198,23 +208,29 @@ DSTACK_END 0x100 - constant RSTACK_END
    >resolve ; immediate
 
 \ test words
-: test1 3 begin dup . cr 1 - dup not until drop ;
-: test2 3 begin dup while dup . cr 1 - repeat drop ;
+\ : test1 3 begin dup . cr 1 - dup not until drop ;
+\ : test2 3 begin dup while dup . cr 1 - repeat drop ;
 
-: aho 3 1 do i . cr loop ;
-0 debug
+\ : aho 3 1 do i . cr loop ;
 
 \ 2 nested loop
-: baka
-    3 1 do i . bl emit
-            3 1 do i . j . bl emit loop cr
-        loop ;
+\ : baka
+\    3 1 do i . bl emit
+\            3 1 do i . j . bl emit loop cr
+\        loop ;
 
 \
 \ operators
 \
+\ we can use '<'
 : 2dup over over ;
+: = - not ;
 : < - 0x8000 and ;
+: 0= 0 = ;
+: <= - dup 0x8000 and swap 0= or ;
+
+: min 2dup - 0x8000 and not if swap then drop ;
+: max 2dup - 0x8000 and if swap then drop ;
 : mod /mod drop ;
 
 \
@@ -256,9 +272,10 @@ variable #base_addr
 8  #field_addr !
 
 \ <# ... prepare numeric conversion
-: <# 
+: <#
+   base #base_addr !
    #field #nb c! 
-   #nb 1 + #field 32 fill ;
+   #nb 1 + #field bl fill ;
 
 : !#p ( c -- )
    #nb #i + swap c!
@@ -303,11 +320,18 @@ variable #base_addr
 : h4.  \ print hex number
   <# #hex # # # # #> type ;
 
-: dump ( n addr -- )
-    1 rot swap    \ addr n 1
-    do            \ addr
+: dump ( addr n -- ) \ simple dump
+   swap dup h4. space
+   swap
+   256 min
+   1             \ addr n 1
+   do            \ addr
       dup c@ h2. space
-      1 + loop drop ;
+      i 16 mod not if cr then
+      1+ loop drop ;
 
-: xx #field 1 + #nb dump ;
+\ : xx #field 1 + #nb dump ;
+
+\ char ( -- c ) \ put an ascii value
+: char bl word 1+ c@ ;
 
