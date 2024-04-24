@@ -52,7 +52,7 @@ opcode / div
 // .(period) (n -- )... print a number
 //
 opcode . period
-opcode cr
+//opcode cr
 //
 // space ... print a space char
 //
@@ -60,7 +60,7 @@ opcode space
 //
 // bl ( -- #' ') put a space char on the stack
 //
-opcode bl
+//opcode bl
 //
 // typeb (addr --) ... print a word string, till a space encounters
 //
@@ -74,8 +74,8 @@ opcode types
 //
 opcode type0
 
-opcode base
-opcode last
+//opcode base
+//opcode last
 //
 // h
 //

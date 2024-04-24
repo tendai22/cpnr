@@ -118,9 +118,14 @@ DSTACK_END 0x100 - constant RSTACK_END
 \ inner interpreter vector
 
 
-
+\ debug
 : debug DEBUG_ADDR ! ;
 0 debug
+
+\ primitives
+: bl 32 ;
+: cr 13 emit 10 emit ;
+: h H_ADDR ;
 
 \
 \ control structure

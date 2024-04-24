@@ -70,7 +70,7 @@ opcode /mod slashmod
 opcode getch
 opcode emit
 opcode space
-opcode cr
+//opcode cr
 opcode . period
 //
 // type (addr n -- )
@@ -79,10 +79,10 @@ opcode type
 //
 // user variables
 //
-opcode h 
-opcode last
-opcode base
-opcode bl
+//opcode h 
+//opcode last
+//opcode base
+//opcode bl
 //
 // ,(comma) ... put a word to the dict entry, cell_inc to (here_addr)
 //
