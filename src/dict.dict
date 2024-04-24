@@ -108,8 +108,8 @@ opcode dd dictdump
 //
 // constant
 //
-opcode docons
-opcode constant
+//opcode docons
+//opcode constant
 
 //
 // compile

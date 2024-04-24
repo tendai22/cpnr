@@ -248,8 +248,8 @@ static int init_mem(context_t *cx)
     STAR(SEMI_ADDR) = do_pop(cx);
     flag |= name2xt(cx, "literal");
     STAR(LITERAL_ADDR) = do_pop(cx);
-    flag |= name2xt(cx, "docons");
-    STAR(DOCONS_ADDR) = do_pop(cx);
+    //flag |= name2xt(cx, "docons");
+    //STAR(DOCONS_ADDR) = do_pop(cx);
     if (flag) {
         return -1;
     }
