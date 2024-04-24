@@ -41,6 +41,8 @@
 : last LAST_ADDR @ ;
 : immediate last c@ 0x80 or last c! ;
 : , ( comma) here ! cells allot ;
+: ] ( -- ) 1 STATE_ADDR ! ; 
+: [ ( -- ) 0 STATE_ADDR ! ;
 
 \ link_addr ( addr -- link-addr )
 : link_addr
@@ -116,7 +118,6 @@ DSTACK_END 0x100 - constant RSTACK_END
 \ uservar address
 
 \ inner interpreter vector
-
 
 \ debug
 : debug DEBUG_ADDR ! ;
@@ -202,7 +203,6 @@ DSTACK_END 0x100 - constant RSTACK_END
     compile (post-loop)
     ; immediate
 
-
 \ begin ... until
 : begin <mark ; immediate
 : until ( flag -- )
@@ -244,16 +244,6 @@ DSTACK_END 0x100 - constant RSTACK_END
 : max 2dup - signbit and if swap then drop ;
 : mod /mod drop ;
 
-\
-\ accept
-\
-: _p++ ( c addr -- c addr+1 )
-   dup rot  \ addr addr c
-   dup rot  \ addr c c addr
-   c! swap  \ c addr
-   1 +      \ c addr++
-   ;
-
 : s0 S0_ADDR @ ;
 
 \ fill 
@@ -261,7 +251,7 @@ DSTACK_END 0x100 - constant RSTACK_END
   rot rot  \ c addr n
   0 do _p++ loop drop drop ;
 
-\
+\================================================
 \ pictured output ... numeric formatted
 \
 
@@ -345,4 +335,22 @@ variable #base_addr
 
 \ char ( -- c ) \ put an ascii value
 : char bl word 1+ c@ ;
+
+\===============================================
+\ accept
+\
+\ input stream, integrated keyin and 
+\ disk/memory source reader
+\
+variable in_p
+variable in_rest
+
+: getch ;
+
+: _p++ ( c addr -- c addr+1 )
+   dup rot  \ addr addr c
+   dup rot  \ addr c c addr
+   c! swap  \ c addr
+   1 +      \ c addr++
+   ;
 

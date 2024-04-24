@@ -71,11 +71,11 @@ opcode getch
 opcode emit
 opcode space
 //opcode cr
-opcode . period
+//opcode . period
 //
 // type (addr n -- )
 //
-opcode type
+//opcode type
 //
 // user variables
 //
@@ -86,7 +86,7 @@ opcode type
 //
 // ,(comma) ... put a word to the dict entry, cell_inc to (here_addr)
 //
-opcode , comma
+//opcode , comma
 //
 // compilers/outer interpreter
 //
@@ -97,7 +97,7 @@ opcode , comma
 //
 opcode create
 //
-// [, ]
+// colon, semicolon
 //
 opcode : start_colondef
 opcode ; end_colondef immediate
@@ -114,10 +114,10 @@ opcode dd dictdump
 //
 // compile
 //
-opcode ] start_compile immediate
-opcode [ end_compile immediate
+//opcode ] start_compile immediate
+//opcode [ end_compile immediate
 opcode +rsp add_rsp
 // opcode find
 opcode compile
 opcode word
-opcode _state
+//opcode _state
