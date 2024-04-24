@@ -348,6 +348,19 @@ undefined:
         do_push(cx, STATE_ADDR);
         cx->pc += CELLS;
         break;
+    case 100: // m_accept
+        // getc from stdin
+        fprintf(stderr, "enter accept\n");
+        n = do_accept(cx);
+        fprintf(stderr, "do_accept: n = %d\n", n);
+        if (n == EOF) {
+            // empty buffer
+            p = &mem[STAR(S0_ADDR)];
+            *p = 0;
+        }
+        print_s0(cx);
+        cx->pc += CELLS;
+        break;
     default:
         goto undefined;
     }

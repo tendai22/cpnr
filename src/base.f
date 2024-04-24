@@ -339,6 +339,9 @@ variable #base_addr
 \ char ( -- c ) \ put an ascii value
 : char bl word 1+ c@ ;
 
+\ exit
+: exit compile semi ; immediate
+
 \ ===============================================
 \ accept
 \
@@ -347,6 +350,9 @@ variable #base_addr
 \
 variable in_p
 variable in_rest
+variable outer_flag
+1 outer_flag !
 
-: getch ;
+\ input buffer, s0, 128bytes
+\ accept ... primitive ( -- ), check s0 c@
 

@@ -118,5 +118,7 @@ BEGIN {
     ropcode[87 + opcode_base] = "m_word"
     opcode["m__state"] = 88 + opcode_base
     ropcode[88 + opcode_base] = "m__state"
+    opcode["m_accept"] = 100 + opcode_base
+    ropcode[100 + opcode_base] = "m_accept"
 }
 
