@@ -63,6 +63,38 @@ void do_dup(context_t *cx)
 }
 
 //
+// getch for thread code version of accept
+//
+// ( -- c|-1 )
+
+void do_getch(context_t *cx)
+{
+    static mem_t buf[128];
+    static int i = -1;
+    mem_t c;
+
+    while (1) {
+        if (i < 0) {
+            // read stdin to fill buf        
+            if (fgets(buf, 127, stdin) == NULL) {
+                fprintf(stderr, "getch: abort, read error\n");
+                do_push(cx, -1);
+                return;
+            }
+            fprintf(stderr, "getch: fill[%s]\n", buf);
+            i = 0;
+        }
+        c = buf[i++];
+        if (c != 0) {
+            do_push(cx, c & 0xff);
+            return;
+        }
+        i = -1;
+        // try to read from stdin
+    }
+}
+
+//
 // reset_instream ... for cancel rest of imput-stream
 //
 void reset_instream(context_t *cx)
@@ -99,7 +131,7 @@ int do_accept(context_t *cx)
     }
     // now in-stream buffer emnty, refill it
     char *buf = &mem[STAR(S0_ADDR)];
-    int size = 80, n;
+    int size = 127, n;
     memset(buf, ' ', size-1);
     buf[size-1] = '\0';
     if (outer_flag) {
@@ -513,7 +545,7 @@ word_t entry_tail(context_t *cx, word_t addr)
     while (addr < entry) {
         link = link_addr(entry);
         prev = entry;
-        fprintf(stderr, "addr = %04X, entry = %04X\n", addr, entry);
+        //fprintf(stderr, "addr = %04X, entry = %04X\n", addr, entry);
         if ((entry = STAR(link)) == 0)
             break;
         //fprintf(stderr, "[%d %.*s]", ((*p)&0x1f),((*p)&0x1f),(p+1));

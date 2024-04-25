@@ -6,21 +6,20 @@
 : S0_ADDR       0x4004 ;
 : STATE_ADDR    0x4006 ;
 : BASE_ADDR     0x4008 ;
-: HALT_ADDR     0x400a ;
+\ for compile instruction/constant
 : COLON_ADDR    0x400c ;
 : SEMI_ADDR     0x400e ;
-: LITERAL_ADDR  0x4010 ;
-: DOCONS_ADDR   0x4012 ;
-: DEBUG_ADDR    0x4014 ;
+: DEBUG_ADDR    0x4012 ;
 
 \ debug
 : debug DEBUG_ADDR ! ;
-1 debug
+0 debug
 
 \ base
 : base BASE_ADDR @ ;
+10 BASE_ADDR !
 
-\ signbin
+\ signbit
 : signbit 0x8000 ;
 
 \ cells
@@ -41,8 +40,8 @@
 : last LAST_ADDR @ ;
 : immediate last c@ 0x80 or last c! ;
 : , ( comma) here ! cells allot ;
-: ] ( -- ) 1 STATE_ADDR ! ; 
-: [ ( -- ) 0 STATE_ADDR ! ;
+: ] ( -- ) 1 STATE_ADDR ! ; immediate
+: [ ( -- ) 0 STATE_ADDR ! ; immediate
 
 \ link_addr ( addr -- link-addr )
 : link_addr
@@ -139,6 +138,22 @@ DSTACK_END 0x100 - constant RSTACK_END
 : then >resolve ; immediate
 : else compile branch >mark swap >resolve ; immediate
 
+\
+\ operators
+\
+\ we can use '<'
+: boolean ( n -- ffff|0000 ) 
+   if -1 else 0 then ;
+: negate ( n -- 0000|ffff )
+   if 0 else -1 then ;
+: 2dup over over ;
+: = - negate ;
+: != - boolean ;
+: < swap > ;
+: 0= 0 = ;
+: <= - dup 0 < swap 0= or ;
+: >= swap <= ;
+
 \ do ... loop
 
 \ loop-structure: do ... loop 実行構造をリターンスタックに置く
@@ -182,10 +197,17 @@ DSTACK_END 0x100 - constant RSTACK_END
    r3@ ;
 
 : (loop)         \ ( delta -- )
-    r1@ +        \ new index
-    dup r1!  \ save new index, new index remains
-    r2@         \ index limit
-    >       \ (limit -1) if i+d > limit, (limit 0) if i+d <= limit 
+   dup 0 > if
+      r1@ +        \ new index
+      dup r1!  \ save new index, new index remains
+      r2@         \ index limit
+      >       \ (limit -1) if i+d > limit, (limit 0) if i+d <= limit 
+   else
+      r1@ +        \ new index
+      dup r1!  \ save new index, new index remains
+      r2@         \ index limit
+      <       \ (limit -1) if i+d > limit, (limit 0) if i+d <= limit 
+   then
     \ falling down to ?branch
     ;
 
@@ -198,6 +220,16 @@ DSTACK_END 0x100 - constant RSTACK_END
     <resolve
     compile (post-loop)
     ; immediate
+
+: +loop  \ 
+    compile (loop)      \ limit -1|0)
+    compile ?branch
+    <resolve
+    compile (post-loop)
+    ; immediate
+
+: leave
+   r2@ r1! ;
 
 \ begin ... until
 : begin <mark ; immediate
@@ -225,16 +257,7 @@ DSTACK_END 0x100 - constant RSTACK_END
 \            3 1 do i . j . bl emit loop cr
 \        loop ;
 
-\
-\ operators
-\
-\ we can use '<'
-: 2dup over over ;
-: = - not ;
-: < swap > ;
-: 0= 0 = ;
-: <= - dup signbit and swap 0= or ;
-: >= swap <= ;
+
 
 : min 2dup - signbit and not if swap then drop ;
 : max 2dup - signbit and if swap then drop ;
@@ -337,10 +360,18 @@ variable #base_addr
 \ : xx #field 1 + #nb dump ;
 
 \ char ( -- c ) \ put an ascii value
-: char bl word 1+ c@ ;
+: char bl word 1+ c@ ; immediate
 
 \ exit
 : exit compile semi ; immediate
+
+\ outer interpreter
+
+\ ここまでは、acceptは機械語命令m_acceptで実現されていた。
+\ ターゲット上で動作するacceptは、キー入力をバッファに集めてゆく
+\ だけのもので、メモリ上テキスト、ディスクバッファ上テキストは
+\ 対象外とする。
+\ 行編集はサポートしない。行編集は別途用意することとする。
 
 \ ===============================================
 \ accept
@@ -348,11 +379,65 @@ variable #base_addr
 \ input stream, integrated keyin and 
 \ disk/memory source reader
 \
-variable in_p
-variable in_rest
+: pad 0xd000 ;
+: in_p ( -- addr )
+   pad dup c@ + 1+ ;
+: inc_p ( n -- )
+   pad dup c@ 1+ swap c! ;
+: in_rest ( -- n )
+   127 pad c@ - ;
+variable >in
 variable outer_flag
 1 outer_flag !
 
 \ input buffer, s0, 128bytes
+\ top(*s0) holds the current index
 \ accept ... primitive ( -- ), check s0 c@
+: accept ( -- )
+   0 pad c!              \ i = 1
+   127 1 do
+      getch 
+      dup 10 = if
+         drop leave
+      else
+      dup 0 >= if       \ valid char
+         in_p c!        \ *p = c
+         inc_p          \ i++ 
+      then then 
+   loop 
+   1 >in ! ;
+
+: w_getch 
+   pad >in @ + c@ \ dup h2. bl emit    \ pad[i]
+;
+: w_i++ 
+   >in dup @ 1+ swap ! ;
+
+: .stack 
+   literal [ char [ , ] emit
+   sp s0 != if
+      sp s0 cells - do
+         i @ h4. bl emit 
+      0 cells - +loop
+   then 
+   literal [ char ] , ] emit
+   ;
+
+: xword ( delim -- addr )
+   pad c@ >in @ <= if 0 here c! exit then
+   begin pad c@ >in @ > over w_getch = and while
+      w_i++
+      >in @ h4. bl emit
+   repeat
+   \ accumulate a word
+   .stack
+   begin pad c@ >in @ >= over w_getch != and while
+      w_getch here >in @ + c!  \ here[i] = pad[i]
+      w_getch emit bl emit
+      w_i++
+   repeat
+   w_getch here >in @ + c!  \ add a trailing delim
+   >in @ here c!         \ put count on here
+   here 10 dump
+   ;
 

@@ -60,5 +60,6 @@ void init_optable(void)
         optable[86] = "m_compile";
         optable[87] = "m_word";
         optable[88] = "m__state";
+        optable[89] = "m_sp";
         optable[100] = "m_accept";
 }

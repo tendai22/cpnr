@@ -121,5 +121,6 @@ opcode +rsp add_rsp
 opcode compile
 opcode word
 //opcode _state
-opcode accept
+//opcode accept
+opcode sp
 

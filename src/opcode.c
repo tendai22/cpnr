@@ -212,7 +212,7 @@ undefined:
     case 56: // m_gt
         w2 = do_pop(cx);
         w = tos(cx);
-        tos(cx) = (w > w2) ? -1 : 0 ;
+        tos(cx) = ((sword_t)w > (sword_t)w2) ? -1 : 0 ;
         cx->pc += CELLS;
         break;
     case 57: // m_slashmod
@@ -228,10 +228,9 @@ undefined:
     //
     case 64: // m_getch
         //
-        cc = get_instream(cx);
-        w = (word_t)cc;
-        do_push(cx, w);
+        do_getch(cx);
         cx->pc += CELLS;
+        break;
     case 65: // m_emit
         // put one byte to screen
         w = do_pop(cx);
@@ -348,6 +347,11 @@ undefined:
         do_push(cx, STATE_ADDR);
         cx->pc += CELLS;
         break;
+    case 89: // m_sp
+        do_push(cx, cx->sp);
+        cx->pc += CELLS;
+        break;
+#if 0
     case 100: // m_accept
         // getc from stdin
         fprintf(stderr, "enter accept\n");
@@ -361,6 +365,7 @@ undefined:
         print_s0(cx);
         cx->pc += CELLS;
         break;
+#endif
     default:
         goto undefined;
     }

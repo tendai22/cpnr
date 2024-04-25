@@ -7,6 +7,7 @@
 #include <setjmp.h>
 
 typedef uint16_t word_t;
+typedef int16_t sword_t;
 typedef uint8_t mem_t;    // ROM/RAM memory array for the target machine
 
 #define MAX_VARIABLE 20
@@ -107,6 +108,7 @@ extern void print_next(context_t *cx, word_t xt);
 
 // outer interpreter
 extern int do_accept(context_t *cx);
+extern void do_getch(context_t *cx);
 extern void do_word(context_t *cx);
 extern void do_find(context_t *cx);
 extern void do_number(context_t *cx);
