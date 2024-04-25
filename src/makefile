@@ -23,7 +23,7 @@ opname.h: opcode.inc gen_opname.sh
 	sh gen_opname.sh opcode.inc > $@
 
 COBJS=main.o machine.o monitor.o cfunc.o opcode.o
-#CFLAGS+=-g
+CFLAGS+=-g
 CFLAGS+=-Wno-pointer-sign 
 
 main.o machine.o monitor.o cfunc.o: machine.h

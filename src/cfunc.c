@@ -99,7 +99,7 @@ void do_getch(context_t *cx)
 //
 void reset_instream(context_t *cx)
 {
-    fprintf(stderr, "reset_instream:\n");
+    //fprintf(stderr, "reset_instream:\n");
     reset_outer();
     cx->p = 0;
     cx->rest = 0;
@@ -444,6 +444,7 @@ void do_end_colondef(context_t *cx)
     //fprintf(stderr, "end_colondef: end   HERE = %04x\n", STAR(H_ADDR));
 }
 
+#if 0
 // entity of colon word, or machine code "m_start_colondef"
 void do_constant(context_t *cx)
 {
@@ -460,6 +461,7 @@ void do_constant(context_t *cx)
     STAR(H_ADDR) += CELLS;      // allot'ed
     //fprintf(stderr, "constant: end   HERE = %04x\n", STAR(H_ADDR));
 }
+#endif
 
 // do_compile_token
 void do_compile_token(context_t *cx)

@@ -171,7 +171,7 @@ undefined:
     // operators
     //
     case 48: // m_not
-        STAR(cx->sp) = !tos(cx);
+        STAR(cx->sp) = tos(cx) ? 0 : -1;
         cx->pc += CELLS;
         break;
     case 49: // m_xor
@@ -305,7 +305,7 @@ undefined:
         dump_entry(cx);
         cx->pc += CELLS;
         break;
-#if !defined(MINIMUM)
+#if 0 //!defined(MINIMUM)
     case 80: // m_docons
         // constant runtime routine
         w = STAR(cx->wa);

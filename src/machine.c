@@ -27,6 +27,7 @@ void do_machine(context_t *cx)
     word_t code;
     // one instruction execution loop,
     // check if a break occurs of not
+    //STAR(DEBUG_ADDR) = 1;
     while (1) {
         // breakpoints?
         for (i = 0; i < BPTBL_SIZE; ++i)
@@ -65,6 +66,7 @@ void do_execute (context_t *cx)
     do_machine(cx);
 }
 
+#if 0
 void do_catch(context_t *cx)
 {
     int result;
@@ -78,6 +80,7 @@ void do_catch(context_t *cx)
         cx->rs = RSTACK_END;
     }
 }
+#endif
 
 // do_abort
 // If the flag is true, types out the last word interpreted, followed by the
@@ -93,7 +96,7 @@ void do_abort(context_t *cx, const char *mes)
         fprintf(stderr, "%.*s %s\n", count, p+1, mes);
     }
     longjmp(cx->env, tos(cx));
-    fprintf(stderr, "after longjmp\n");
+    //fprintf(stderr, "after longjmp\n");
 }
 
 int do_mainloop(context_t *cx)
@@ -102,7 +105,7 @@ int do_mainloop(context_t *cx)
     int count, result;
     while (1) {
         // do_catch
-        do_catch(cx);
+        //do_catch(cx);
         if ((result = setjmp(cx->env)) != 0) {
             // reset input stream
             reset_instream(cx);
@@ -140,7 +143,7 @@ int do_mainloop(context_t *cx)
                 do_number(cx);  // (addr -- n r)
                 if (do_pop(cx) != 0) {
                     do_push(cx, 1);
-                    do_abort(cx, "not found\n");
+                    do_abort(cx, "not found");
                     //fprintf(stderr, "b count = %d\n", count++);
                     //break;
                 }

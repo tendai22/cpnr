@@ -133,28 +133,34 @@ DSTACK_END 0x100 - constant RSTACK_END
 : <mark here ;
 : <resolve here ! cells allot ;
 
+\ ======================================
 \ if-else-then
+\
 : if compile ?branch >mark ; immediate
 : then >resolve ; immediate
 : else compile branch >mark swap >resolve ; immediate
 
-\
+\ ======================================
 \ operators
 \
 \ we can use '<'
 : boolean ( n -- ffff|0000 ) 
    if -1 else 0 then ;
 : negate ( n -- 0000|ffff )
-   if 0 else -1 then ;
+   0 swap -  ;
 : 2dup over over ;
-: = - negate ;
-: != - boolean ;
+: = - not ;
+: != - not not ;
 : < swap > ;
-: 0= 0 = ;
+: 0= not ;
 : <= - dup 0 < swap 0= or ;
 : >= swap <= ;
+: false 0 ;
+: true -1 ;
 
+\ ======================================
 \ do ... loop
+\
 
 \ loop-structure: do ... loop 実行構造をリターンスタックに置く
 \ (limit index -- ) .. doでデータスタックから2要素をリターン
@@ -231,14 +237,23 @@ DSTACK_END 0x100 - constant RSTACK_END
 : leave
    r2@ r1! ;
 
+: unloop
+   cells 2 1 + * +rsp ;
+   \ 2 for limit, index
+   \ 1 for return address of unloop itself
+
+\
 \ begin ... until
+\
 : begin <mark ; immediate
 : until ( flag -- )
    compile ?branch <resolve 
    ; immediate
 
- \ begin ... f while ... repeat
- : while ( f -- )
+\
+\ begin ... f while ... repeat
+\
+: while ( f -- )
    compile ?branch >mark ; immediate
 : repeat ( -- )
    compile branch
@@ -248,22 +263,40 @@ DSTACK_END 0x100 - constant RSTACK_END
 \ test words
 \ : test1 3 begin dup . cr 1 - dup not until drop ;
 \ : test2 3 begin dup while dup . cr 1 - repeat drop ;
-
 \ : aho 3 1 do i . cr loop ;
-
 \ 2 nested loop
 \ : baka
-\    3 1 do i . bl emit
-\            3 1 do i . j . bl emit loop cr
+\    3 1 do i . space
+\            3 1 do i . j . space loop cr
 \        loop ;
+\ unloop test
+\ : aho 5 1 do i . cr i 3 = if unloop exit then loop ;
 
+\ ==== end of primary defintions
+
+: s0 S0_ADDR @ ;
+
+\ stack operations
+\ opcode rot
+\ opcode swap
+\ opcode drop
+\ opcode over
+\ opcode dup 
+: ?dup ( x -- 0|x x)
+   dup if dup then ;
+: depth ( -- +n )
+   \ return the number of cells on the stack
+   sp s0 swap - 2 / ;
+: nip ( x1 x2 -- x2 )
+   swap drop ;
+: pick ( +n -- x )
+   \ place a copy of the nth stack entry, 0th is tos
+   sp swap 1+ cells * + @ ;
 
 
 : min 2dup - signbit and not if swap then drop ;
 : max 2dup - signbit and if swap then drop ;
 : mod /mod drop ;
-
-: s0 S0_ADDR @ ;
 
 : _p++ ( c addr -- c addr+1 )
    dup rot  \ addr addr c
@@ -359,6 +392,12 @@ variable #base_addr
 
 \ : xx #field 1 + #nb dump ;
 
+\ space ( -- ) .. type a space
+: space bl emit ;
+
+\ spaces ( n -- ) .. n spaces
+: spaces 1 do bl emit loop ;
+
 \ char ( -- c ) \ put an ascii value
 : char bl word 1+ c@ ; immediate
 
@@ -408,36 +447,48 @@ variable outer_flag
    1 >in ! ;
 
 : w_getch 
-   pad >in @ + c@ \ dup h2. bl emit    \ pad[i]
+   pad >in @ + c@ \ dup h2. space    \ pad[i]
 ;
 : w_i++ 
    >in dup @ 1+ swap ! ;
 
+\ ======================================
+\ .stack ... debug word
+\
 : .stack 
    literal [ char [ , ] emit
    sp s0 != if
       sp s0 cells - do
-         i @ h4. bl emit 
+         i @ h4. space 
       0 cells - +loop
    then 
    literal [ char ] , ] emit
    ;
 
-: xword ( delim -- addr )
-   pad c@ >in @ <= if 0 here c! exit then
-   begin pad c@ >in @ > over w_getch = and while
+\ ====================================
+\ word ... extract a word
+\
+: w_rest pad c@ >in @ - ;
+
+: word ( delim -- addr )
+   w_rest 0 <= if 0 here c! drop 0 exit then
+   begin w_rest 0 > over w_getch = and while
       w_i++
-      >in @ h4. bl emit
+      \ >in @ h4. space
    repeat
    \ accumulate a word
-   .stack
-   begin pad c@ >in @ >= over w_getch != and while
-      w_getch here >in @ + c!  \ here[i] = pad[i]
-      w_getch emit bl emit
-      w_i++
+   1     \ destination index h[i]
+   begin w_rest 0 >= 2 pick w_getch != and while
+      here over + w_getch swap c!  \ here[i] = pad[i]
+      \ w_getch emit space
+      1+ w_i++
    repeat
-   w_getch here >in @ + c!  \ add a trailing delim
-   >in @ here c!         \ put count on here
-   here 10 dump
+   dup here + 2 pick swap c!
+   1 - here c!          \ put count on here
+   drop
+   here \ 10 dump
    ;
+
+\ accept-word test
+\ : wtest accept begin 32 word dup while 10 dump cr repeat drop ;
 
