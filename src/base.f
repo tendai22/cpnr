@@ -432,19 +432,31 @@ variable outer_flag
 \ input buffer, s0, 128bytes
 \ top(*s0) holds the current index
 \ accept ... primitive ( -- ), check s0 c@
+: =whitespace ( char -- flag )
+   dup  13 = 
+   over 10 = or
+   over 8 = or
+   swap drop ;
+
 : accept ( -- )
    0 pad c!              \ i = 1
    127 1 do
       getch 
-      dup 10 = if
-         drop leave
-      else
-      dup 0 >= if       \ valid char
+      dup 0 = if
+         leave
+      else dup =whitespace if
+         leave
+      else dup 0 = if
+         leave
+      else dup 0 > if       \ valid char
          in_p c!        \ *p = c
          inc_p          \ i++ 
-      then then 
-   loop 
-   1 >in ! ;
+      then then then then
+   loop
+   bl in_p c!
+   inc_p 
+   1 >in ! 
+   drop ;
 
 : w_getch 
    pad >in @ + c@ \ dup h2. space    \ pad[i]
@@ -492,3 +504,38 @@ variable outer_flag
 \ accept-word test
 \ : wtest accept begin 32 word dup while 10 dump cr repeat drop ;
 
+: .ps ( char -- ) \ dump stack with char
+   emit .stack cr ;
+: .hd 
+   here 10 dump cr ;
+
+\ yet another definition of word
+: h++ here c@ 1+ here c! ;
+: hptr here dup c@ + 1+ ;
+: word ( delim -- addr )
+   0              \ ( -- delim flag ) ... flag show if it has started to store chars
+   0 here c!      \ clear here[0]
+   pad dup dup c@ + swap ( 0x30 .ps ) \  limit-index
+   >in @ +        \ start-index
+   do dup 0 = if  \ skip it
+         i c@ 2 pick ( 0x41 .ps ) != if 1+ then  \ flag++
+      then
+      dup 1 = if  \ store it
+         i c@ 2 pick ( 0x42 .ps ) = i c@ 0 = or if 1+ else   \ flag++
+            i c@                    \ src char
+            hptr ( 0x43 .ps ) c!     \ store it
+            h++      \ increment counter
+            ( .hd )
+         then
+      then
+      dup 2 = if  \ put trailing delim
+         over
+         hptr ( 0x44 .ps ) c!
+         \ do not increment h++
+         1+       \ increment flag
+         leave
+      then
+      >in @ 1+ >in ( 0x45 .ps ) ! \ increment >in  
+   loop
+   drop drop here 
+   ( .hd ) ;
