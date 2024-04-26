@@ -477,39 +477,17 @@ variable outer_flag
    literal [ char ] , ] emit
    ;
 
+\
+\ words for debugging
+\
+: .ps ( char -- ) \ dump stack with char
+   emit .stack cr ;
+: .hd             \ dump here buffer
+   here 10 dump cr ;
+
 \ ====================================
 \ word ... extract a word
 \
-: w_rest pad c@ >in @ - ;
-
-: word ( delim -- addr )
-   w_rest 0 <= if 0 here c! drop 0 exit then
-   begin w_rest 0 > over w_getch = and while
-      w_i++
-      \ >in @ h4. space
-   repeat
-   \ accumulate a word
-   1     \ destination index h[i]
-   begin w_rest 0 >= 2 pick w_getch != and while
-      here over + w_getch swap c!  \ here[i] = pad[i]
-      \ w_getch emit space
-      1+ w_i++
-   repeat
-   dup here + 2 pick swap c!
-   1 - here c!          \ put count on here
-   drop
-   here \ 10 dump
-   ;
-
-\ accept-word test
-\ : wtest accept begin 32 word dup while 10 dump cr repeat drop ;
-
-: .ps ( char -- ) \ dump stack with char
-   emit .stack cr ;
-: .hd 
-   here 10 dump cr ;
-
-\ yet another definition of word
 : h++ here c@ 1+ here c! ;
 : hptr here dup c@ + 1+ ;
 : word ( delim -- addr )
@@ -539,3 +517,6 @@ variable outer_flag
    loop
    drop drop here 
    ( .hd ) ;
+
+\ test word for accept-word
+\ : aho accept begin bl word c@ while .hd repeat ;
