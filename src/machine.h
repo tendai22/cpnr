@@ -70,8 +70,6 @@ typedef struct _ctx {
     word_t ca;      // code address
     word_t rs;      // return stack pointer
     word_t sp;      // data stack pointer
-    word_t ah;
-    word_t al;      // accumulator high, low
     word_t pc;
     int    halt_flag;
     int    ss_flag;

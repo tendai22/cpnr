@@ -28,7 +28,8 @@ undefined:
         cx->pc += CELLS;
         break;
     case 1: // m_halt
-        //fprintf(stderr, "halt at %04X\n", cx->pc);
+        //if (STAR(DEBUG_ADDR))
+        //    fprintf(stderr, "halt at %04X\n", cx->pc);
         return -1;
     //
     // inner interpreter

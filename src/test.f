@@ -11,5 +11,24 @@
 : SEMI_ADDR     0x400e ;
 : DEBUG_ADDR    0x4012 ;
 
+\ debug
 : debug DEBUG_ADDR ! ;
+1 debug
+\ base
+: base BASE_ADDR @ ;
+10 BASE_ADDR !
 
+\ signbit
+: signbit 0x8000 ;
+
+\ cells
+: cells 2 ;
+
+\
+\ simple ones
+\
+: 1+ 1 + ;
+
+\
+\ dictionary/compilation
+\

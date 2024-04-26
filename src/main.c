@@ -24,9 +24,11 @@ static void initialize_ctx(context_t *cx)
     cx->ca = 0;
     cx->rs = RSTACK_END;
     cx->sp = DSTACK_END;
-    cx->ah = 0;
-    cx->al = 0;
     reset(cx);      // initialize cx->pc
+    cx->halt_flag = 0;
+    cx->ss_flag = 0;
+    for (int i = 0; i < BPTBL_SIZE; ++i)
+        cx->bp[i] = 0;
 }
 
 //
@@ -248,6 +250,7 @@ static int init_mem(context_t *cx)
     STAR(SEMI_ADDR) = do_pop(cx);
     flag |= name2xt(cx, "literal");
     STAR(LITERAL_ADDR) = do_pop(cx);
+    STAR(DEBUG_ADDR) = 0;
     //flag |= name2xt(cx, "docons");
     //STAR(DOCONS_ADDR) = do_pop(cx);
     if (flag) {

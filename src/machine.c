@@ -28,6 +28,7 @@ void do_machine(context_t *cx)
     // one instruction execution loop,
     // check if a break occurs of not
     //STAR(DEBUG_ADDR) = 1;
+    cx->halt_flag = 0;
     while (1) {
         // breakpoints?
         for (i = 0; i < BPTBL_SIZE; ++i)
