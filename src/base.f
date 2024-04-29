@@ -524,21 +524,23 @@ variable outer_flag
 \ =========================
 \ find ... search a word in the dictionary
 : compare ( c-addr1 u1 c-addr2 u2 -- n )
+   \ 3 pick 2 dump 1 pick 2 dump cr
    0     \ dummy for first drop
-   3 pick 2 pick min    \ compare length
-   1 do     \ c-addr1 u1 c-addr2 u2
+   3 pick 2 pick min 1 -    \ max index (len - 1)
+   0 do     \ c-addr1 u1 c-addr2 u2
       drop
       3 pick i + c@  \ c-addr1 u1 c-addr2 u2 i c1
       2 pick i + c@  \ c-addr1 u1 c-addr2 u2 i c1 c2
-      \ .stack cr
+      \ 0x32 emit .stack cr
       -           \ c-addr1 u1 c-addr2 u2 i (c1-c2)
-      \ .stack cr
-      dup 0 != if leave then loop
-      \ now the result is 0|-1|1,
-      \ if 0, compare u1 and u2
-      dup 0 = if 3 pick 2 pick - swap drop then
-      \ ok got it, erase 4 args
-      swap drop swap drop swap drop swap drop 
+      \ 0x33 emit .stack cr
+      dup 0 != if leave then 
+   loop
+   \ now the result is 0|-1|1,
+   \ if 0, compare u1 and u2
+   dup 0 = if 3 pick 2 pick - swap drop then
+   \ ok got it, erase 4 args
+   swap drop swap drop swap drop swap drop 
 ;
 
 \ for test command
@@ -551,11 +553,16 @@ variable outer_flag
    tmp H_ADDR !
    accept
    32 word
-   here dup c@ + 1+ align H_ADDR ! \ new address
+   1+
+   \ 0x30 emit .stack cr
+   here dup c@ 2 + + align H_ADDR ! \ new address
    32 word
+   1+
+   \ 0x31 emit .stack cr
    rot H_ADDR !
-   1 pick c@ swap dup c@
+   1 pick 1 - c@ swap dup 1 - c@
    tmp 16 dump cr
+   .stack cr
    compare
    ;
 
@@ -596,7 +603,7 @@ variable outer_flag
       \ c-addr 0 link link+1 len
       4 pick dup c@ swap 1+ swap
       \ c-addr 0 link link+1 len c-addr+1 len
-      \ 0x4C emit .stack cr
+      \ 0x4C emit .stack 
       compare
       \ 0x43 emit .stack cr
       \ c-addr 0 link 0|-1|1 
@@ -608,9 +615,9 @@ variable outer_flag
    repeat
    \ here, c-addr link or c-addr 0
    drop
-   0x46 emit .stack cr
+   \ 0x46 emit .stack cr
    dup 0 = if over 10 dump else
-      0x44 emit .stack cr
+      \ 0x44 emit .stack cr
       \ dispose word address
       swap drop
       \ immediate flag
