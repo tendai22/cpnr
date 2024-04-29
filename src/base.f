@@ -520,3 +520,109 @@ variable outer_flag
 
 \ test word for accept-word
 \ : aho accept begin bl word c@ while .hd repeat ;
+
+\ =========================
+\ find ... search a word in the dictionary
+: compare ( c-addr1 u1 c-addr2 u2 -- n )
+   0     \ dummy for first drop
+   3 pick 2 pick min    \ compare length
+   1 do     \ c-addr1 u1 c-addr2 u2
+      drop
+      3 pick i + c@  \ c-addr1 u1 c-addr2 u2 i c1
+      2 pick i + c@  \ c-addr1 u1 c-addr2 u2 i c1 c2
+      \ .stack cr
+      -           \ c-addr1 u1 c-addr2 u2 i (c1-c2)
+      \ .stack cr
+      dup 0 != if leave then loop
+      \ now the result is 0|-1|1,
+      \ if 0, compare u1 and u2
+      dup 0 = if 3 pick 2 pick - swap drop then
+      \ ok got it, erase 4 args
+      swap drop swap drop swap drop swap drop 
+;
+
+\ for test command
+: align ( addr -- addr2 )
+   cells + 1 - cells / cells * ;
+
+0xe000 constant tmp 
+: tcom
+   here  \ save it on stack
+   tmp H_ADDR !
+   accept
+   32 word
+   here dup c@ + 1+ align H_ADDR ! \ new address
+   32 word
+   rot H_ADDR !
+   1 pick c@ swap dup c@
+   tmp 16 dump cr
+   compare
+   ;
+
+\ link_addr ( entry -- link )
+: link_addr
+   dup c@ 0x1f and   \ n = *entry & 0x1f
+   dup 1 and + 2 + +
+;
+
+\ prev_link ( entry -- prev-entry )
+: prev_link
+   link_addr @
+;
+
+\ print name
+: entry_name ( entry -- )
+   c@ 0x1f and \ length
+   1 do dup i + c@ emit loop space ;
+
+\ test
+: ltest
+   last
+   begin dup while
+      dup h4. bl emit dup entry_name cr
+      prev_link repeat drop ;
+
+\ find   ( c-addr -- c-addr 0 | xt 1 | xt -1 )
+\    returns 0 if not found, c-addr remains,
+\            1 if an immediate word found
+\           -1 if non-immediate word found
+: xfind
+   0 last      \ c-addr 0 last
+   begin dup while   \ repeat until link is null
+      \ c-addr 0 link
+      dup
+      \ c-addr 0 link link
+      dup c@ 0x1f and swap 1+ swap    \ entry string length
+      \ c-addr 0 link link+1 len
+      4 pick dup c@ swap 1+ swap
+      \ c-addr 0 link link+1 len c-addr+1 len
+      \ 0x4C emit .stack cr
+      compare
+      \ 0x43 emit .stack cr
+      \ c-addr 0 link 0|-1|1 
+      0 != if prev_link else   \ c-addr 0 prev_link
+      \ make return code
+      \ c-addr 0 link -> c-addr link 0
+      swap then
+      \ 0x55 emit .stack cr 
+   repeat
+   \ here, c-addr link or c-addr 0
+   drop
+   0x46 emit .stack cr
+   dup 0 = if over 10 dump else
+      0x44 emit .stack cr
+      \ dispose word address
+      swap drop
+      \ immediate flag
+      dup c@ 0x80 and if 1 else -1 then
+      \ xt
+      swap
+      link_addr cells +
+      swap
+   then
+;
+
+: ftest
+   accept
+   32 word
+   xfind ;
