@@ -69,29 +69,8 @@ void do_dup(context_t *cx)
 
 void do_getch(context_t *cx)
 {
-    static mem_t buf[128];
-    static int i = -1;
-    mem_t c;
-
-    while (1) {
-        if (i < 0) {
-            // read stdin to fill buf        
-            if (fgets(buf, 127, stdin) == NULL) {
-                fprintf(stderr, "getch: abort, read error\n");
-                do_push(cx, -1);
-                return;
-            }
-            fprintf(stderr, "getch: fill[%s]\n", buf);
-            i = 0;
-        }
-        c = buf[i++];
-        if (c != 0) {
-            do_push(cx, c & 0xff);
-            return;
-        }
-        i = -1;
-        // try to read from stdin
-    }
+    word_t w = getch(cx);
+    do_push(cx, w ? w : -1);
 }
 
 //
@@ -101,22 +80,36 @@ void reset_instream(context_t *cx)
 {
     //fprintf(stderr, "reset_instream:\n");
     reset_outer();
-    cx->p = 0;
-    cx->rest = 0;
+    &mem[STAR(PAD_ADDR)] = 0;       // length zero
 }
 
 //
-// get_instream
+// get_instream ... get one char from pad-in buffer
 //
-int get_instream(context_t *cx)
+static mem_t uc = -1;
+
+int getch(context_t *cx)
 {
-    int c;
-    if (cx->p == 0 || cx->rest == 0)
-        return 0;   // eof
-    cx->rest --;
-    c = *(cx->p)++;
+    int c, n, i;
+    mem_t *p = &mem[STAR(PAD_ADDR)];
+    if ((c = uc) >= 0) {
+        uc = -1;
+        return c;
+    }
+    n = *p;
+    i = STAR(IN_ADDR);
+    // i should be between 1 and n
+    if (i > n)
+        return 0;
+    c = p[i++];
+    STAR(IN_ADDR) = i;
     //fprintf(stderr, "(%c)", c);
     return c;
+}
+
+void ungetch(context_t *cx, mem_t c)
+{
+    uc = c;
 }
 
 //
@@ -130,12 +123,12 @@ int do_accept(context_t *cx)
         return 0;
     }
     // now in-stream buffer emnty, refill it
-    char *buf = &mem[STAR(S0_ADDR)];
+    char *buf = &mem[STAR(PAD_ADDR)];
     int size = 127, n;
     memset(buf, ' ', size-1);
     buf[size-1] = '\0';
     if (outer_flag) {
-        if (gets_outer(buf, size - 1) == 0) {
+        if (gets_outer(buf + 1, size - 1) == 0) {
             // outer data expires
             outer_flag = 0;
         }
@@ -143,21 +136,21 @@ int do_accept(context_t *cx)
     if (outer_flag == 0) {
         // input from keyboard
         do_prompt(cx);
-        if (fgets (buf, size - 1, stdin) == 0) {
+        if (fgets (buf + 1, size - 1, stdin) == 0) {
             fprintf(stderr, "eof\n");
             return EOF;
         }
     }
-    n = strlen(buf);
-    while (0 < n && (buf[n - 1] == '\n' || buf[n - 1] == '\r')) {
+    n = strlen(buf + 1);
+    while (1 < n && (buf[n - 1] == '\n' || buf[n - 1] == '\r')) {
         buf[--n] = ' ';
     }
     if (buf[n - 1] != ' ' && n < 79) {
         buf[n] = ' ';
         buf[n + 1] = '\0';
     }
-    cx->p = buf;
-    cx->rest = n;
+    buf[0] = n;         // buf length
+    STAR(IN_ADDR) = 1;  // initial index
     return 0;
 }
 
@@ -173,12 +166,12 @@ void do_word(context_t *cx)
     here = h0 = &mem[STAR(H_ADDR)];
     // skip if the first is space
     while (1) {
-        if ((c = get_instream(cx)) == 0) {
+        if ((c = getch(cx)) == 0) {
             // end-of-file
             tos(cx) = 0;
             return;
         } else if (c == delim) {
-            while ((c = get_instream(cx)) == delim)
+            while ((c = getch(cx)) == delim)
                 ;   // skip delimiters
             if (c == 0) {
                 tos(cx) = 0;
@@ -190,12 +183,12 @@ void do_word(context_t *cx)
         do {
             *here++ = c;
             //fprintf(stderr, "[%c]", c);
-        } while ((c = get_instream(cx)) != 0 && c != delim);
+        } while ((c = getch(cx)) != 0 && c != delim);
         // get a word
         if (((c = h0[1]) == '(' || c == '\\') && here - h0 == 2) {
             //fprintf(stderr, "comment: \n");
             if (c == '(') {
-                while ((c = get_instream(cx)) != 0 && c != ')')
+                while ((c = getch(cx)) != 0 && c != ')')
                     ;
                 if (c == ')') {
                     // end-of-comment, try the rest of it
@@ -204,7 +197,7 @@ void do_word(context_t *cx)
                     continue;
                 }
             } else if (c == '\\') {
-                while ((c = get_instream(cx)) != 0 && c != '\n')
+                while ((c = getch(cx)) != 0 && c != '\n')
                     ;
             }
             //fprintf(stderr, "comment: end-of-line\n");

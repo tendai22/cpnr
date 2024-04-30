@@ -52,27 +52,24 @@ void reset_outer(void)
     filenames = 0;
 }
 
-int gets_outer(char *buf, int size)
+int getch_outer(void)
 {
+    int c;
     while (1) {
         if (filenames == 0 || filenames[0] == 0) {
             filenames = 0;
-            buf[0] = 0;
             return 0;
         }
         if (fp == 0) {
             if ((fp = fopen(filenames[0], "r")) == 0) {
                 fprintf(stderr, "gets_outer: cannot open %s, no file input any more\n", filenames[0]);
                 filenames = 0;
-                buf[0] = 0;
                 return 0;
             }
             // now file input established
         }
-        if (fgets(buf, size, fp) != 0) {
-            if (STAR(DEBUG_ADDR))
-                fprintf(stderr, "gets_outer: read: %s\n", buf);
-            return 1; // ok, read a line and return
+        if ((c = fgetc(fp)) != EOF) {
+            return c; // ok, read a line and return
         }
         // try to open next file
         fclose(fp);

@@ -88,7 +88,7 @@ extern int monitor(context_t *cx);
 extern int do_mainloop(context_t *cx);
 extern void reset(context_t *cx);
 
-extern int gets_outer(char *buf, int size);
+extern int getch_outer(void);
 extern void reset_outer(void);
 extern void reset_instream(context_t *cx);
 extern int get_instream(context_t *cx);
