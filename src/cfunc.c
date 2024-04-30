@@ -375,7 +375,10 @@ void do_number(context_t *cx)
 void do_prompt(context_t *cx)
 {
     print_dstack(cx);
-    fprintf(stderr, " ok\n");
+    if (STAR(STATE_ADDR))
+        fprintf(stderr, " compile\n");
+    else
+        fprintf(stderr, " ok\n");
 }
 
 // do_emit

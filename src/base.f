@@ -595,8 +595,10 @@ variable outer_flag
 \    returns 0 if not found, c-addr remains,
 \            1 if an immediate word found
 \           -1 if non-immediate word found
-: xfind
-   0 last      \ c-addr 0 last
+: -find
+   DEBUG_ADDR @
+   0 debug
+   0 swap      \ c-addr 0 last
    begin dup while   \ repeat until link is null
       \ c-addr 0 link
       dup
@@ -629,10 +631,32 @@ variable outer_flag
       link_addr cells +
       swap
    then
+   rot debug
 ;
+
+\
+\ find .. default is 'last' dictionary
+\
+: find
+   last -find ;
 
 \ test word
 : ftest
    accept
    32 word
-   xfind ;
+   find ;
+
+\ ===================================
+\ number
+\
+
+: >number ( char -- num | -1 )
+   \ one-digit conversion
+   ;
+
+: [char]
+   literal literal 
+   ] bl word dup h4. space 10 dump .stack ; immediate
+
+\ : baka [char] a ;
+
