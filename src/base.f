@@ -52,6 +52,7 @@
    + ;
 
 \ code_addr ( addr -- code-addr )
+: code_addr 
    link_addr cells + ;
 
 \ create
@@ -584,6 +585,7 @@ variable outer_flag
 
 \ test
 : ltest
+   here h4. bl emit cr
    last
    begin dup while
       dup h4. bl emit dup entry_name cr
@@ -613,14 +615,14 @@ variable outer_flag
       swap then
       \ 0x55 emit .stack cr 
    repeat
-   \ here, c-addr link or c-addr 0
+   \ here, c-addr link 0 or c-addr 0 0
    drop
    \ 0x46 emit .stack cr
    dup 0 = if over 10 dump else
       \ 0x44 emit .stack cr
       \ dispose word address
       swap drop
-      \ immediate flag
+      \ check immediate flag
       dup c@ 0x80 and if 1 else -1 then
       \ xt
       swap
@@ -629,6 +631,7 @@ variable outer_flag
    then
 ;
 
+\ test word
 : ftest
    accept
    32 word
