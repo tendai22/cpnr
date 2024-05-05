@@ -353,7 +353,7 @@ undefined:
         cx->pc += CELLS;
         break;
 #if 0
-    case 100: // m_accept
+    case 99: // m_accept
         // getc from stdin
         fprintf(stderr, "enter accept\n");
         n = do_accept(cx);

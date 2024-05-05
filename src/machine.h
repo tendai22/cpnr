@@ -53,7 +53,9 @@ typedef uint8_t mem_t;    // ROM/RAM memory array for the target machine
 #define LITERAL_ADDR  (USER_START+16)
 //#define DOCONS_ADDR   (USER_START+18)
 #define DEBUG_ADDR    (USER_START+18)
- 
+#define PAD_ADDR      (USER_START+20)
+#define IN_ADDR       (USER_START+22)
+
 #define MEMSIZE 65536
 extern mem_t mem[];
 
@@ -111,6 +113,8 @@ extern void do_word(context_t *cx);
 extern void do_find(context_t *cx);
 extern void do_number(context_t *cx);
 extern void do_prompt(context_t *cx);
+extern int gets_outer(mem_t *buf, int len);
+extern int getch(context_t *cx);
 
 extern void do_catch(context_t *cx);
 extern void do_abort(context_t *cx, const char *message);

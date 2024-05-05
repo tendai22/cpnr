@@ -80,7 +80,7 @@ void reset_instream(context_t *cx)
 {
     //fprintf(stderr, "reset_instream:\n");
     reset_outer();
-    &mem[STAR(PAD_ADDR)] = 0;       // length zero
+    mem[STAR(PAD_ADDR)] = 0;       // length zero
 }
 
 //

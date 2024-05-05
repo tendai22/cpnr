@@ -52,7 +52,7 @@ void reset_outer(void)
     filenames = 0;
 }
 
-int getch_outer(void)
+int gets_outer(mem_t *buf, int len)
 {
     int c;
     while (1) {
@@ -68,8 +68,8 @@ int getch_outer(void)
             }
             // now file input established
         }
-        if ((c = fgetc(fp)) != EOF) {
-            return c; // ok, read a line and return
+        if (fgets(buf, len-1, fp) != 0) {
+            return strlen(buf); // ok, read a line and return
         }
         // try to open next file
         fclose(fp);

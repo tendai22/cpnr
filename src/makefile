@@ -30,7 +30,7 @@ main.o machine.o monitor.o cfunc.o: machine.h
 monitor.o: opname.h
 
 cpnr: $(COBJS)
-	cc -o cpnr $(COBJS)
+	cc $(CFLAGS) -o cpnr $(COBJS)
 
 .f.X:
 	$(F2X) -o $*.X $*.f
