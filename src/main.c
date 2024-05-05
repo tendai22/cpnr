@@ -69,6 +69,7 @@ int gets_outer(mem_t *buf, int len)
             // now file input established
         }
         if (fgets(buf, len-1, fp) != 0) {
+            //fprintf(stderr, "gets_outer: [%s]\n", buf);
             return strlen(buf); // ok, read a line and return
         }
         // try to open next file
@@ -248,10 +249,16 @@ static int init_mem(context_t *cx)
     flag |= name2xt(cx, "literal");
     STAR(LITERAL_ADDR) = do_pop(cx);
     STAR(DEBUG_ADDR) = 0;
+    STAR(PAD_ADDR) = DSTACK_END;
+    STAR(IN_ADDR) = 0;
     //flag |= name2xt(cx, "docons");
     //STAR(DOCONS_ADDR) = do_pop(cx);
     if (flag) {
         return -1;
+    }
+    //STAR(DEBUG_ADDR) = 1;
+    if (STAR(DEBUG_ADDR)) {
+        fprintf(stderr, "init_mem: initial DEBUG_ADDR = %d\n", STAR(DEBUG_ADDR));
     }
     fprintf(stderr, "init_mem: halt xt = %04X, semi xt = %04X\n", STAR(HALT_ADDR), STAR(SEMI_ADDR));
     return 0;

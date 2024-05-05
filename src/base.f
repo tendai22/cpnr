@@ -419,7 +419,7 @@ variable #base_addr
 \ input stream, integrated keyin and 
 \ disk/memory source reader
 \
-: pad 0xd000 ;
+: pad S0_ADDR @ ;
 : in_p ( -- addr )
    pad dup c@ + 1+ ;
 : inc_p ( n -- )

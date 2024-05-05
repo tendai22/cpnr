@@ -86,7 +86,7 @@ void reset_instream(context_t *cx)
 //
 // get_instream ... get one char from pad-in buffer
 //
-static mem_t uc = -1;
+static int uc = -1;
 
 int getch(context_t *cx)
 {
@@ -118,38 +118,42 @@ void ungetch(context_t *cx, mem_t c)
 int do_accept(context_t *cx)
 {
     static int outer_flag = 1;
+    static int linecount = 0;
 
     if (cx->p && cx->rest > 0) {
         return 0;
     }
     // now in-stream buffer emnty, refill it
-    char *buf = &mem[STAR(PAD_ADDR)];
+    char *buf = &mem[STAR(PAD_ADDR)] + 1;
     int size = 127, n;
     memset(buf, ' ', size-1);
     buf[size-1] = '\0';
     if (outer_flag) {
-        if (gets_outer(buf + 1, size - 1) == 0) {
+        if (gets_outer(buf, size) == 0) {
             // outer data expires
             outer_flag = 0;
         }
+        if (STAR(DEBUG_ADDR))
+            fprintf(stderr, "accept: [%s]", buf);
     }
     if (outer_flag == 0) {
         // input from keyboard
         do_prompt(cx);
-        if (fgets (buf + 1, size - 1, stdin) == 0) {
+        if (fgets (buf, size, stdin) == 0) {
             fprintf(stderr, "eof\n");
             return EOF;
         }
     }
-    n = strlen(buf + 1);
-    while (1 < n && (buf[n - 1] == '\n' || buf[n - 1] == '\r')) {
-        buf[--n] = ' ';
+    n = strlen(buf);
+    for (int i = n - 1; i >= 0 ; --i) {
+        if (buf[i] != '\n' && buf[i] != '\r')
+            break;
+        buf[i] = '\0';
     }
-    if (buf[n - 1] != ' ' && n < 79) {
-        buf[n] = ' ';
-        buf[n + 1] = '\0';
-    }
-    buf[0] = n;         // buf length
+    n = strlen(buf);
+    mem[STAR(PAD_ADDR)] = n;         // buf length
+    if (STAR(DEBUG_ADDR))
+        fprintf(stderr, "%d [%s]\n", linecount++, buf);
     STAR(IN_ADDR) = 1;  // initial index
     return 0;
 }
@@ -161,7 +165,7 @@ void do_word(context_t *cx)
 {
     char delim, *tib, *p, *here, *h0;
     word_t wp;
-    int n, c;
+    int n, c, count = 0;
     delim = tos(cx);
     here = h0 = &mem[STAR(H_ADDR)];
     // skip if the first is space
@@ -182,7 +186,8 @@ void do_word(context_t *cx)
         here++;     // keep the first count char
         do {
             *here++ = c;
-            //fprintf(stderr, "[%c]", c);
+            if (count++ > 200)
+                break;
         } while ((c = getch(cx)) != 0 && c != delim);
         // get a word
         if (((c = h0[1]) == '(' || c == '\\') && here - h0 == 2) {
