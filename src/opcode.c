@@ -12,7 +12,7 @@ int machine_code(context_t *cx, word_t code)
 {
     word_t addr, *wp, w, w2, n;
     mem_t *p, c;
-    int cc;
+    int cc, result;
     // machine code
     if ((code & 0xf000) != opcode_base) {
 undefined:
@@ -354,9 +354,11 @@ undefined:
         break;
     case 98: // m_getline
         // ( n addr -- -1 (ready)|0 (eof) )
-        n = do_getline(cx);
-        n = (n == 0) ? -1 : 0;
-        do_push(cx, n);
+        w = do_pop(cx);
+        n = do_pop(cx);
+        result = do_getline(cx, &mem[w], n);
+        result = (result == 0) ? -1 : 0;
+        do_push(cx, result);
         cx->pc += CELLS;
         break;
 #if 0

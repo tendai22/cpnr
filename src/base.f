@@ -430,6 +430,19 @@ variable >in
 variable outer_flag
 1 outer_flag !
 
+\ ======================================
+\ .stack ... debug word
+\
+: .stack 
+   literal [ char [ , ] emit
+   sp s0 != if
+      sp s0 cells - do
+         i @ h4. space 
+      0 cells - +loop
+   then 
+   literal [ char ] , ] emit
+   ;
+
 \ input buffer, s0, 128bytes
 \ top(*s0) holds the current index
 \ accept ... primitive ( -- ), check s0 c@
@@ -476,14 +489,15 @@ variable outer_flag
    swap -
 ;
 
-: aho 127 pad 1 + getline pad 1 + 16 dump ;
+\ : aho 127 pad 1 + getline pad 1 + 16 dump ;
 
-: xaccept
+: accept
    127 pad 1+ getline
-   not if ( abort ) then ;
+   not if ( abort ) then
    \ now got a line on pad
    pad dup 1+ strlen +   \ &pad[strlen]
-   pad do 
+   \ eliminate trailing cr/lf
+   pad 1+ swap do 
       i c@
       dup 13 = if 0 i c! else
       dup 10 = if 0 i c!
@@ -492,36 +506,9 @@ variable outer_flag
       drop
       -1 +loop
    pad dup 1+ strlen swap c!
-   pad 16 drop
    ;
- 
-\   127 pad getline   \ ( n addr --- f )
-\   if   \ if get a line onto pad
-\      1 127 1 - do  \ ( i = 126, 125 ... 1 )
-\         pad i + c@
-\         i . space dup hex .  space decimal
-\         dup 13 = if
-\            leave
-\         dup 10 = if
-\            leave
-\         then then
-\         drop 
-\      -1 +loop
-\   then
-\ ;
 
-\ ======================================
-\ .stack ... debug word
-\
-: .stack 
-   literal [ char [ , ] emit
-   sp s0 != if
-      sp s0 cells - do
-         i @ h4. space 
-      0 cells - +loop
-   then 
-   literal [ char ] , ] emit
-   ;
+: atest accept pad 16 dump 0 pad c! ;
 
 \
 \ words for debugging
@@ -565,7 +552,7 @@ variable outer_flag
    ( .hd ) ;
 
 \ test word for accept-word
-\ : aho accept begin bl word c@ while .hd repeat ;
+: wtest accept begin bl word c@ while .hd repeat ;
 
 \ =========================
 \ find ... search a word in the dictionary
@@ -676,7 +663,7 @@ variable outer_flag
       link_addr cells +
       swap
    then
-   rot debug
+   rot \ debug
 ;
 
 \
@@ -698,10 +685,13 @@ variable outer_flag
 : >number ( char -- num | -1 )
    \ one-digit conversion
    ;
+\ : ' \ comma ... find address of next string in dictionary
+\   bl word -find ; immediate
 
-: [char]
-   literal literal 
-   ] bl word dup h4. space 10 dump .stack ; immediate
 
-\ : baka [char] a ;
+\ : [char]
+\    ' literal , 
+\    ] bl word ; immediate
+
+\ : baka ' aho ; immediate
 

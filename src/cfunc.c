@@ -129,13 +129,11 @@ static void dump_line(const char *buf)
 }
 
 //
-// do_getline: ( n addr  -- )
+// do_getline: ( -- )
 //
-int do_getline(context_t *cx)
+int do_getline(context_t *cx, char *buf, int size)
 {
     static int outer_flag = 1;
-    char *buf =  &mem[do_pop(cx)];
-    int size = do_pop(cx);
     // now in-stream buffer emnty, refill it
     //fprintf(stderr, "do_getline: buf = %04x size = %d\n", (word_t)(buf - (char *)&mem[0]), size);
     memset(buf, ' ', size-1);
@@ -158,7 +156,7 @@ int do_getline(context_t *cx)
         }
         line_number = -1;
     }
-    dump_line(buf);
+    //dump_line(buf);
     return 0;
 }
 
@@ -174,9 +172,7 @@ int do_accept(context_t *cx)
     if (cx->p && cx->rest > 0) {
         return 0;
     }
-    do_push(cx, 127);       // bufsize
-    do_push(cx, STAR(PAD_ADDR) + 1);
-    if (do_getline(cx)) {
+    if (do_getline(cx, buf, 127 - 1)) {
         return EOF;
     }
     n = strlen(buf);

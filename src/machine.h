@@ -108,7 +108,7 @@ extern void print_next(context_t *cx, word_t xt);
 
 // outer interpreter
 extern int do_accept(context_t *cx);
-extern int do_getline(context_t *cx);
+extern int do_getline(context_t *cx, char *buf, int size);
 extern void do_getch(context_t *cx);
 extern void do_word(context_t *cx);
 extern void do_find(context_t *cx);
