@@ -67,7 +67,7 @@ opcode /mod slashmod
 //
 // i/o primitives
 //
-opcode getch
+//opcode getch
 opcode emit
 opcode space
 //opcode cr
@@ -122,5 +122,6 @@ opcode compile
 opcode word
 //opcode _state
 //opcode accept
+opcode getline
 opcode sp
 

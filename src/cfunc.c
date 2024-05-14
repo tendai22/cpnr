@@ -84,7 +84,7 @@ void reset_instream(context_t *cx)
 }
 
 //
-// get_instream ... get one char from pad-in buffer
+// getch/ungetch ... for C function do_word
 //
 static int uc = -1;
 
@@ -112,20 +112,32 @@ void ungetch(context_t *cx, mem_t c)
     uc = c;
 }
 
+static int line_number = 0;
+
+static void dump_line(const char *buf)
+{
+    int n = strlen(buf);
+    char c;
+    const char *p = &buf[n > 0 ? n - 1 : 0];
+    if (line_number > 0) {
+        while (p >= &buf[0] && *p && ((c = *p) == '\n' || c == '\r'))
+            --p;
+        if (p - buf < n)
+            ++p;
+        fprintf(stderr, "%d:[%.*s]\n", line_number, (int)(p - buf), buf);
+    }
+}
+
 //
-// do_accept: ( -- )
+// do_getline: ( n addr  -- )
 //
-int do_accept(context_t *cx)
+int do_getline(context_t *cx)
 {
     static int outer_flag = 1;
-    static int linecount = 0;
-
-    if (cx->p && cx->rest > 0) {
-        return 0;
-    }
+    char *buf =  &mem[do_pop(cx)];
+    int size = do_pop(cx);
     // now in-stream buffer emnty, refill it
-    char *buf = &mem[STAR(PAD_ADDR)] + 1;
-    int size = 127, n;
+    //fprintf(stderr, "do_getline: buf = %04x size = %d\n", (word_t)(buf - (char *)&mem[0]), size);
     memset(buf, ' ', size-1);
     buf[size-1] = '\0';
     if (outer_flag) {
@@ -134,7 +146,8 @@ int do_accept(context_t *cx)
             outer_flag = 0;
         }
         if (STAR(DEBUG_ADDR))
-            fprintf(stderr, "accept: [%s]", buf);
+            fprintf(stderr, "getline: [%s]", buf);
+        line_number++;
     }
     if (outer_flag == 0) {
         // input from keyboard
@@ -143,6 +156,28 @@ int do_accept(context_t *cx)
             fprintf(stderr, "eof\n");
             return EOF;
         }
+        line_number = -1;
+    }
+    dump_line(buf);
+    return 0;
+}
+
+//
+// do_accept: ( -- )
+//
+int do_accept(context_t *cx)
+{
+    static int linecount = 0;
+    int n;
+    char *buf = &mem[STAR(PAD_ADDR)] + 1;
+
+    if (cx->p && cx->rest > 0) {
+        return 0;
+    }
+    do_push(cx, 127);       // bufsize
+    do_push(cx, STAR(PAD_ADDR) + 1);
+    if (do_getline(cx)) {
+        return EOF;
     }
     n = strlen(buf);
     for (int i = n - 1; i >= 0 ; --i) {

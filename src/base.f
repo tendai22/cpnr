@@ -439,10 +439,16 @@ variable outer_flag
    over 8 = or
    swap drop ;
 
+: w_getch 
+   pad >in @ + c@ \ dup h2. space    \ pad[i]
+;
+: w_i++ 
+   >in dup @ 1+ swap ! ;
+
 : accept ( -- )
    0 pad c!              \ i = 1
    127 1 do
-      getch 
+      w_getch 
       dup 0 = if
          leave
       else dup =whitespace if
@@ -459,11 +465,50 @@ variable outer_flag
    1 >in ! 
    drop ;
 
-: w_getch 
-   pad >in @ + c@ \ dup h2. space    \ pad[i]
+: strlen \ ( addr --- n )
+   dup
+   begin 
+      dup c@
+   while \ not nul char
+      1+
+   repeat
+   \ top end
+   swap -
 ;
-: w_i++ 
-   >in dup @ 1+ swap ! ;
+
+: aho 127 pad 1 + getline pad 1 + 16 dump ;
+
+: xaccept
+   127 pad 1+ getline
+   not if ( abort ) then ;
+   \ now got a line on pad
+   pad dup 1+ strlen +   \ &pad[strlen]
+   pad do 
+      i c@
+      dup 13 = if 0 i c! else
+      dup 10 = if 0 i c!
+               else leave
+      then then
+      drop
+      -1 +loop
+   pad dup 1+ strlen swap c!
+   pad 16 drop
+   ;
+ 
+\   127 pad getline   \ ( n addr --- f )
+\   if   \ if get a line onto pad
+\      1 127 1 - do  \ ( i = 126, 125 ... 1 )
+\         pad i + c@
+\         i . space dup hex .  space decimal
+\         dup 13 = if
+\            leave
+\         dup 10 = if
+\            leave
+\         then then
+\         drop 
+\      -1 +loop
+\   then
+\ ;
 
 \ ======================================
 \ .stack ... debug word

@@ -61,5 +61,6 @@ void init_optable(void)
         optable[87] = "m_word";
         optable[88] = "m__state";
         optable[89] = "m_sp";
+        optable[98] = "m_getline";
         optable[99] = "m_accept";
 }

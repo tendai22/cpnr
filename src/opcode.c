@@ -352,6 +352,13 @@ undefined:
         do_push(cx, cx->sp);
         cx->pc += CELLS;
         break;
+    case 98: // m_getline
+        // ( n addr -- -1 (ready)|0 (eof) )
+        n = do_getline(cx);
+        n = (n == 0) ? -1 : 0;
+        do_push(cx, n);
+        cx->pc += CELLS;
+        break;
 #if 0
     case 99: // m_accept
         // getc from stdin
