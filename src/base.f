@@ -10,6 +10,8 @@
 : COLON_ADDR    0x400c ;
 : SEMI_ADDR     0x400e ;
 : DEBUG_ADDR    0x4012 ;
+: PAD_ADDR      0x4014 ;
+: IN_ADDR       0x4016 ;
 
 \ debug
 : debug DEBUG_ADDR ! ;
@@ -39,7 +41,7 @@
 : allot H_ADDR @ + H_ADDR ! ;
 : last LAST_ADDR @ ;
 : immediate last c@ 0x80 or last c! ;
-: , ( comma) here ! cells allot ;
+: , ( comma ) here ! cells allot ;
 : ] ( -- ) 1 STATE_ADDR ! ; immediate
 : [ ( -- ) 0 STATE_ADDR ! ; immediate
 
@@ -156,6 +158,10 @@ DSTACK_END 0x100 - constant RSTACK_END
 : 0= not ;
 : <= - dup 0 < swap 0= or ;
 : >= swap <= ;
+: 0> 0 > ;
+: 0>= 0 < not ;
+: 0< 0 < ;
+: 0<= 0 > not ;
 : false 0 ;
 : true -1 ;
 
@@ -419,14 +425,16 @@ variable #base_addr
 \ input stream, integrated keyin and 
 \ disk/memory source reader
 \
-: pad S0_ADDR @ ;
+: pad PAD_ADDR @ ;
 : in_p ( -- addr )
    pad dup c@ + 1+ ;
 : inc_p ( n -- )
    pad dup c@ 1+ swap c! ;
 : in_rest ( -- n )
    127 pad c@ - ;
-variable >in
+
+: >in IN_ADDR ;
+
 variable outer_flag
 1 outer_flag !
 
@@ -452,31 +460,36 @@ variable outer_flag
    over 8 = or
    swap drop ;
 
-: w_getch 
-   pad >in @ + c@ \ dup h2. space    \ pad[i]
-;
-: w_i++ 
-   >in dup @ 1+ swap ! ;
+\ : w_getch 
+\   pad >in @ + c@ \ dup h2. space    \ pad[i]
+\ ;
+\ : w_i++ 
+\   >in dup @ 1+ swap ! ;
 
-: accept ( -- )
-   0 pad c!              \ i = 1
-   127 1 do
-      w_getch 
-      dup 0 = if
-         leave
-      else dup =whitespace if
-         leave
-      else dup 0 = if
-         leave
-      else dup 0 > if       \ valid char
-         in_p c!        \ *p = c
-         inc_p          \ i++ 
-      then then then then
-   loop
-   bl in_p c!
-   inc_p 
-   1 >in ! 
-   drop ;
+\ : accept ( -- )
+\   0 pad c!              \ i = 1
+\   127 1 do
+\      w_getch 
+\      dup 0 = if
+\         leave
+\      else dup =whitespace if
+\         leave
+\      else dup 0 = if
+\         leave
+\      else dup 0 > if       \ valid char
+\         in_p c!        \ *p = c
+\         inc_p          \ i++ 
+\      then then then then
+\   loop
+\   bl in_p c!
+\   inc_p 
+\   1 >in ! 
+\   drop ;
+
+\ test getline
+: gtest 127 pad 1+ getline ;
+
+: abort 0x2a emit halt ;
 
 : strlen \ ( addr --- n )
    dup
@@ -491,9 +504,9 @@ variable outer_flag
 
 \ : aho 127 pad 1 + getline pad 1 + 16 dump ;
 
-: accept
+: accept \ ( --- ) read a line to put it to pad
    127 pad 1+ getline
-   not if ( abort ) then
+   not if 0 pad c! abort then
    \ now got a line on pad
    pad dup 1+ strlen +   \ &pad[strlen]
    \ eliminate trailing cr/lf
@@ -506,6 +519,7 @@ variable outer_flag
       drop
       -1 +loop
    pad dup 1+ strlen swap c!
+   1 >in !
    ;
 
 : atest accept pad 16 dump 0 pad c! ;
@@ -523,11 +537,13 @@ variable outer_flag
 \
 : h++ here c@ 1+ here c! ;
 : hptr here dup c@ + 1+ ;
-: word ( delim -- addr )
+: word ( delim -- addr|0 )
    0              \ ( -- delim flag ) ... flag show if it has started to store chars
    0 here c!      \ clear here[0]
-   pad dup dup c@ + swap ( 0x30 .ps ) \  limit-index
+   pad dup dup c@ 1+ + swap ( 0x30 .ps ) \  limit-index
    >in @ +        \ start-index
+   0x41 .ps
+   over over <= if drop drop drop drop 0 0x42 .ps exit then
    do dup 0 = if  \ skip it
          i c@ 2 pick ( 0x41 .ps ) != if 1+ then  \ flag++
       then
@@ -548,11 +564,20 @@ variable outer_flag
       then
       >in @ 1+ >in ( 0x45 .ps ) ! \ increment >in  
    loop
-   drop drop here 
-   ( .hd ) ;
+   drop drop here c@ if here else 0 then 0x43 .ps
+   .hd ;
 
 \ test word for accept-word
 : wtest accept begin bl word c@ while .hd repeat ;
+
+: >rest \ ( --- n ) rest of pad buffer ;
+   pad c@ 1+ >in @ 0x31 .ps - ;
+
+: wwtest
+   begin 
+      begin >rest 0x48 .ps 0> not while 0x23 emit space accept repeat
+      begin bl word while repeat
+   0 until ;
 
 \ =========================
 \ find ... search a word in the dictionary
@@ -630,7 +655,8 @@ variable outer_flag
 : -find
    DEBUG_ADDR @
    0 debug
-   0 swap      \ c-addr 0 last
+   swap      \ c-addr 0 last
+   0x40 emit .stack
    begin dup while   \ repeat until link is null
       \ c-addr 0 link
       dup
@@ -651,9 +677,9 @@ variable outer_flag
    repeat
    \ here, c-addr link 0 or c-addr 0 0
    drop
-   \ 0x46 emit .stack cr
+   0x46 emit .stack cr
    dup 0 = if over 10 dump else
-      \ 0x44 emit .stack cr
+      0x44 emit .stack cr
       \ dispose word address
       swap drop
       \ check immediate flag
@@ -663,7 +689,6 @@ variable outer_flag
       link_addr cells +
       swap
    then
-   rot \ debug
 ;
 
 \
@@ -685,13 +710,21 @@ variable outer_flag
 : >number ( char -- num | -1 )
    \ one-digit conversion
    ;
-\ : ' \ comma ... find address of next string in dictionary
-\   bl word -find ; immediate
+
+: [.ps] 0x58 .ps cr ; immediate
+
+: ' \ comma ... find address of next string in dictionary
+  0x1090 , 
+  bl word 0x58 .ps .hd cr 
+  find 
+  not if abort then 
+  0x58 .ps 
+  , last 16 dump ; immediate
+
+: [char]
+    ' literal , 
+    ] bl word ; immediate
 
 
-\ : [char]
-\    ' literal , 
-\    ] bl word ; immediate
-
-\ : baka ' aho ; immediate
+\ : baka ' + , 1 , ; 
 

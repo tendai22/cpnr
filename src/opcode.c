@@ -30,6 +30,8 @@ undefined:
     case 1: // m_halt
         //if (STAR(DEBUG_ADDR))
         //    fprintf(stderr, "halt at %04X\n", cx->pc);
+        fflush(stdout);
+        fflush(stderr);
         return -1;
     //
     // inner interpreter
