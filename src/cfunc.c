@@ -388,15 +388,23 @@ void do_find(context_t *cx)
 // である。
 void do_number(context_t *cx)
 {
-    int value, r;
+    int r;
+    int32_t value;
     mem_t *p = &mem[do_pop(cx)];
+    mem_t buf[32];
     int count = *p++;
     if (STAR(DEBUG_ADDR))
         fprintf(stderr, "number:[%d %.*s]", count, count, p);
+    // check if it should convert to double length or not
     r = sscanf(p, "%i", &value) == 1 ? 0 : -1;
     if (STAR(DEBUG_ADDR))
         fprintf(stderr, " -> %d %d\n", value, r);
-    do_push(cx, value);
+    // low push first, high second
+    do_push(cx, value & 0xffff);
+    if (value & 0xffff0000) {
+        // double length
+        do_push(cx, (value>>16)&0xffff);
+    }
     do_push(cx, r);
 }
 

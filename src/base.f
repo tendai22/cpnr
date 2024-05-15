@@ -723,8 +723,7 @@ variable outer_flag
 
 : [char]
     ' literal , 
-    ] bl word ; immediate
-
+    ] bl word 1+ c@ , ; immediate
 
 \ : baka ' + , 1 , ; 
-
+\ : baka [char] x ;
