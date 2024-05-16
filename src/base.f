@@ -318,6 +318,59 @@ DSTACK_END 0x100 - constant RSTACK_END
   rot rot  \ c addr n
   0 do _p++ loop drop drop ;
 
+\ ========================================
+\ double length integer
+\
+\ opcode d+  ( ud1 ud2 --- ud )
+\ opcode m+  ( ud1 n2 --- ud )
+\ opcode m*/ ( ud1 n2 n3 --- ud (= ud1*n2/n3))
+
+: 2swap ( n1 n2 n3 n4 --- n3 n4 n1 n2 )
+   >r    ( n1 n2 n3 )
+   rot rot ( n3 n1 n2 )
+   r>    ( n3 n1 n2 n4 )
+   rot rot ( n3 n4 n1 n2 )
+   ;
+
+: m/ \ ( ud1 n2 --- ud )
+    1 swap ( ud1 1 n2 )
+    m*/    ( ud1/n2 )
+    ;
+
+: bitnot 
+   negate 1- ;
+
+: dnegate
+   bitnot swap bitnot swap
+   1 m+
+   ;
+
+: dabs
+   dup 0x8000 and if \ negative
+      dnegate then ;
+
+: m/mod \ ( ud1 n2 --- reminder udq )
+   2 pick 2 pick 2 pick ( ud1 n2 ud1 n2 )
+   m/  ( ud1 n2 ud1/n2 )
+   2dup 
+   >r >r ( save ud1/n2 )
+   rot ( ud1 ud1/n2 n2 )
+   1   ( ud1 ud1/n2 n2 1 )
+   m*/ ( ud1 ud1/n2*n2 )
+   dnegate ( ud1 -ud1/n2*n2)
+   d+  ( dmod )
+   drop ( mod ) \ single length reminder
+   r> r> ( mod ud1/n2 )
+   ;
+
+: s->d \ ( n -- d ) ... sign extension
+   dup signbit and if \ negative
+      0xffff
+   else \ positive
+      0
+   then
+   ;
+
 \ ================================================
 \ pictured output ... numeric formatted
 \
@@ -355,15 +408,16 @@ variable #base_addr
    10 - 0x41 + then then ;
 
 : # ( d -- n/10 )
-   #base /mod swap ( n -- n/10 n%10 ) 
+   #base m/mod  ( d -- d%10 d/10 ) 
+   rot         ( d/10 d%10 )
    i2a #np c!
    #i-- ;
 
 : #s ( u -- )
-   begin # dup not until ;
+   begin # 2dup or not until ;
 
 : #> ( -- ) \ return string for `TYPE` 
-   drop #nb #i + #field #i - ;
+   drop drop #nb #i + #field #i - ;
 
 : hold  ( c -- ) \ append a char to nbuf
    #np c! #i-- ;
@@ -371,22 +425,24 @@ variable #base_addr
 : type ( addr u -- ) \ print a string
    1 do dup i + c@ emit loop drop ;
 
-: sign ( n xx - n xx ) \ print '-' if n is minus
-   swap dup signbit and if 45 #np c! #i-- then swap ;
+: sign ( n xx xx - n xx xx ) \ print '-' if n is minus
+   2 pick signbit and if 45 #np c! #i-- then ;
 
 : abs dup signbit and if 0 swap - then ;
 
-: . dup abs <# #s sign #> type drop ;
+: D. 2dup dabs <# #s sign #> type drop drop space ;
+
+: . s->d D. ;
 
 : #hex 16 #base_addr ! ;
 : #decimal 10 #base_addr ! ;
 : #dec 10 #base_addr ! ;
 
 : h2.  \ print hex number
-  <# #hex # # #> type ;
+  0 <# #hex # # #> type ;
 
 : h4.  \ print hex number
-  <# #hex # # # # #> type ;
+  0 <# #hex # # # # #> type ;
 
 : dump ( addr n -- ) \ simple dump
    swap dup h4. space
@@ -729,41 +785,6 @@ variable outer_flag
 \ : baka ' + , 1 , ; 
 \ : baka [char] x ;
 
-\
-\ double length integer
-\
-\ opcode d+  ( ud1 ud2 --- ud )
-\ opcode m+  ( ud1 n2 --- ud )
-\ opcode m*/ ( ud1 n2 n3 --- ud (= ud1*n2/n3))
 
-: 2swap ( n1 n2 n3 n4 --- n3 n4 n1 n2 )
-   >r    ( n1 n2 n3 )
-   rot rot ( n3 n1 n2 )
-   r>    ( n3 n1 n2 n4 )
-   rot rot ( n3 n4 n1 n2 )
-   ;
-
-: m/ \ ( ud1 n2 --- ud )
-    1 swap ( ud1 1 n2 )
-    m*/    ( ud1/n2 )
-    ;
-
-: bitnot 
-   negate 1- ;
-
-: dnegate
-   bitnot swap bitnot swap
-   1 m+
-   ;
-
-: m/mod 
-   2 pick 2 pick 2 pick ( ud1 n2 ud1 n2 )
-   m/  ( ud1 n2 ud1/n2 )
-   rot ( ud1 ud1/n2 n2 )
-   1   ( ud1 ud1/n2 n2 1 )
-   m*/ ( ud1 ud1/n2*n2 )
-   dnegate
-   d+
-   ;
 
 
