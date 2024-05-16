@@ -124,4 +124,12 @@ opcode word
 //opcode accept
 opcode getline
 opcode sp
+//
+// double length integer
+//
+opcode d+ dadd
+opcode m+ madd
+opcode m*/ mmuldiv
+opcode d< dlt
+
 

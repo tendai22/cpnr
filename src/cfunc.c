@@ -639,3 +639,21 @@ void dump_entry(context_t *cx)
     }
 }
 
+//
+// double length integer
+//
+uint32_t do_dpop(context_t *cx)
+{
+    word_t high, low;
+    high = do_pop(cx);
+    low = do_pop(cx);
+    return (((uint32_t)high)<<16)|((uint32_t)low);
+}
+
+uint32_t do_dpush(context_t *cx, uint32_t u)
+{
+    // push low first, hight next
+    do_push(cx, u&0xffff);
+    do_push(cx, (word_t)((u>>16)&0xffff));
+}
+

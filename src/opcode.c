@@ -11,6 +11,8 @@ static int opcode_base = 0xc000;
 int machine_code(context_t *cx, word_t code)
 {
     word_t addr, *wp, w, w2, n;
+    int32_t d1, d2;
+    uint32_t ud1, ud2;
     mem_t *p, c;
     int cc, result;
     // machine code
@@ -378,6 +380,37 @@ undefined:
         cx->pc += CELLS;
         break;
 #endif
+    case 100:   // m_dadd
+        // D+, double add
+        ud1 = do_dpop(cx);
+        ud2 = do_dpop(cx);
+        do_dpush(cx, ud1 + ud2);
+        cx->pc += CELLS;
+        break;
+    case 101:  // m_madd
+        // ( d n --- d(=d+n) )
+        w = do_pop(cx);
+        ud1 = do_dpop(cx) + w;
+        do_dpush(cx, ud1);
+        cx->pc += CELLS;
+        break;
+    case 102:  // m_mmuldiv
+        // ( d1 n2 n3 --- t-result )
+        w2 = do_pop(cx);
+        w = do_pop(cx);
+        ud1 = do_dpop(cx);
+        ud1 *= w;
+        ud1 /= w2;
+        do_dpush(cx, ud1);
+        cx->pc += CELLS;
+        break;
+    case 103:   // m_dlt
+        // ( d1 d2 --- d(-1 if d1<d2, 0 if d1>=d2) )
+        ud2 = do_dpop(cx);
+        ud1 = do_dpop(cx);
+        do_push(cx, (ud1 < ud2) ? (word_t)(-1) : 0);
+        cx->pc += CELLS;
+        break;
     default:
         goto undefined;
     }

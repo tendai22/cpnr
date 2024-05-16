@@ -147,4 +147,8 @@ extern void m_run(context_t *cx);
 extern void m_jmp_immediate(context_t *cx);
 extern void m_jmp(context_t *cx, word_t addr);
 
+// double length integer
+extern uint32_t do_dpop(context_t *cx);
+extern uint32_t do_dpush(context_t *cx, uint32_t u);
+
 #endif //__MACHINE_H

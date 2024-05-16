@@ -124,5 +124,13 @@ BEGIN {
     ropcode[98 + opcode_base] = "m_getline"
     opcode["m_accept"] = 99 + opcode_base
     ropcode[99 + opcode_base] = "m_accept"
+    opcode["m_dadd"] = 100 + opcode_base
+    ropcode[100 + opcode_base] = "m_dadd"
+    opcode["m_madd"] = 101 + opcode_base
+    ropcode[101 + opcode_base] = "m_madd"
+    opcode["m_mmuldiv"] = 102 + opcode_base
+    ropcode[102 + opcode_base] = "m_mmuldiv"
+    opcode["m_dlt"] = 103 + opcode_base
+    ropcode[103 + opcode_base] = "m_dlt"
 }
 

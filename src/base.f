@@ -31,6 +31,7 @@
 \ simple ones
 \
 : 1+ 1 + ;
+: 1- 1 - ;
 
 \
 \ dictionary/compilation
@@ -353,7 +354,7 @@ variable #base_addr
    dup 10 < if 0x30 + else
    10 - 0x41 + then then ;
 
-: # ( u -- n/10 )
+: # ( d -- n/10 )
    #base /mod swap ( n -- n/10 n%10 ) 
    i2a #np c!
    #i-- ;
@@ -542,7 +543,7 @@ variable outer_flag
    0 here c!      \ clear here[0]
    pad dup dup c@ 1+ + swap ( 0x30 .ps ) \  limit-index
    >in @ +        \ start-index
-   0x41 .ps
+   ( 0x41 .ps )
    over over <= if drop drop drop drop 0 0x42 .ps exit then
    do dup 0 = if  \ skip it
          i c@ 2 pick ( 0x41 .ps ) != if 1+ then  \ flag++
@@ -564,14 +565,14 @@ variable outer_flag
       then
       >in @ 1+ >in ( 0x45 .ps ) ! \ increment >in  
    loop
-   drop drop here c@ if here else 0 then 0x43 .ps
-   .hd ;
+   drop drop here c@ if here else 0 then ( 0x43 .ps )
+   ( .hd ) ;
 
 \ test word for accept-word
 : wtest accept begin bl word c@ while .hd repeat ;
 
 : >rest \ ( --- n ) rest of pad buffer ;
-   pad c@ 1+ >in @ 0x31 .ps - ;
+   pad c@ 1+ >in @ ( 0x31 .ps ) - ;
 
 : wwtest
    begin 
@@ -656,7 +657,7 @@ variable outer_flag
    DEBUG_ADDR @
    0 debug
    swap      \ c-addr 0 last
-   0x40 emit .stack
+   ( 0x40 emit .stack )
    begin dup while   \ repeat until link is null
       \ c-addr 0 link
       dup
@@ -677,9 +678,9 @@ variable outer_flag
    repeat
    \ here, c-addr link 0 or c-addr 0 0
    drop
-   0x46 emit .stack cr
-   dup 0 = if over 10 dump else
-      0x44 emit .stack cr
+   \ 0x46 emit .stack cr
+   dup 0 = if ( over 10 dump ) else
+      \ 0x44 emit .stack cr
       \ dispose word address
       swap drop
       \ check immediate flag
@@ -715,11 +716,11 @@ variable outer_flag
 
 : ' \ comma ... find address of next string in dictionary
   0x1090 , 
-  bl word 0x58 .ps .hd cr 
+  bl word ( 0x58 .ps .hd cr )
   find 
   not if abort then 
-  0x58 .ps 
-  , last 16 dump ; immediate
+  ( 0x58 .ps ) 
+  , ( last 16 dump ) ; immediate
 
 : [char]
     ' literal , 
@@ -727,3 +728,42 @@ variable outer_flag
 
 \ : baka ' + , 1 , ; 
 \ : baka [char] x ;
+
+\
+\ double length integer
+\
+\ opcode d+  ( ud1 ud2 --- ud )
+\ opcode m+  ( ud1 n2 --- ud )
+\ opcode m*/ ( ud1 n2 n3 --- ud (= ud1*n2/n3))
+
+: 2swap ( n1 n2 n3 n4 --- n3 n4 n1 n2 )
+   >r    ( n1 n2 n3 )
+   rot rot ( n3 n1 n2 )
+   r>    ( n3 n1 n2 n4 )
+   rot rot ( n3 n4 n1 n2 )
+   ;
+
+: m/ \ ( ud1 n2 --- ud )
+    1 swap ( ud1 1 n2 )
+    m*/    ( ud1/n2 )
+    ;
+
+: bitnot 
+   negate 1- ;
+
+: dnegate
+   bitnot swap bitnot swap
+   1 m+
+   ;
+
+: m/mod 
+   2 pick 2 pick 2 pick ( ud1 n2 ud1 n2 )
+   m/  ( ud1 n2 ud1/n2 )
+   rot ( ud1 ud1/n2 n2 )
+   1   ( ud1 ud1/n2 n2 1 )
+   m*/ ( ud1 ud1/n2*n2 )
+   dnegate
+   d+
+   ;
+
+

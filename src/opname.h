@@ -63,4 +63,8 @@ void init_optable(void)
         optable[89] = "m_sp";
         optable[98] = "m_getline";
         optable[99] = "m_accept";
+        optable[100] = "m_dadd";
+        optable[101] = "m_madd";
+        optable[102] = "m_mmuldiv";
+        optable[103] = "m_dlt";
 }
