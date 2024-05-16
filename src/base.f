@@ -715,12 +715,12 @@ variable outer_flag
 : [.ps] 0x58 .ps cr ; immediate
 
 : ' \ comma ... find address of next string in dictionary
-  0x1090 , 
-  bl word ( 0x58 .ps .hd cr )
-  find 
-  not if abort then 
-  ( 0x58 .ps ) 
-  , ( last 16 dump ) ; immediate
+   0x1090 , 
+   bl word ( 0x58 .ps .hd cr )
+   find 
+   not if abort then 
+   ( 0x58 .ps ) 
+   , ( last 16 dump ) ; immediate
 
 : [char]
     ' literal , 

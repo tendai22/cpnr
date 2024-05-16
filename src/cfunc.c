@@ -401,9 +401,11 @@ void do_number(context_t *cx)
         fprintf(stderr, " -> %d %d\n", value, r);
     // low push first, high second
     do_push(cx, value & 0xffff);
-    if (value & 0xffff0000) {
+    value >>= 16;
+    value &= 0xffff;
+    if (value != 0 && value != 0xffff) {
         // double length
-        do_push(cx, (value>>16)&0xffff);
+        do_push(cx, value);
     }
     do_push(cx, r);
 }
