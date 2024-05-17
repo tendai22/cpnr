@@ -325,6 +325,8 @@ DSTACK_END 0x100 - constant RSTACK_END
 \ opcode m+  ( ud1 n2 --- ud )
 \ opcode m*/ ( ud1 n2 n3 --- ud (= ud1*n2/n3))
 
+: 2drop drop drop ;
+
 : 2swap ( n1 n2 n3 n4 --- n3 n4 n1 n2 )
    >r    ( n1 n2 n3 )
    rot rot ( n3 n1 n2 )
@@ -390,7 +392,7 @@ variable #base_addr
 : #base #base_addr @ ;
 
 10 #base_addr !
-8  #field_addr !
+16  #field_addr !
 
 \ <# ... prepare numeric conversion
 : <#
@@ -430,9 +432,9 @@ variable #base_addr
 
 : abs dup signbit and if 0 swap - then ;
 
-: D. 2dup dabs <# #s sign #> type drop drop space ;
+: d. 2dup dabs <# #s sign #> type drop drop space ;
 
-: . s->d D. ;
+: . s->d d. ;
 
 : #hex 16 #base_addr ! ;
 : #decimal 10 #base_addr ! ;
@@ -785,6 +787,52 @@ variable outer_flag
 \ : baka ' + , 1 , ; 
 \ : baka [char] x ;
 
+\
+\ rest of double length number alithmetics
+\
+: d- dnegate d+ ;
+: d/ \ ( ud1 n2 --- ud1/n2 ) ... same as `m/` 
+  m/ ;
+: dmax \ ( ud1 ud2 --- ud )
+   3 pick 3 pick 3 pick 3 pick ( ud1 ud2 ud1 ud2 ) 
+   d<      if 2swap then 2drop ;
+: dmin \ ( ud1 ud2 --- ud )
+   3 pick 3 pick 3 pick 3 pick ( ud1 ud2 ud1 ud2 ) 
+   d< not if 2swap then 2drop ;
 
 
+: #a2i \ ( c --- n )
+   dup 
+   48 - dup 0< if else        \ \0 ... '0'
+   10 - dup 0< if 10 + else   \ '0' ... '9'
+    7 - dup 0< if else        \ ...
+   26 - dup 0< if 36 + else   \ 'A' ... 'Z'
+    6 - dup 0< if else        \ ... 
+   26 - dup 0< if 36 + else   \ 'a' ... 'z'
+                  drop -1
+   then then then then then then
+   swap drop
+;
 
+: (number) \ ( d1 addr1 --- d2 addr2 )
+   rot rot \ ( addr1 d1 )
+   begin
+      2 pick c@   \ next char
+                  \ ( addr1 d1 c )
+      #a2i dup 0< not
+   while          \ ( addr1 d1 n )
+      rot rot     \ ( addr1 n d1 )
+      base 1 m*/  0x42 .ps \ ( addr1 n d1*10 )
+      rot         \ addr1 d1*10 n
+      0x43 .ps
+      m+          \ addr1 (d1*10+n)
+      0x44 .ps
+      rot 1+ 
+      rot rot     \ ( addr1++ d2 )
+   repeat
+   drop           \ ( addr2 d2 )
+   rot            \ ( d2 addr2 )
+   0x45 .ps 
+   ;
+
+: ntest 0 0 accept pad 1+ 0x40 .ps (number) 0 pad c! pad 16 dump ;

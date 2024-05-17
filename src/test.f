@@ -13,7 +13,7 @@
 
 \ debug
 : debug DEBUG_ADDR ! ;
-1 debug
+0 debug
 \ base
 : base BASE_ADDR @ ;
 10 BASE_ADDR !
