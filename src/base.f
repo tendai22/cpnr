@@ -814,24 +814,72 @@ variable outer_flag
    swap drop
 ;
 
+: #ispunct \ ( c --- flag )
+   dup 0x2c = if -1 else \ comma else
+   dup 0x2e = if -1 else \ period
+   dup 0x2f = if -1 else \ slash
+   dup 0x2a = if -1 else \ aster
+   dup 0x3a = if -1 else \ colon
+    0
+   then then then then then
+   swap drop 
+;
+
+: (base) \ base saved in return stack
+   r> dup >r ;
+
 : (number) \ ( d1 addr1 --- d2 addr2 )
-   rot rot \ ( addr1 d1 )
+   \ '-' check
+   dup c@ 0x2d = if \ '-' flag
+      1+ 0x8000 else 0 then
+   ( 0x46 .ps ) ( d1 addr1 base )
+   \ '0x' check
+   over c@ 0x30 = 2 pick 1+ c@ 0x78 = and if \ '0x'
+      swap 2 + swap 16 else base then or    \ base = 0x8010 or 0x000a, 
+                              \ MSB show sign flag
+   ( 0x47 .ps )
+   >r          \ save base to return stack
+   ( 0x48 .ps ) ( d1 addr1 base )
+   rot rot 
+   ( 0x48 .ps ) \ ( addr1 d1 )
+   \ r> dup >r   \ get base
+   \ ( addr1 d1 )
    begin
+      0x40 .ps
       2 pick c@   \ next char
-                  \ ( addr1 d1 c )
-      #a2i dup 0< not
-   while          \ ( addr1 d1 n )
-      rot rot     \ ( addr1 n d1 )
-      base 1 m*/  0x42 .ps \ ( addr1 n d1*10 )
-      rot         \ addr1 d1*10 n
-      0x43 .ps
-      m+          \ addr1 (d1*10+n)
-      0x44 .ps
-      rot 1+ 
-      rot rot     \ ( addr1++ d2 )
-   repeat
+      \ ( addr1 d1 c )
+                  \ punctuation flag
+      dup #ispunct if r> 0x61 .ps 0x4000 or >r 
+                  \ punctuation, set b14
+         drop 0   \ loop flag, zero means continue
+      else #a2i dup 0< not if
+               \ valid numeric char, add it to shifted d1
+               \ ( addr1 d1 n )
+         rot rot     \ ( addr1 n d1 )
+         0x41 .ps
+         r> dup >r 0x3fff and \ base
+         0x42 .ps
+         1 m*/  0x42 .ps \ ( addr1 n d1*10 )
+         rot         \ addr1 d1*10 n
+         0x43 .ps
+         m+          \ addr1 (d1*10+n)
+         0x44 .ps
+      else \ invalid, exit here
+      then then
+      ( addr1 d1 flag )
+      \ increment address
+      0x45 .ps 
+      0< if 
+         1  \ exit the loop
+      else
+         rot 1+ 
+         rot rot     \ ( addr1++ d2 )
+         0  \ continue the loop
+      then
+   until
    drop           \ ( addr2 d2 )
    rot            \ ( d2 addr2 )
+   r>             \ restor flag for debug
    0x45 .ps 
    ;
 
