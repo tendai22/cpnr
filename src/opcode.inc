@@ -132,5 +132,7 @@ BEGIN {
     ropcode[102 + opcode_base] = "m_mmuldiv"
     opcode["m_dlt"] = 103 + opcode_base
     ropcode[103 + opcode_base] = "m_dlt"
+    opcode["m_umul"] = 104 + opcode_base
+    ropcode[104 + opcode_base] = "m_umul"
 }
 

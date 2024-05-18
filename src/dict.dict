@@ -131,5 +131,7 @@ opcode d+ dadd
 opcode m+ madd
 opcode m*/ mmuldiv
 opcode d< dlt
+opcode u* umul
+
 
 

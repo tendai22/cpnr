@@ -67,4 +67,5 @@ void init_optable(void)
         optable[101] = "m_madd";
         optable[102] = "m_mmuldiv";
         optable[103] = "m_dlt";
+        optable[104] = "m_umul";
 }

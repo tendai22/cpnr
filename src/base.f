@@ -814,7 +814,7 @@ variable outer_flag
    swap drop
 ;
 
-: #ispunct \ ( c --- flag )
+: ?#punct \ ( c --- flag )
    dup 0x2c = if -1 else \ comma else
    dup 0x2e = if -1 else \ period
    dup 0x2f = if -1 else \ slash
@@ -825,62 +825,121 @@ variable outer_flag
    swap drop 
 ;
 
-: (base) \ base saved in return stack
-   r> dup >r ;
+variable dpl
+0 dpl !
+variable #base
+10 #base !
 
-: (number) \ ( d1 addr1 --- d2 addr2 )
-   \ '-' check
-   dup c@ 0x2d = if \ '-' flag
-      1+ 0x8000 else 0 then
-   ( 0x46 .ps ) ( d1 addr1 base )
-   \ '0x' check
-   over c@ 0x30 = 2 pick 1+ c@ 0x78 = and if \ '0x'
-      swap 2 + swap 16 else base then or    \ base = 0x8010 or 0x000a, 
-                              \ MSB show sign flag
-   ( 0x47 .ps )
-   >r          \ save base to return stack
-   ( 0x48 .ps ) ( d1 addr1 base )
-   rot rot 
-   ( 0x48 .ps ) \ ( addr1 d1 )
-   \ r> dup >r   \ get base
-   \ ( addr1 d1 )
-   begin
-      0x40 .ps
-      2 pick c@   \ next char
-      \ ( addr1 d1 c )
-                  \ punctuation flag
-      dup #ispunct if r> 0x61 .ps 0x4000 or >r 
-                  \ punctuation, set b14
-         drop 0   \ loop flag, zero means continue
-      else #a2i dup 0< not if
-               \ valid numeric char, add it to shifted d1
-               \ ( addr1 d1 n )
-         rot rot     \ ( addr1 n d1 )
-         0x41 .ps
-         r> dup >r 0x3fff and \ base
-         0x42 .ps
-         1 m*/  0x42 .ps \ ( addr1 n d1*10 )
-         rot         \ addr1 d1*10 n
-         0x43 .ps
-         m+          \ addr1 (d1*10+n)
-         0x44 .ps
-      else \ invalid, exit here
-      then then
-      ( addr1 d1 flag )
-      \ increment address
-      0x45 .ps 
-      0< if 
-         1  \ exit the loop
-      else
-         rot 1+ 
-         rot rot     \ ( addr1++ d2 )
-         0  \ continue the loop
-      then
-   until
-   drop           \ ( addr2 d2 )
-   rot            \ ( d2 addr2 )
-   r>             \ restor flag for debug
-   0x45 .ps 
+: digit \ ( c base --- n2 flag )
+   swap     ( base c )
+   dup 
+   48 - dup 0< if else        \ \0 ... '0'
+   10 - dup 0< if 10 + else   \ '0' ... '9'
+    7 - dup 0< if else        \ ...
+   26 - dup 0< if 36 + else   \ 'A' ... 'Z'
+    6 - dup 0< if else        \ ... 
+   26 - dup 0< if 36 + else   \ 'a' ... 'z'
+                  drop -1
+   then then then then then then
+   ( 0x33 .ps )   \ ( base c n2 )
+   swap drop dup \ ( base n2 n2 )
+   ( 0x34 .ps )   \ ( base n2 n2)
+   0< if drop drop 0 else
+   swap over ( 0x35 .ps ) <= if \ ( n2 base n2 )
+      drop 0 
+   else
+      -1 
+   then then
+   ( 0x36 .ps )
    ;
 
-: ntest 0 0 accept pad 1+ 0x40 .ps (number) 0 pad c! pad 16 dump ;
+\ (number) .. support word for `number`
+\ start scan from addr+1, for `number`s convinience
+\
+: (number) \ ( d1 addr1 --- d2 addr2 )
+   \ check if '0x'
+   \ base #base ! 
+   dup 1+ c@ 0x30 ( 0x39 .ps ) =  \ ( d1 addr1 flag1 )
+   over 2 + c@ 0x78 ( 0x38 .ps ) = and ( 0x37 .ps ) \ ( d1 addr1 flag1&flag2 )
+   if 16 #base ! 2 + else base #base ! then
+   ( 0x36 .ps ) 
+   begin
+      1+ dup >r \ Save addr1+1, address of the first digit, on
+            \ return stack.
+      c@    \ Get a digit
+      #base @  \ Get the current base
+      digit \ A primitive. (c n1 -- n2 tf or ff)
+            \ Convert the character c according to base n1 to
+            \ a binary number n2 with a true flag on top of
+            \ stack. If the digit is an invalid character, only
+            \ a false flag is left on stack.
+   while    \ Successful conversion, accumulate into d1.
+      ( 0x42 .ps )
+      swap  \ Get the high order part of d1 to the top.
+      #base @ u* \ Multiply by base value
+      drop  \ Drop the high order part of the product
+      rot   \ Move the low order part of d1 to top of stack
+      #base @ u* \ Multiply by base value
+      ( 0x43 .ps )
+      d+    \ Accumulate result into d1
+      dpl @ 1+ \ See if DPL is other than -1
+      if    \ DPL is not -1, a decimal point was encountered
+         1 dpl @ + dpl ! \ Increment DPL, one more digit to right of
+            \ decimal point
+      then
+      r> \ Pop addr1+1 back to convert the next digit.
+   repeat \ If an invalid digit was found, exit the loop here.
+         \ Otherwise repeat the conversion until the string is
+         \ exhausted.
+   r>    \ Pop return stack which contains the address of the first
+         \ non-convertable digit, addr2.
+   ;
+
+\ test for (number)
+ : nt 0 0 accept pad 0x40 .ps (number) 0 pad c! pad 16 dump ;
+
+\ temporal stub
+: ?error drop drop ;
+
+: ?#eos \ space or nul
+   dup bl = over 0 = or
+   swap drop
+;
+
+\
+\ number
+\
+: number \ addr -- d
+   0 0 rot     \ Push two zero's on stack as the initial value
+               \ of d. 
+   dup 1+ c@   \ Get the first digit
+   0x2d =      \ Is it a - sign?
+   0x61 .ps 
+   dup >r      \ Save the flag on return stack.
+   if 1+ then  \ If the first digit is minus, increment addr
+   -1          \ The initial value of DPL
+   begin       \ Start the conversion process
+      dpl !    \ Store the decimal point counter
+      (number) \ Convert one digit after another until an 
+               \ invalid char occurs. Result is accumulated
+               \ into d.
+      dup c@   \ Fetch the invalid digit
+      ?#eos not   \ blank or nul?
+   while       \ Not a blank, see if it is a decimal point
+      dup c@   \ Get the digit again
+      ?#punct not    \ Is it a punctuation?
+      0 ?error \ Not a decimal point. It is an illegal 
+               \ character for a number. Issue an error 
+               \ message and quit.
+      0        \ A decimal point was found. Set DPL to 0 the
+               \ next time.
+   repeat      \ Exit here if a blank was detected. Otherwise
+               \ repeat the conversion process.
+   drop        \ Discard addr on stack
+   r>          \ Pop the flag of - sign back
+   0x62 .ps
+   if dnegate   \ Negate d if the first digit is a - sign.
+   then
+   ; \          All done. A double integer is on 
+
+: nn accept pad 0x40 .ps number 0 pad c! pad 16 dump ;

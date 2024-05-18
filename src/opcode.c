@@ -411,6 +411,13 @@ undefined:
         do_push(cx, (ud1 < ud2) ? (word_t)(-1) : 0);
         cx->pc += CELLS;
         break;
+    case 104: // m_umul
+        d1 = do_pop(cx);
+        d1 *= (uint32_t)do_pop(cx);
+        do_push(cx, d1&0xffff);
+        do_push(cx, (d1>>16)&0xffff);
+        cx->pc += CELLS;
+        break;
     default:
         goto undefined;
     }
