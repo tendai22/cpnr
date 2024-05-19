@@ -18,6 +18,7 @@ opcode run
 opcode startdoes
 opcode semi
 opcode execute
+opcode trap
 
 //
 // primitives .. thread instructions
@@ -25,6 +26,7 @@ opcode execute
 opcode literal
 opcode branch
 opcode ?branch qbranch
+opcode sliteral
 
 //
 // primitives ... memory access
@@ -119,6 +121,7 @@ opcode dd dictdump
 opcode +rsp add_rsp
 // opcode find
 opcode compile
+opcode [compile] bracompile immediate
 opcode word
 //opcode _state
 //opcode accept
@@ -132,6 +135,8 @@ opcode m+ madd
 opcode m*/ mmuldiv
 opcode d< dlt
 opcode u* umul
+opcode dliteral
+
 
 
 

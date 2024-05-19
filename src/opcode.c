@@ -30,11 +30,12 @@ undefined:
         cx->pc += CELLS;
         break;
     case 1: // m_halt
-        //if (STAR(DEBUG_ADDR))
-        //    fprintf(stderr, "halt at %04X\n", cx->pc);
+         if (STAR(DEBUG_ADDR))
+            fprintf(stderr, "halt at %04X\n", cx->pc);
+        cx->halt_flag = 1;
         fflush(stdout);
         fflush(stderr);
-        return -1;
+        return 1;
     //
     // inner interpreter
     //
@@ -66,6 +67,13 @@ undefined:
     case 7: // m_execute
         cx->ip = do_pop(cx);
         goto do_next_label;
+    case 8: // m_trap
+         if (STAR(DEBUG_ADDR))
+            fprintf(stderr, "trap at %04X\n", cx->pc);
+        cx->halt_flag = 1;
+        fflush(stdout);
+        fflush(stderr);
+        return -1;
 
     case 16: // m_literal
         w = STAR(cx->ip);
@@ -416,6 +424,51 @@ undefined:
         d1 *= (uint32_t)do_pop(cx);
         do_push(cx, d1&0xffff);
         do_push(cx, (d1>>16)&0xffff);
+        cx->pc += CELLS;
+        break;
+    case 105: // m_rp_reset
+        cx->rs = RSTACK_END;
+        cx->pc += CELLS;
+        break;
+    case 106: // m_sp_reset
+        cx->sp = DSTACK_END;
+        cx->pc += CELLS;
+        break;
+    case 107: // m_sliteral
+        do_push(cx, cx->ip);
+        n = mem[cx->ip];        // c-string length
+        n = (n + 1 + CELLS - 1) / CELLS * CELLS;
+        cx->ip += n;
+        cx->pc += CELLS;
+        break;
+    case 108: // m_bracompile
+        // ( --- ) ... read the following word to find and compile xt
+        // : [compile]
+        // bl word find
+        do_push(cx, ' ');
+        do_word(cx);
+        do_find(cx); 
+        // not if here count type ." not found" abort then ,
+        if (do_pop(cx) == 0) {
+            w = STAR(H_ADDR);       // count
+            w2 = w + 1;             // string
+            fprintf(stderr, "%.*s: not found\n", mem[w], &mem[w2]);
+        }
+        // , (compile it)
+        w = do_pop(cx);
+        if (STAR(DEBUG_ADDR))
+            fprintf(stderr, "STAR[%04x] = %04x\n", STAR(H_ADDR), w);
+        STAR(STAR(H_ADDR)) = w;
+        STAR(H_ADDR) += CELLS;
+        cx->pc += CELLS;
+        break;
+    case 109: // m_dliteral
+        w = STAR(cx->ip);
+        cx->ip += CELLS;
+        do_push(cx, w);
+        w = STAR(cx->ip);
+        cx->ip += CELLS;
+        do_push(cx, w);
         cx->pc += CELLS;
         break;
     default:

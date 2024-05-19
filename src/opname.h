@@ -1,4 +1,4 @@
-static const char *optable[100];
+static const char *optable[128];
 void init_optable(void)
 {
         optable[0] = "m_nop";
@@ -9,6 +9,7 @@ void init_optable(void)
         optable[5] = "m_startdoes";
         optable[6] = "m_semi";
         optable[7] = "m_execute";
+        optable[8] = "m_trap";
         optable[16] = "m_literal";
         optable[17] = "m_qbranch";
         optable[18] = "m_branch";
@@ -68,4 +69,9 @@ void init_optable(void)
         optable[102] = "m_mmuldiv";
         optable[103] = "m_dlt";
         optable[104] = "m_umul";
+        optable[105] = "m_rp_reset";
+        optable[106] = "m_sp_reset";
+        optable[107] = "m_sliteral";
+        optable[108] = "m_bracompile";
+        optable[109] = "m_dliteral";
 }

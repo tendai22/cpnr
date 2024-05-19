@@ -29,6 +29,7 @@ static void initialize_ctx(context_t *cx)
     cx->ss_flag = 0;
     for (int i = 0; i < BPTBL_SIZE; ++i)
         cx->bp[i] = 0;
+    lnum = 0;
 }
 
 //

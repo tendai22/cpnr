@@ -11,6 +11,13 @@ opcode semi
 opcode next
 opcode run 
 opcode execute
+opcode (abort) abort
+
+//
+// premitives ... boot sequence
+//
+opcode rp! rp_reset
+opcode sp! sp_reset
 
 //
 // primitives .. thread instructions
@@ -18,6 +25,7 @@ opcode execute
 opcode bra
 opcode bne
 opcode literal
+opcode sliteral     \ string literal
 
 //
 // primitives ... memory access

@@ -112,19 +112,19 @@ void ungetch(context_t *cx, mem_t c)
     uc = c;
 }
 
-static int line_number = 0;
+int lnum = 0;
 
 static void dump_line(const char *buf)
 {
     int n = strlen(buf);
     char c;
     const char *p = &buf[n > 0 ? n - 1 : 0];
-    if (line_number > 0) {
+    if (lnum > 0) {
         while (p >= &buf[0] && *p && ((c = *p) == '\n' || c == '\r'))
             --p;
         if (p - buf < n)
             ++p;
-        fprintf(stderr, "%d:[%.*s]\n", line_number, (int)(p - buf), buf);
+        fprintf(stderr, "%d:[%.*s]\n", lnum, (int)(p - buf), buf);
     }
 }
 
@@ -145,7 +145,7 @@ int do_getline(context_t *cx, char *buf, int size)
         }
         if (STAR(DEBUG_ADDR))
             fprintf(stderr, "getline: [%s]", buf);
-        line_number++;
+        lnum++;
     }
     if (outer_flag == 0) {
         // input from keyboard
@@ -154,7 +154,7 @@ int do_getline(context_t *cx, char *buf, int size)
             fprintf(stderr, "eof\n");
             return EOF;
         }
-        line_number = -1;
+        //lnum = -1;
     }
     //dump_line(buf);
     return 0;

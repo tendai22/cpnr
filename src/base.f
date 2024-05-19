@@ -15,11 +15,14 @@
 
 \ debug
 : debug DEBUG_ADDR ! ;
-0 debug
 
 \ base
 : base BASE_ADDR @ ;
 10 BASE_ADDR !
+
+\ state
+: state STATE_ADDR ;
+0 state !
 
 \ signbit
 : signbit 0x8000 ;
@@ -43,11 +46,11 @@
 : last LAST_ADDR @ ;
 : immediate last c@ 0x80 or last c! ;
 : , ( comma ) here ! cells allot ;
-: ] ( -- ) 1 STATE_ADDR ! ; immediate
-: [ ( -- ) 0 STATE_ADDR ! ; immediate
+: ] ( -- ) 1 state ! ; immediate
+: [ ( -- ) 0 state ! ; immediate
 
-\ link_addr ( addr -- link-addr )
-: link_addr
+\ lfa, link_addr ( addr -- link-addr )
+: lfa
    dup c@      \ addr c
    31 and      \ addr n (= c&0x1f)
    dup 1 and   \ addr n (n&1)
@@ -55,14 +58,14 @@
    + ;
 
 \ code_addr ( addr -- code-addr )
-: code_addr 
-   link_addr cells + ;
+: cfa 
+   lfa cells + ;
 
 \ create
 : create
    32 word drop
    last              \ last
-   here link_addr    \ last link_pos
+   here lfa    \ last link_pos
    dup rot swap      \ link_pos last link_pos
    !                 \ STAR(link_pos) = last 
    here LAST_ADDR !  \ link_pos
@@ -74,7 +77,7 @@
 \
 
 : (does)
-   last link_addr cells +  \ code_addr
+   last lfa cells +  \ code_addr
    rsp @            \ get semi addr
    cells +                 \ get colon addr
    swap !            \ STAR(code_addr) = colon_addr
@@ -254,8 +257,11 @@ DSTACK_END 0x100 - constant RSTACK_END
 \ begin ... until
 \
 : begin <mark ; immediate
-: until ( flag -- )
+: until \ ( flag -- )
    compile ?branch <resolve 
+   ; immediate
+: again \ ( -- )
+   compile branch <resolve 
    ; immediate
 
 \
@@ -419,13 +425,13 @@ variable #base_addr
    begin # 2dup or not until ;
 
 : #> ( -- ) \ return string for `TYPE` 
-   drop drop #nb #i + #field #i - ;
+   drop drop #nb #i + 1+ #field #i - ;
 
 : hold  ( c -- ) \ append a char to nbuf
    #np c! #i-- ;
 
 : type ( addr u -- ) \ print a string
-   1 do dup i + c@ emit loop drop ;
+   swap 1- swap 1 do dup i + c@ emit loop drop ;
 
 : sign ( n xx xx - n xx xx ) \ print '-' if n is minus
    2 pick signbit and if 45 #np c! #i-- then ;
@@ -661,8 +667,13 @@ variable outer_flag
 ;
 
 \ for test command
-: align ( addr -- addr2 )
-   cells + 1 - cells / cells * ;
+: aligned \ ( addr -- addr2 )
+   cells + 1- cells / cells *
+   ;
+
+: align 
+   0x41 .ps here aligned H_ADDR 0x42 .ps ! ;
+
 
 0xe000 constant tmp 
 : tcom
@@ -683,15 +694,15 @@ variable outer_flag
    compare
    ;
 
-\ link_addr ( entry -- link )
-: link_addr
-   dup c@ 0x1f and   \ n = *entry & 0x1f
-   dup 1 and + 2 + +
-;
+\ lfa ( entry -- link )
+\ : link_addr
+\    dup c@ 0x1f and   \ n = *entry & 0x1f
+\    dup 1 and + 2 + +
+\ ;
 
 \ prev_link ( entry -- prev-entry )
 : prev_link
-   link_addr @
+   lfa @
 ;
 
 \ print name
@@ -745,7 +756,7 @@ variable outer_flag
       dup c@ 0x80 and if 1 else -1 then
       \ xt
       swap
-      link_addr cells +
+      lfa cells +
       swap
    then
 ;
@@ -766,26 +777,58 @@ variable outer_flag
 \ number
 \
 
-: >number ( char -- num | -1 )
-   \ one-digit conversion
-   ;
-
-: [.ps] 0x58 .ps cr ; immediate
+\ : [.ps] 0x58 .ps cr ; immediate
 
 : ' \ comma ... find address of next string in dictionary
-   0x1090 , 
+   compile literal
    bl word ( 0x58 .ps .hd cr )
    find 
    not if abort then 
-   ( 0x58 .ps ) 
-   , ( last 16 dump ) ; immediate
+   ( 0x58 .ps )
+   , ( last 16 dump ) 
+   ; immediate
+
+\ : baka ' getline ;
 
 : [char]
-    ' literal , 
-    ] bl word 1+ c@ , ; immediate
+    compile literal 
+    bl word 1+ c@ , 
+    ; immediate
+
+\ : aho [char] a ;
+
+\
+\ string manipulation
+\
+
+\ 1 debug
+
+: ["] \ ( --- c-addr )
+    \ leave the address of a counted-string, on where 'here'
+   compile sliteral
+   [char] " word ( dup 16 dump )
+   c@ 1+ allot  ( here h4. 0x41 .ps )
+   align ( here h4. cr )
+   ; immediate
+
+: count \ ( c-addr --- count addr+1 )
+   dup 1+ swap c@ ;
+
+: ." \ "
+   [compile] ["]
+   ' count ,
+   ' type ,
+   ; immediate
+
+\ : aho ." baka" ;
+
+\ : [compile] \ compile a word (even if it is immediate)
+\    bl word find not if here count type ." not found" abort then ,
+\    ; immediate
 
 \ : baka ' + , 1 , ; 
 \ : baka [char] x ;
+\ : baka [compile] [ ;
 
 \
 \ rest of double length number alithmetics
@@ -943,3 +986,61 @@ variable #base
    ; \          All done. A double integer is on 
 
 : nn accept pad 0x40 .ps number 0 pad c! pad 16 dump ;
+
+
+\
+\ interpret ... interpret words in the line input
+\
+: interpret
+   begin
+      bl word
+   not while
+      \ a valid word
+      find
+      if
+         state @ <
+         if cfa ,    \ compile it
+         else
+            cfa execute
+         then
+         \ ?stack
+      else  \ not found, check number
+         here
+         number
+         dpl @ 1+    \ dpl + 1
+         if
+            [compile] dliteral
+         else
+            drop
+            [compile] literal
+         then
+         \ ?stack
+      then
+   repeat
+   ;
+
+\
+\ quit ... outer interpreter main loop
+\
+
+: quit
+   [compile] [ \ start interpretive state
+   begin
+      \ rp!
+      cr
+      127 s0 getline
+      not if abort then \ stop interpreter when enter ^D
+      \ interpret
+      state @ 0=
+      if
+         ." ok"
+      then
+   again
+   ;
+
+: 2, \ ( d --- ) ... compile a double length integer
+   swap ' literal , , ' literal , , ;
+: aho 100000 0x44 .ps 2, ; immediate
+: baka aho ;
+
+last dd

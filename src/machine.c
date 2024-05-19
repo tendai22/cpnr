@@ -21,9 +21,9 @@
 //
 mem_t mem[65536];
 
-void do_machine(context_t *cx)
+int do_machine(context_t *cx)
 {
-    int i;
+    int i, result;
     word_t code;
     // one instruction execution loop,
     // check if a break occurs of not
@@ -43,11 +43,12 @@ void do_machine(context_t *cx)
         code = STAR(cx->pc);
         if (STAR(DEBUG_ADDR) & 1)
             do_print_status(cx);
-        if (machine_code(cx, code) != 0)
-            break;
-        if (cx->halt_flag) {
-            fprintf(stderr,"halt:\n");
-            break;
+        if ((result = machine_code(cx, code)) != 0) {
+            if (result < 0) {
+                fprintf(stderr, "trap: result = %d\n", result);
+                longjmp(cx->env, -result);
+            }
+            return result;
         }
     }
 }
@@ -94,7 +95,7 @@ void do_abort(context_t *cx, const char *mes)
     if (tos(cx)) {
         p = &mem[STAR(H_ADDR)];      // entry top, word name
         count = *p & 0x1f;
-        fprintf(stderr, "%.*s %s\n", count, p+1, mes);
+        fprintf(stderr, ">>> %d: %.*s %s\n", (int)lnum, count, p+1, mes);
     }
     longjmp(cx->env, tos(cx));
     //fprintf(stderr, "after longjmp\n");
