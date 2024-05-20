@@ -75,7 +75,7 @@ undefined:
         fflush(stderr);
         return -1;
 
-    case 16: // m_literal
+    case 16: // m_dolit
         w = STAR(cx->ip);
         cx->ip += CELLS;
         do_push(cx, w);
@@ -434,7 +434,7 @@ undefined:
         cx->sp = DSTACK_END;
         cx->pc += CELLS;
         break;
-    case 107: // m_sliteral
+    case 107: // m_s_dolit
         do_push(cx, cx->ip);
         n = mem[cx->ip];        // c-string length
         n = (n + 1 + CELLS - 1) / CELLS * CELLS;
@@ -462,7 +462,7 @@ undefined:
         STAR(H_ADDR) += CELLS;
         cx->pc += CELLS;
         break;
-    case 109: // m_dliteral
+    case 109: // m_d_dolit
         w = STAR(cx->ip);
         cx->ip += CELLS;
         do_push(cx, w);

@@ -18,8 +18,8 @@ BEGIN {
     ropcode[7 + opcode_base] = "m_execute"
     opcode["m_trap"] = 8 + opcode_base
     ropcode[8 + opcode_base] = "m_trap"
-    opcode["m_literal"] = 16 + opcode_base
-    ropcode[16 + opcode_base] = "m_literal"
+    opcode["m_dolit"] = 16 + opcode_base
+    ropcode[16 + opcode_base] = "m_dolit"
     opcode["m_qbranch"] = 17 + opcode_base
     ropcode[17 + opcode_base] = "m_qbranch"
     opcode["m_branch"] = 18 + opcode_base
@@ -140,11 +140,11 @@ BEGIN {
     ropcode[105 + opcode_base] = "m_rsp_reset"
     opcode["m_sp_reset"] = 106 + opcode_base
     ropcode[106 + opcode_base] = "m_sp_reset"
-    opcode["m_sliteral"] = 107 + opcode_base
-    ropcode[107 + opcode_base] = "m_sliteral"
+    opcode["m_s_dolit"] = 107 + opcode_base
+    ropcode[107 + opcode_base] = "m_s_dolit"
     opcode["m_bracompile"] = 108 + opcode_base
     ropcode[108 + opcode_base] = "m_bracompile"
-    opcode["m_dliteral"] = 109 + opcode_base
-    ropcode[109 + opcode_base] = "m_dliteral"
+    opcode["m_d_dolit"] = 109 + opcode_base
+    ropcode[109 + opcode_base] = "m_d_dolit"
 }
 

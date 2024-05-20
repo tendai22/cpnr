@@ -2,7 +2,7 @@
 cat "$@" |
 sed '
 1i\
-static const char *optable[128];\
+static const char *optable[256];\
 void init_optable(void)\
 {
 $a\

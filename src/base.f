@@ -229,7 +229,7 @@ DSTACK_END 0x100 - constant RSTACK_END
     ;
 
 : loop  \ limit -- limit if loop remains | none if loop exits)
-    compile literal
+    compile dolit
     1 here ! cells allot   \ compile 1 as delta)
                         \ limit limit iaddr index 1 
     compile (loop)      \ limit -1|0)
@@ -507,13 +507,13 @@ variable outer_flag
 \ .stack ... debug word
 \
 : .stack 
-   literal [ char [ , ] emit
+   dolit [ char [ , ] emit
    sp@ s0 != if
       sp@ s0 cells - do
          i @ h4. space 
       0 cells - +loop
    then 
-   literal [ char ] , ] emit
+   dolit [ char ] , ] emit
    ;
 
 \ input buffer, s0, 128bytes
@@ -718,15 +718,16 @@ variable outer_flag
       dup h4. bl emit dup entry_name cr
       prev_link repeat drop ;
 
-\ find   ( c-addr -- c-addr 0 | xt 1 | xt -1 )
+\ find   ( c-addr -- c-addr 0 | xt c 1 | xt c -1 )
 \    returns 0 if not found, c-addr remains,
 \            1 if an immediate word found
 \           -1 if non-immediate word found
 : -find
+   0x61 .ps
    DEBUG_ADDR @
    0 debug
    swap      \ c-addr 0 last
-   ( 0x40 emit .stack )
+   0x62 .ps dup 16 dump ( 0x40 emit .stack )
    begin dup while   \ repeat until link is null
       \ c-addr 0 link
       dup
@@ -765,7 +766,7 @@ variable outer_flag
 \ find .. default is 'last' dictionary
 \
 : find
-   last -find ;
+   here 0x41 .ps -find 0x42 .ps ;
 
 \ test word
 : ftest
@@ -774,15 +775,15 @@ variable outer_flag
    find ;
 
 \ ===================================
-\ number
+\ compilation
 \
 
 \ : [.ps] 0x58 .ps cr ; immediate
 
 : ' \ comma ... find address of next string in dictionary
-   compile literal
-   bl word ( 0x58 .ps .hd cr )
-   find 
+   compile dolit
+   bl word 0x66 .ps .hd cr 
+   -find 
    not if abort then 
    ( 0x58 .ps )
    , ( last 16 dump ) 
@@ -791,11 +792,32 @@ variable outer_flag
 \ : baka ' getline ;
 
 : [char]
-    compile literal 
+    compile dolit 
     bl word 1+ c@ , 
     ; immediate
 
 \ : aho [char] a ;
+
+: literal \ ( n --- ) ... compile literal instruction
+   state @ if \ compile
+      ' dolit ,
+      ,
+   then ; immediate
+
+\ : aho [ 100 ] literal ;
+\ : baka aho here 16 dump ;
+\ last dd
+
+: dliteral \ ( d --- ) ... compile double length integer
+   state @ if \ compile
+      ' dolit ,
+      ,
+      ' dolit ,
+      ,
+   then ; immediate
+
+\ : baka [ 100000 ] dliteral here 16 dump ;
+\ last dd
 
 \
 \ string manipulation
@@ -805,7 +827,7 @@ variable outer_flag
 
 : ["] \ ( --- c-addr )
     \ leave the address of a counted-string, on where 'here'
-   compile sliteral
+   compile s_dolit
    [char] " word ( dup 16 dump )
    c@ 1+ allot  ( here h4. 0x41 .ps )
    align ( here h4. cr )
@@ -839,8 +861,6 @@ variable outer_flag
    ' trap ,
    ; immediate
 
-last dd
-
 : .( \ ( --- ) ... compile message
    [char] ) word
    count type cr 
@@ -857,6 +877,10 @@ last dd
 \ : baka ' + , 1 , ; 
 \ : baka [char] x ;
 \ : baka [compile] [ ;
+
+\ ===================================
+\ number
+\
 
 \
 \ rest of double length number alithmetics
@@ -1026,42 +1050,46 @@ variable #base
 \
 : interpret
    begin
+      0x30 .ps
       ( s0 16 dump )
       bl word  \ ( addr|0 ) 
-      0x40 .ps dup 16 dump
+      0x31 .ps dup 16 dump
    while
       \ a valid word
       \ ( ) ... empty stack
-      here 16 dump
+      0x32 .ps 
       find
-      0x41 .ps
+      0x33 .ps
+      dup
       if
-         state @ 0x42 .ps <
-         if cfa ,    \ compile it
+         \ get the length
+         \ state @ 0x42 .ps <
+         0x34 .ps state @ - 1+ 0x35 .ps 0<  
+         if ,    \ compile it
          else
-            cfa execute
+            0x36 .ps execute
          then
-         0x43 .ps
          \ ?stack
       else  \ not found, check number
+         drop
          here
          dup 16 dump
          number
          dpl @ 1+    \ dpl + 1
-         0x44 .ps
+         0x37 .ps
          if
             [compile] dliteral
          else
             drop
             [compile] literal
          then
-         0x45 .ps
+         0x38 .ps
          \ ?stack
       then
    repeat
    ;
 
-last dd
+\ last dd
 
 \
 \ quit ... outer interpreter main loop
@@ -1072,19 +1100,27 @@ last dd
    begin
       rp!
       cr
-      accept
-      s0 c@ 0= if abort" EOF" then \ stop interpreter when enter ^D
+      begin
+         accept
+         s0 c@ 
+      until
+      0x21 .ps
       interpret
+      0x22 .ps
       state @ 0=
+      0x23 .ps
       if
-         ." ok"
+         ."   OK"
       then
+      0x24 .ps
    again
    ;
 
+: aho ." baka " ;
+last dd
 
 : 2, \ ( d --- ) ... compile a double length integer
-   swap ' literal , , ' literal , , ;
+   swap ' dolit , , ' dolit , , ;
 
 
 \ : aho 100000 0x44 .ps 2, ; immediate

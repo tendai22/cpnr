@@ -247,7 +247,7 @@ static int init_mem(context_t *cx)
     STAR(COLON_ADDR) = do_pop(cx);
     flag |= name2xt(cx, "semi");
     STAR(SEMI_ADDR) = do_pop(cx);
-    flag |= name2xt(cx, "literal");
+    flag |= name2xt(cx, "dolit");
     STAR(LITERAL_ADDR) = do_pop(cx);
     STAR(DEBUG_ADDR) = 0;
     STAR(PAD_ADDR) = DSTACK_END;
