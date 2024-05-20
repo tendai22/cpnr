@@ -360,7 +360,7 @@ undefined:
         do_push(cx, STATE_ADDR);
         cx->pc += CELLS;
         break;
-    case 89: // m_sp
+    case 89: // m_sp_at
         do_push(cx, cx->sp);
         cx->pc += CELLS;
         break;
@@ -426,7 +426,7 @@ undefined:
         do_push(cx, (d1>>16)&0xffff);
         cx->pc += CELLS;
         break;
-    case 105: // m_rp_reset
+    case 105: // m_rsp_reset
         cx->rs = RSTACK_END;
         cx->pc += CELLS;
         break;

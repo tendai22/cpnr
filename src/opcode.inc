@@ -120,8 +120,8 @@ BEGIN {
     ropcode[87 + opcode_base] = "m_word"
     opcode["m__state"] = 88 + opcode_base
     ropcode[88 + opcode_base] = "m__state"
-    opcode["m_sp"] = 89 + opcode_base
-    ropcode[89 + opcode_base] = "m_sp"
+    opcode["m_sp_at"] = 89 + opcode_base
+    ropcode[89 + opcode_base] = "m_sp_at"
     opcode["m_getline"] = 98 + opcode_base
     ropcode[98 + opcode_base] = "m_getline"
     opcode["m_accept"] = 99 + opcode_base
@@ -136,8 +136,8 @@ BEGIN {
     ropcode[103 + opcode_base] = "m_dlt"
     opcode["m_umul"] = 104 + opcode_base
     ropcode[104 + opcode_base] = "m_umul"
-    opcode["m_rp_reset"] = 105 + opcode_base
-    ropcode[105 + opcode_base] = "m_rp_reset"
+    opcode["m_rsp_reset"] = 105 + opcode_base
+    ropcode[105 + opcode_base] = "m_rsp_reset"
     opcode["m_sp_reset"] = 106 + opcode_base
     ropcode[106 + opcode_base] = "m_sp_reset"
     opcode["m_sliteral"] = 107 + opcode_base

@@ -126,7 +126,10 @@ opcode word
 //opcode _state
 //opcode accept
 opcode getline
-opcode sp
+opcode sp@ sp_at
+opcode rp! rsp_reset
+opcode sp! sp_reset
+
 //
 // double length integer
 //

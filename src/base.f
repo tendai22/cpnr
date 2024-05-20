@@ -300,12 +300,12 @@ DSTACK_END 0x100 - constant RSTACK_END
    dup if dup then ;
 : depth ( -- +n )
    \ return the number of cells on the stack
-   sp s0 swap - 2 / ;
+   sp@ s0 swap - 2 / ;
 : nip ( x1 x2 -- x2 )
    swap drop ;
 : pick ( +n -- x )
    \ place a copy of the nth stack entry, 0th is tos
-   sp swap 1+ cells * + @ ;
+   sp@ swap 1+ cells * + @ ;
 
 
 : min 2dup - signbit and not if swap then drop ;
@@ -490,13 +490,13 @@ variable #base_addr
 \ input stream, integrated keyin and 
 \ disk/memory source reader
 \
-: pad PAD_ADDR @ ;
+\ : pad PAD_ADDR @ ;
 : in_p ( -- addr )
-   pad dup c@ + 1+ ;
+   s0 dup c@ + 1+ ;
 : inc_p ( n -- )
-   pad dup c@ 1+ swap c! ;
+   s0 dup c@ 1+ swap c! ;
 : in_rest ( -- n )
-   127 pad c@ - ;
+   127 s0 c@ - ;
 
 : >in IN_ADDR ;
 
@@ -508,8 +508,8 @@ variable outer_flag
 \
 : .stack 
    literal [ char [ , ] emit
-   sp s0 != if
-      sp s0 cells - do
+   sp@ s0 != if
+      sp@ s0 cells - do
          i @ h4. space 
       0 cells - +loop
    then 
@@ -552,7 +552,7 @@ variable outer_flag
 \   drop ;
 
 \ test getline
-: gtest 127 pad 1+ getline ;
+: gtest 127 s0 1+ getline ;
 
 : abort 0x2a emit halt ;
 
@@ -567,15 +567,15 @@ variable outer_flag
    swap -
 ;
 
-\ : aho 127 pad 1 + getline pad 1 + 16 dump ;
+\ : aho 127 s0 1 + getline s0 1 + 16 dump ;
 
-: accept \ ( --- ) read a line to put it to pad
-   127 pad 1+ getline
-   not if 0 pad c! abort then
-   \ now got a line on pad
-   pad dup 1+ strlen +   \ &pad[strlen]
+: accept \ ( --- ) read a line to put it to s0
+   127 s0 1+ getline
+   not if 0 s0 c! abort then
+   \ now got a line on s0
+   s0 dup 1+ strlen +   \ &s0[strlen]
    \ eliminate trailing cr/lf
-   pad 1+ swap do 
+   s0 1+ swap do 
       i c@
       dup 13 = if 0 i c! else
       dup 10 = if 0 i c!
@@ -583,11 +583,11 @@ variable outer_flag
       then then
       drop
       -1 +loop
-   pad dup 1+ strlen swap c!
+   s0 dup 1+ strlen swap c!
    1 >in !
    ;
 
-: atest accept pad 16 dump 0 pad c! ;
+: atest accept s0 16 dump 0 s0 c! ;
 
 \
 \ words for debugging
@@ -605,38 +605,38 @@ variable outer_flag
 : word ( delim -- addr|0 )
    0              \ ( -- delim flag ) ... flag show if it has started to store chars
    0 here c!      \ clear here[0]
-   pad dup dup c@ 1+ + swap ( 0x30 .ps ) \  limit-index
+   s0 dup dup c@ 1+ + swap ( 0x30 .ps ) \  limit-index
    >in @ +        \ start-index
+   over over <= if drop drop drop drop 0 ( 0x42 .ps ) exit then
    ( 0x41 .ps )
-   over over <= if drop drop drop drop 0 0x42 .ps exit then
    do dup 0 = if  \ skip it
-         i c@ 2 pick ( 0x41 .ps ) != if 1+ then  \ flag++
+         i c@ 2 pick ( 0x42 .ps ) != if 1+ then  \ flag++
       then
       dup 1 = if  \ store it
-         i c@ 2 pick ( 0x42 .ps ) = i c@ 0 = or if 1+ else   \ flag++
+         i c@ 2 pick ( 0x43 .ps ) = i c@ 0 = or if 1+ else   \ flag++
             i c@                    \ src char
-            hptr ( 0x43 .ps ) c!     \ store it
+            hptr ( 0x44 .ps ) c!     \ store it
             h++      \ increment counter
             ( .hd )
          then
       then
       dup 2 = if  \ put trailing delim
          over
-         hptr ( 0x44 .ps ) c!
+         hptr ( 0x45 .ps ) c!
          \ do not increment h++
          1+       \ increment flag
          leave
       then
-      >in @ 1+ >in ( 0x45 .ps ) ! \ increment >in  
+      >in @ 1+ >in ( 0x46 .ps ) ! \ increment >in  
    loop
-   drop drop here c@ if here else 0 then ( 0x43 .ps )
+   drop drop here c@ if here else 0 then ( 0x46 .ps )
    ( .hd ) ;
 
 \ test word for accept-word
 : wtest accept begin bl word c@ while .hd repeat ;
 
-: >rest \ ( --- n ) rest of pad buffer ;
-   pad c@ 1+ >in @ ( 0x31 .ps ) - ;
+: >rest \ ( --- n ) rest of s0 buffer ;
+   s0 c@ 1+ >in @ ( 0x31 .ps ) - ;
 
 : wwtest
    begin 
@@ -672,7 +672,7 @@ variable outer_flag
    ;
 
 : align 
-   0x41 .ps here aligned H_ADDR 0x42 .ps ! ;
+   ( 0x41 .ps ) here aligned H_ADDR ( 0x42 .ps ) ! ;
 
 
 0xe000 constant tmp 
@@ -814,16 +814,44 @@ variable outer_flag
 : count \ ( c-addr --- count addr+1 )
    dup 1+ swap c@ ;
 
-: ." \ "
+: ." \ ( --- ) ... print the string
    [compile] ["]
    ' count ,
    ' type ,
    ; immediate
 
-\ : aho ." baka" ;
+: c" \ ( --- c-addr )... string constant with counted string
+   [compile] ["]
+   ; immediate
+
+: s" \ ( --- count addr )... string constant for `type`
+   [compile] ["]
+   ' count ,
+   ; immediate
+
+: abort" 
+   ' here ,
+   ' count ,
+   ' type ,
+   [compile] ["]
+   ' count ,
+   ' type ,
+   ' trap ,
+   ; immediate
+
+last dd
+
+: .( \ ( --- ) ... compile message
+   [char] ) word
+   count type cr 
+   ;
+
+\ : baka ." aho" ;
+\ : baka2 S" aho" ;
+\ : baka3 C" aho" ;
 
 \ : [compile] \ compile a word (even if it is immediate)
-\    bl word find not if here count type ." not found" abort then ,
+\    bl word find not if abort": not found" then ,
 \    ; immediate
 
 \ : baka ' + , 1 , ; 
@@ -939,7 +967,7 @@ variable #base
    ;
 
 \ test for (number)
- : nt 0 0 accept pad 0x40 .ps (number) 0 pad c! pad 16 dump ;
+ : nt 0 0 accept s0 0x40 .ps (number) 0 s0 c! s0 16 dump ;
 
 \ temporal stub
 : ?error drop drop ;
@@ -957,7 +985,7 @@ variable #base
                \ of d. 
    dup 1+ c@   \ Get the first digit
    0x2d =      \ Is it a - sign?
-   0x61 .ps 
+   ( 0x61 .ps )
    dup >r      \ Save the flag on return stack.
    if 1+ then  \ If the first digit is minus, increment addr
    -1          \ The initial value of DPL
@@ -980,44 +1008,60 @@ variable #base
                \ repeat the conversion process.
    drop        \ Discard addr on stack
    r>          \ Pop the flag of - sign back
-   0x62 .ps
+   ( 0x62 .ps )
    if dnegate   \ Negate d if the first digit is a - sign.
    then
    ; \          All done. A double integer is on 
 
-: nn accept pad 0x40 .ps number 0 pad c! pad 16 dump ;
+: nn accept s0 0x40 .ps number 0 s0 c! s0 16 dump ;
 
-
+\
+: ?stack 
+   sp@ s0 >    \
+   1 ?error
+   sp@ here 128 + <
+   7 ?error ;
 \
 \ interpret ... interpret words in the line input
 \
 : interpret
    begin
-      bl word
-   not while
+      ( s0 16 dump )
+      bl word  \ ( addr|0 ) 
+      0x40 .ps dup 16 dump
+   while
       \ a valid word
+      \ ( ) ... empty stack
+      here 16 dump
       find
+      0x41 .ps
       if
-         state @ <
+         state @ 0x42 .ps <
          if cfa ,    \ compile it
          else
             cfa execute
          then
+         0x43 .ps
          \ ?stack
       else  \ not found, check number
          here
+         dup 16 dump
          number
          dpl @ 1+    \ dpl + 1
+         0x44 .ps
          if
             [compile] dliteral
          else
             drop
             [compile] literal
          then
+         0x45 .ps
          \ ?stack
       then
    repeat
    ;
+
+last dd
 
 \
 \ quit ... outer interpreter main loop
@@ -1026,11 +1070,11 @@ variable #base
 : quit
    [compile] [ \ start interpretive state
    begin
-      \ rp!
+      rp!
       cr
-      127 s0 getline
-      not if abort then \ stop interpreter when enter ^D
-      \ interpret
+      accept
+      s0 c@ 0= if abort" EOF" then \ stop interpreter when enter ^D
+      interpret
       state @ 0=
       if
          ." ok"
@@ -1038,9 +1082,12 @@ variable #base
    again
    ;
 
+
 : 2, \ ( d --- ) ... compile a double length integer
    swap ' literal , , ' literal , , ;
-: aho 100000 0x44 .ps 2, ; immediate
-: baka aho ;
 
-last dd
+
+\ : aho 100000 0x44 .ps 2, ; immediate
+\ : baka aho ;
+
+\ last dd

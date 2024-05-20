@@ -61,7 +61,7 @@ void init_optable(void)
         optable[86] = "m_compile";
         optable[87] = "m_word";
         optable[88] = "m__state";
-        optable[89] = "m_sp";
+        optable[89] = "m_sp_at";
         optable[98] = "m_getline";
         optable[99] = "m_accept";
         optable[100] = "m_dadd";
@@ -69,7 +69,7 @@ void init_optable(void)
         optable[102] = "m_mmuldiv";
         optable[103] = "m_dlt";
         optable[104] = "m_umul";
-        optable[105] = "m_rp_reset";
+        optable[105] = "m_rsp_reset";
         optable[106] = "m_sp_reset";
         optable[107] = "m_sliteral";
         optable[108] = "m_bracompile";

@@ -80,7 +80,7 @@ void reset_instream(context_t *cx)
 {
     //fprintf(stderr, "reset_instream:\n");
     reset_outer();
-    mem[STAR(PAD_ADDR)] = 0;       // length zero
+    mem[STAR(S0_ADDR)] = 0;       // length zero
 }
 
 //
@@ -91,7 +91,7 @@ static int uc = -1;
 int getch(context_t *cx)
 {
     int c, n, i;
-    mem_t *p = &mem[STAR(PAD_ADDR)];
+    mem_t *p = &mem[STAR(S0_ADDR)];
     if ((c = uc) >= 0) {
         uc = -1;
         return c;
@@ -167,7 +167,7 @@ int do_accept(context_t *cx)
 {
     static int linecount = 0;
     int n;
-    char *buf = &mem[STAR(PAD_ADDR)] + 1;
+    char *buf = &mem[STAR(S0_ADDR)] + 1;
 
     if (cx->p && cx->rest > 0) {
         return 0;
@@ -182,7 +182,7 @@ int do_accept(context_t *cx)
         buf[i] = '\0';
     }
     n = strlen(buf);
-    mem[STAR(PAD_ADDR)] = n;         // buf length
+    mem[STAR(S0_ADDR)] = n;         // buf length
     if (STAR(DEBUG_ADDR))
         fprintf(stderr, "%d [%s]\n", linecount++, buf);
     STAR(IN_ADDR) = 1;  // initial index
