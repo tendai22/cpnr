@@ -759,7 +759,7 @@ variable outer_flag
    repeat
    \ here, c-addr link 0 or c-addr 0 0
    drop
-   \ 0x46 emit .stack cr
+   \ c-addr should be remain, so that multiple dictionary search should do
    dup 0 = if ( over 10 dump ) else
       \ 0x44 emit .stack cr
       \ dispose word address
@@ -777,7 +777,7 @@ variable outer_flag
 \ find .. default is 'last' dictionary
 \
 : find
-   here 0x41 .ps -find 0x42 .ps ;
+   here 0x41 .ps -find dup if else swap drop then 0x42 .ps ;
 
 \ test word
 : ftest
@@ -817,20 +817,6 @@ variable outer_flag
    count type cr 
    ;
 
-: ' \ comma ... find address of next string in dictionary
-   \ [ .( comma ) ]
-   ( 0x64 emit )
-   compile dolit ( 0x65 .ps )
-   bl word ( 0x66 .ps dup .cs cr ) 
-   -find 
-   not if abort then 
-   ( 0x58 .ps )
-   , ( here 2 - 16 dump ) 
-   ; immediate
-
-\ last dd
-\ : baka ' getline    ;
-\ last dd
 
 : literal \ ( n --- ) ... compile literal instruction
    state @ if \ compile
@@ -1087,7 +1073,7 @@ variable #base
       0x30 .ps
       ( s0 16 dump )
       bl word  \ ( addr|0 ) 
-      0x31 .ps dup .cs
+      0x31 .ps 
       dup
    while
       \ a valid word
@@ -1102,13 +1088,12 @@ variable #base
          0x34 .ps state @ - 1+ 0x35 .ps 0<  
          if ,    \ compile it
          else
-            0x36 .ps execute
+            0x36 .ps ." execute" cr execute
          then
          \ ?stack
       else  \ not found, check number
          drop
-         here
-         dup 16 dump
+         dup .cs cr
          number
          dpl @ 1+    \ dpl + 1
          0x37 .ps
@@ -1122,6 +1107,7 @@ variable #base
          \ ?stack
       then
    repeat
+   drop
    ;
 
 \ last dd
@@ -1145,7 +1131,7 @@ variable #base
       state @ 0=
       0x23 .ps
       if
-         ."   OK"
+         ." OK "
       then
       0x24 .ps
    again

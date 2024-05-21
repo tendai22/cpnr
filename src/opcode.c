@@ -66,7 +66,7 @@ undefined:
         break;
     case 7: // m_execute
         cx->wa = do_pop(cx);
-        cx->ip = HALT_ADDR;     // ipはxtの置き場を指すようにする。
+        // cx->ip = HALT_ADDR;     // ipはxtの置き場を指すようにする。
                             // それはHALT_ADDRだ。
         goto do_run_label;
     case 8: // m_trap

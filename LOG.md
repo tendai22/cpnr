@@ -1238,7 +1238,8 @@ FF00 3 "aho"
 baka [0002 2CA6 0002] ok
 ```
 
-こちらはahoをquit/interpretループで実行している。期待通りに動作している。
+こちらはahoをquit/interpretループで実行している。期待通りに動作している。ただ、1回実行すると抜けてしまうのは
+おかしい。HALT_ADDRに充てているからかな。
 
 ```
 1072 07       .head   "execute"
@@ -1250,3 +1251,40 @@ baka [0002 2CA6 0002] ok
 ```
 
 この最後の `m_next` を `m_halt` にすればいいのかもしれない。`m_execute`/ワード`execute`の実体はターゲット版で機械語手書きとするのがよいのだろう。
+
+いや、`quit`ルーチンの実行を継続するためには、`m_execute`の後ろは`m_next`であるべきですね。`HALT_ADDR`を消して再試行する。
+
+HALT_ADDRを外したところ、コマンドを実行してもループから抜けなくなった。スタックはぼろぼろですが。これで先に進もう。
+
+## `-find` の結果にc-addrが残る件
+
+複数辞書の検索のために残すべき。Fig-FORTHでは、下請けワード`(FIND)`があり、
+
+```
+(FIND): ( c-addr dict-addr --- pfa len true | false )
+\ A primitive. Search the dictionary starting at the address
+\ on stack for a name matching the text at the address second
+\ on stack. Return the parameter field address of the
+\ matching name, its length byte, and a boolean true flag
+\ on stack for a match. If no match is ppossible, only a
+\ boolean false flag is left on
+```
+
+我々の実装では、
+
+```
+-find: ( c-addr --- 0 | xt 1 | xt -1 )
+```
+
+発見できなかった場合、後続のnumberでc-addr文字列を使うので、-findの返し値にc-addrを残しておく。辞書発見の有無フラグは、あとで1 or -1の値も使う(compile or executeの判断に)ので、ifの前でdupして、numberの前でdropすることにした。
+
+以上で、accept/interpretが動作しだした。
+
+* 定数、
+* ワード
+* コロン定義
+
+が動作する。quit内部で定義したワードがquitを抜けても当然残っている。
+
+ただ、abortがかかったときにquitも抜けてしまうのが難点。
+
