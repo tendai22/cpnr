@@ -107,6 +107,7 @@ opcode ; end_colondef immediate
 //
 // dd ... dictdump ( addr -- )
 opcode dd dictdump
+opcode lnum
 //
 // constant
 //

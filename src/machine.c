@@ -115,6 +115,7 @@ int do_mainloop(context_t *cx)
             cx->rs = RSTACK_END;
         }
         count = 0;
+        do_prompt(cx);
         if (do_accept(cx) == EOF)
             return -1;
         print_s0(cx);
@@ -124,6 +125,7 @@ int do_mainloop(context_t *cx)
             do_word(cx);    // (delim -- addr)
             if (tos(cx) == 0) {
                 do_pop(cx); // discard it
+                do_prompt(cx);
                 if (do_accept(cx) == EOF)
                     return -1;
                 print_s0(cx);

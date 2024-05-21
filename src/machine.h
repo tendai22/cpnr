@@ -120,6 +120,7 @@ extern int getch(context_t *cx);
 extern void do_catch(context_t *cx);
 extern void do_abort(context_t *cx, const char *message);
 extern int lnum;
+extern void do_lnum(context_t *cx);
 extern void do_push(context_t *cx, word_t value);
 extern void do_pushr(context_t *cx, word_t value);
 extern void do_dup(context_t *cx);

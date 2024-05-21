@@ -65,8 +65,10 @@ undefined:
         cx->pc += CELLS;
         break;
     case 7: // m_execute
-        cx->ip = do_pop(cx);
-        goto do_next_label;
+        cx->wa = do_pop(cx);
+        cx->ip = HALT_ADDR;     // ipはxtの置き場を指すようにする。
+                            // それはHALT_ADDRだ。
+        goto do_run_label;
     case 8: // m_trap
          if (STAR(DEBUG_ADDR))
             fprintf(stderr, "trap at %04X\n", cx->pc);
@@ -362,6 +364,10 @@ undefined:
         break;
     case 89: // m_sp_at
         do_push(cx, cx->sp);
+        cx->pc += CELLS;
+        break;
+    case 90: // m_lnum
+        do_lnum(cx);
         cx->pc += CELLS;
         break;
     case 98: // m_getline

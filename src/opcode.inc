@@ -122,6 +122,8 @@ BEGIN {
     ropcode[88 + opcode_base] = "m__state"
     opcode["m_sp_at"] = 89 + opcode_base
     ropcode[89 + opcode_base] = "m_sp_at"
+    opcode["m_lnum"] = 90 + opcode_base
+    ropcode[90 + opcode_base] = "m_lnum"
     opcode["m_getline"] = 98 + opcode_base
     ropcode[98 + opcode_base] = "m_getline"
     opcode["m_accept"] = 99 + opcode_base

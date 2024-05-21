@@ -554,7 +554,7 @@ variable outer_flag
 \ test getline
 : gtest 127 s0 1+ getline ;
 
-: abort 0x2a emit halt ;
+: abort 0x2a emit 0x2a emit 0x2a emit lnum . trap ;
 
 : strlen \ ( addr --- n )
    dup
@@ -596,6 +596,17 @@ variable outer_flag
    emit .stack cr ;
 : .hd             \ dump here buffer
    here 10 dump cr ;
+: .cs \ ( c-addr --- ) dump counted string
+   dup h4. space 
+   dup c@ dup .   \ c-addr n
+   over +         \ c-addr c-addr+n
+   swap 1+        \ c-addr+n c-addr+1
+   0x22 emit      \ print "
+   do i c@ emit loop
+   0x022 emit     \ print "
+   cr ;
+
+\ : cstest accept s0 .cs 0 s0 c! ;
 
 \ ====================================
 \ word ... extract a word
@@ -723,11 +734,11 @@ variable outer_flag
 \            1 if an immediate word found
 \           -1 if non-immediate word found
 : -find
-   0x61 .ps
-   DEBUG_ADDR @
-   0 debug
-   swap      \ c-addr 0 last
-   0x62 .ps dup 16 dump ( 0x40 emit .stack )
+   ( 0x61 .ps )
+   \ DEBUG_ADDR @
+   \ 0 debug
+   0 last      \ c-addr 0 last
+   ( 0x62 .ps dup 16 dump )
    begin dup while   \ repeat until link is null
       \ c-addr 0 link
       dup
@@ -782,7 +793,7 @@ variable outer_flag
 
 : ' \ comma ... find address of next string in dictionary
    compile dolit
-   bl word 0x66 .ps .hd cr 
+   bl word ( 0x66 .ps .hd cr ) 
    -find 
    not if abort then 
    ( 0x58 .ps )
@@ -798,6 +809,29 @@ variable outer_flag
 
 \ : aho [char] a ;
 
+: count \ ( c-addr --- count addr+1 )
+   dup 1+ swap c@ ;
+
+: .( \ ( --- ) ... compile message
+   [char] ) word
+   count type cr 
+   ;
+
+: ' \ comma ... find address of next string in dictionary
+   \ [ .( comma ) ]
+   ( 0x64 emit )
+   compile dolit ( 0x65 .ps )
+   bl word ( 0x66 .ps dup .cs cr ) 
+   -find 
+   not if abort then 
+   ( 0x58 .ps )
+   , ( here 2 - 16 dump ) 
+   ; immediate
+
+\ last dd
+\ : baka ' getline    ;
+\ last dd
+
 : literal \ ( n --- ) ... compile literal instruction
    state @ if \ compile
       ' dolit ,
@@ -806,7 +840,6 @@ variable outer_flag
 
 \ : aho [ 100 ] literal ;
 \ : baka aho here 16 dump ;
-\ last dd
 
 : dliteral \ ( d --- ) ... compile double length integer
    state @ if \ compile
@@ -824,6 +857,7 @@ variable outer_flag
 \
 
 \ 1 debug
+
 
 : ["] \ ( --- c-addr )
     \ leave the address of a counted-string, on where 'here'
@@ -1053,12 +1087,13 @@ variable #base
       0x30 .ps
       ( s0 16 dump )
       bl word  \ ( addr|0 ) 
-      0x31 .ps dup 16 dump
+      0x31 .ps dup .cs
+      dup
    while
       \ a valid word
       \ ( ) ... empty stack
       0x32 .ps 
-      find
+      -find
       0x33 .ps
       dup
       if
@@ -1104,7 +1139,7 @@ variable #base
          accept
          s0 c@ 
       until
-      0x21 .ps
+      0x21 .ps s0 .cs
       interpret
       0x22 .ps
       state @ 0=
@@ -1117,7 +1152,6 @@ variable #base
    ;
 
 : aho ." baka " ;
-last dd
 
 : 2, \ ( d --- ) ... compile a double length integer
    swap ' dolit , , ' dolit , , ;

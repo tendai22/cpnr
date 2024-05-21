@@ -229,7 +229,7 @@ DSTACK_END 0x100 - constant RSTACK_END
     ;
 
 : loop  \ limit -- limit if loop remains | none if loop exits)
-    compile literal
+    compile dolit
     1 here ! cells allot   \ compile 1 as delta)
                         \ limit limit iaddr index 1 
     compile (loop)      \ limit -1|0)
@@ -300,12 +300,12 @@ DSTACK_END 0x100 - constant RSTACK_END
    dup if dup then ;
 : depth ( -- +n )
    \ return the number of cells on the stack
-   sp s0 swap - 2 / ;
+   sp@ s0 swap - 2 / ;
 : nip ( x1 x2 -- x2 )
    swap drop ;
 : pick ( +n -- x )
    \ place a copy of the nth stack entry, 0th is tos
-   sp swap 1+ cells * + @ ;
+   sp@ swap 1+ cells * + @ ;
 
 
 : min 2dup - signbit and not if swap then drop ;
@@ -490,13 +490,13 @@ variable #base_addr
 \ input stream, integrated keyin and 
 \ disk/memory source reader
 \
-: pad PAD_ADDR @ ;
+\ : pad PAD_ADDR @ ;
 : in_p ( -- addr )
-   pad dup c@ + 1+ ;
+   s0 dup c@ + 1+ ;
 : inc_p ( n -- )
-   pad dup c@ 1+ swap c! ;
+   s0 dup c@ 1+ swap c! ;
 : in_rest ( -- n )
-   127 pad c@ - ;
+   127 s0 c@ - ;
 
 : >in IN_ADDR ;
 
@@ -507,13 +507,13 @@ variable outer_flag
 \ .stack ... debug word
 \
 : .stack 
-   literal [ char [ , ] emit
-   sp s0 != if
-      sp s0 cells - do
+   dolit [ char [ , ] emit
+   sp@ s0 != if
+      sp@ s0 cells - do
          i @ h4. space 
       0 cells - +loop
    then 
-   literal [ char ] , ] emit
+   dolit [ char ] , ] emit
    ;
 
 \ input buffer, s0, 128bytes
@@ -552,9 +552,9 @@ variable outer_flag
 \   drop ;
 
 \ test getline
-: gtest 127 pad 1+ getline ;
+: gtest 127 s0 1+ getline ;
 
-: abort 0x2a emit halt ;
+: abort 0x2a emit 0x2a emit 0x2a emit lnum . trap ;
 
 : strlen \ ( addr --- n )
    dup
@@ -567,15 +567,15 @@ variable outer_flag
    swap -
 ;
 
-\ : aho 127 pad 1 + getline pad 1 + 16 dump ;
+\ : aho 127 s0 1 + getline s0 1 + 16 dump ;
 
-: accept \ ( --- ) read a line to put it to pad
-   127 pad 1+ getline
-   not if 0 pad c! abort then
-   \ now got a line on pad
-   pad dup 1+ strlen +   \ &pad[strlen]
+: accept \ ( --- ) read a line to put it to s0
+   127 s0 1+ getline
+   not if 0 s0 c! abort then
+   \ now got a line on s0
+   s0 dup 1+ strlen +   \ &s0[strlen]
    \ eliminate trailing cr/lf
-   pad 1+ swap do 
+   s0 1+ swap do 
       i c@
       dup 13 = if 0 i c! else
       dup 10 = if 0 i c!
@@ -583,11 +583,11 @@ variable outer_flag
       then then
       drop
       -1 +loop
-   pad dup 1+ strlen swap c!
+   s0 dup 1+ strlen swap c!
    1 >in !
    ;
 
-: atest accept pad 16 dump 0 pad c! ;
+: atest accept s0 16 dump 0 s0 c! ;
 
 \
 \ words for debugging
@@ -596,6 +596,17 @@ variable outer_flag
    emit .stack cr ;
 : .hd             \ dump here buffer
    here 10 dump cr ;
+: .cs \ ( c-addr --- ) dump counted string
+   dup h4. space 
+   dup c@ dup .   \ c-addr n
+   over +         \ c-addr c-addr+n
+   swap 1+        \ c-addr+n c-addr+1
+   0x22 emit      \ print "
+   do i c@ emit loop
+   0x022 emit     \ print "
+   cr ;
+
+\ : cstest accept s0 .cs 0 s0 c! ;
 
 \ ====================================
 \ word ... extract a word
@@ -605,38 +616,38 @@ variable outer_flag
 : word ( delim -- addr|0 )
    0              \ ( -- delim flag ) ... flag show if it has started to store chars
    0 here c!      \ clear here[0]
-   pad dup dup c@ 1+ + swap ( 0x30 .ps ) \  limit-index
+   s0 dup dup c@ 1+ + swap ( 0x30 .ps ) \  limit-index
    >in @ +        \ start-index
+   over over <= if drop drop drop drop 0 ( 0x42 .ps ) exit then
    ( 0x41 .ps )
-   over over <= if drop drop drop drop 0 0x42 .ps exit then
    do dup 0 = if  \ skip it
-         i c@ 2 pick ( 0x41 .ps ) != if 1+ then  \ flag++
+         i c@ 2 pick ( 0x42 .ps ) != if 1+ then  \ flag++
       then
       dup 1 = if  \ store it
-         i c@ 2 pick ( 0x42 .ps ) = i c@ 0 = or if 1+ else   \ flag++
+         i c@ 2 pick ( 0x43 .ps ) = i c@ 0 = or if 1+ else   \ flag++
             i c@                    \ src char
-            hptr ( 0x43 .ps ) c!     \ store it
+            hptr ( 0x44 .ps ) c!     \ store it
             h++      \ increment counter
             ( .hd )
          then
       then
       dup 2 = if  \ put trailing delim
          over
-         hptr ( 0x44 .ps ) c!
+         hptr ( 0x45 .ps ) c!
          \ do not increment h++
          1+       \ increment flag
          leave
       then
-      >in @ 1+ >in ( 0x45 .ps ) ! \ increment >in  
+      >in @ 1+ >in ( 0x46 .ps ) ! \ increment >in  
    loop
-   drop drop here c@ if here else 0 then ( 0x43 .ps )
+   drop drop here c@ if here else 0 then ( 0x46 .ps )
    ( .hd ) ;
 
 \ test word for accept-word
 : wtest accept begin bl word c@ while .hd repeat ;
 
-: >rest \ ( --- n ) rest of pad buffer ;
-   pad c@ 1+ >in @ ( 0x31 .ps ) - ;
+: >rest \ ( --- n ) rest of s0 buffer ;
+   s0 c@ 1+ >in @ ( 0x31 .ps ) - ;
 
 : wwtest
    begin 
@@ -672,7 +683,7 @@ variable outer_flag
    ;
 
 : align 
-   0x41 .ps here aligned H_ADDR 0x42 .ps ! ;
+   ( 0x41 .ps ) here aligned H_ADDR ( 0x42 .ps ) ! ;
 
 
 0xe000 constant tmp 
@@ -718,15 +729,16 @@ variable outer_flag
       dup h4. bl emit dup entry_name cr
       prev_link repeat drop ;
 
-\ find   ( c-addr -- c-addr 0 | xt 1 | xt -1 )
+\ find   ( c-addr -- c-addr 0 | xt c 1 | xt c -1 )
 \    returns 0 if not found, c-addr remains,
 \            1 if an immediate word found
 \           -1 if non-immediate word found
 : -find
-   DEBUG_ADDR @
-   0 debug
-   swap      \ c-addr 0 last
-   ( 0x40 emit .stack )
+   ( 0x61 .ps )
+   \ DEBUG_ADDR @
+   \ 0 debug
+   0 last      \ c-addr 0 last
+   ( 0x62 .ps dup 16 dump )
    begin dup while   \ repeat until link is null
       \ c-addr 0 link
       dup
@@ -765,7 +777,7 @@ variable outer_flag
 \ find .. default is 'last' dictionary
 \
 : find
-   last -find ;
+   here 0x41 .ps -find 0x42 .ps ;
 
 \ test word
 : ftest
@@ -774,30 +786,63 @@ variable outer_flag
    find ;
 
 \ ===================================
-\ number
+\ compilation
 \
 
 \ : [.ps] 0x58 .ps cr ; immediate
 
-: ' \ comma ... find address of next string in dictionary
-   compile literal
-   bl word ( 0x58 .ps .hd cr )
-   find 
-   not if abort then 
-   0x58 .ps 
-   , ( last 16 dump ) 
-   ; immediate
-
-: baka ' getline ;
-
-last dd
-
 : [char]
-    compile literal 
+    compile dolit 
     bl word 1+ c@ , 
     ; immediate
 
 \ : aho [char] a ;
+
+: count \ ( c-addr --- count addr+1 )
+   dup 1+ swap c@ ;
+
+: .( \ ( --- ) ... compile message
+   [char] ) word
+   count type cr 
+   ;
+
+: ' \ comma ... find address of next string in dictionary
+   [ .( comma ) ]
+   0x64 emit
+   compile dolit 0x65 .ps
+   bl word 0x66 .ps dup .cs cr 
+   -find 
+   not if abort then 
+   0x58 .ps
+   , here 2 - 16 dump 
+   ; immediate
+
+\ last dd
+ : baka 
+   ' getline
+   ;
+last dd
+
+: literal \ ( n --- ) ... compile literal instruction
+   state @ if \ compile
+      ' dolit ,
+      ,
+   then ; immediate
+
+\ : aho [ 100 ] literal ;
+\ : baka aho here 16 dump ;
+\ last dd
+
+: dliteral \ ( d --- ) ... compile double length integer
+   state @ if \ compile
+      ' dolit ,
+      ,
+      ' dolit ,
+      ,
+   then ; immediate
+
+\ : baka [ 100000 ] dliteral here 16 dump ;
+\ last dd
 
 \
 \ string manipulation
@@ -807,185 +852,21 @@ last dd
 
 : ["] \ ( --- c-addr )
     \ leave the address of a counted-string, on where 'here'
-   compile sliteral
+   compile s_dolit
    [char] " word ( dup 16 dump )
    c@ 1+ allot  ( here h4. 0x41 .ps )
    align ( here h4. cr )
    ; immediate
 
-: count \ ( c-addr --- count addr+1 )
-   dup 1+ swap c@ ;
-
-
-: ." \ "
+: ." \ ( --- ) ... print the string
    [compile] ["]
+   [ .( ----- start post process compile --- ) 0 debug ]
    ' count ,
    ' type ,
-    ; immediate
+   [ 0 debug ]
+   ; immediate
 
-\ : aho ." baka" ;
-
-\ : [compile] \ compile a word (even if it is immediate)
-\    bl word find not if here count type ." not found" abort then ,
-\    ; immediate
-
-\ : baka ' + , 1 , ; 
-\ : baka [char] x ;
-: baka [compile] [ ;
-
-\
-\ rest of double length number alithmetics
-\
-: d- dnegate d+ ;
-: d/ \ ( ud1 n2 --- ud1/n2 ) ... same as `m/` 
-  m/ ;
-: dmax \ ( ud1 ud2 --- ud )
-   3 pick 3 pick 3 pick 3 pick ( ud1 ud2 ud1 ud2 ) 
-   d<      if 2swap then 2drop ;
-: dmin \ ( ud1 ud2 --- ud )
-   3 pick 3 pick 3 pick 3 pick ( ud1 ud2 ud1 ud2 ) 
-   d< not if 2swap then 2drop ;
-
-
-: #a2i \ ( c --- n )
-   dup 
-   48 - dup 0< if else        \ \0 ... '0'
-   10 - dup 0< if 10 + else   \ '0' ... '9'
-    7 - dup 0< if else        \ ...
-   26 - dup 0< if 36 + else   \ 'A' ... 'Z'
-    6 - dup 0< if else        \ ... 
-   26 - dup 0< if 36 + else   \ 'a' ... 'z'
-                  drop -1
-   then then then then then then
-   swap drop
-;
-
-: ?#punct \ ( c --- flag )
-   dup 0x2c = if -1 else \ comma else
-   dup 0x2e = if -1 else \ period
-   dup 0x2f = if -1 else \ slash
-   dup 0x2a = if -1 else \ aster
-   dup 0x3a = if -1 else \ colon
-    0
-   then then then then then
-   swap drop 
-;
-
-variable dpl
-0 dpl !
-variable #base
-10 #base !
-
-: digit \ ( c base --- n2 flag )
-   swap     ( base c )
-   dup 
-   48 - dup 0< if else        \ \0 ... '0'
-   10 - dup 0< if 10 + else   \ '0' ... '9'
-    7 - dup 0< if else        \ ...
-   26 - dup 0< if 36 + else   \ 'A' ... 'Z'
-    6 - dup 0< if else        \ ... 
-   26 - dup 0< if 36 + else   \ 'a' ... 'z'
-                  drop -1
-   then then then then then then
-   ( 0x33 .ps )   \ ( base c n2 )
-   swap drop dup \ ( base n2 n2 )
-   ( 0x34 .ps )   \ ( base n2 n2)
-   0< if drop drop 0 else
-   swap over ( 0x35 .ps ) <= if \ ( n2 base n2 )
-      drop 0 
-   else
-      -1 
-   then then
-   ( 0x36 .ps )
-   ;
-
-\ (number) .. support word for `number`
-\ start scan from addr+1, for `number`s convinience
-\
-: (number) \ ( d1 addr1 --- d2 addr2 )
-   \ check if '0x'
-   \ base #base ! 
-   dup 1+ c@ 0x30 ( 0x39 .ps ) =  \ ( d1 addr1 flag1 )
-   over 2 + c@ 0x78 ( 0x38 .ps ) = and ( 0x37 .ps ) \ ( d1 addr1 flag1&flag2 )
-   if 16 #base ! 2 + else base #base ! then
-   ( 0x36 .ps ) 
-   begin
-      1+ dup >r \ Save addr1+1, address of the first digit, on
-            \ return stack.
-      c@    \ Get a digit
-      #base @  \ Get the current base
-      digit \ A primitive. (c n1 -- n2 tf or ff)
-            \ Convert the character c according to base n1 to
-            \ a binary number n2 with a true flag on top of
-            \ stack. If the digit is an invalid character, only
-            \ a false flag is left on stack.
-   while    \ Successful conversion, accumulate into d1.
-      ( 0x42 .ps )
-      swap  \ Get the high order part of d1 to the top.
-      #base @ u* \ Multiply by base value
-      drop  \ Drop the high order part of the product
-      rot   \ Move the low order part of d1 to top of stack
-      #base @ u* \ Multiply by base value
-      ( 0x43 .ps )
-      d+    \ Accumulate result into d1
-      dpl @ 1+ \ See if DPL is other than -1
-      if    \ DPL is not -1, a decimal point was encountered
-         1 dpl @ + dpl ! \ Increment DPL, one more digit to right of
-            \ decimal point
-      then
-      r> \ Pop addr1+1 back to convert the next digit.
-   repeat \ If an invalid digit was found, exit the loop here.
-         \ Otherwise repeat the conversion until the string is
-         \ exhausted.
-   r>    \ Pop return stack which contains the address of the first
-         \ non-convertable digit, addr2.
-   ;
-
-\ test for (number)
- : nt 0 0 accept pad 0x40 .ps (number) 0 pad c! pad 16 dump ;
-
-\ temporal stub
-: ?error drop drop ;
-
-: ?#eos \ space or nul
-   dup bl = over 0 = or
-   swap drop
-;
-
-\
-\ number
-\
-: number \ addr -- d
-   0 0 rot     \ Push two zero's on stack as the initial value
-               \ of d. 
-   dup 1+ c@   \ Get the first digit
-   0x2d =      \ Is it a - sign?
-   0x61 .ps 
-   dup >r      \ Save the flag on return stack.
-   if 1+ then  \ If the first digit is minus, increment addr
-   -1          \ The initial value of DPL
-   begin       \ Start the conversion process
-      dpl !    \ Store the decimal point counter
-      (number) \ Convert one digit after another until an 
-               \ invalid char occurs. Result is accumulated
-               \ into d.
-      dup c@   \ Fetch the invalid digit
-      ?#eos not   \ blank or nul?
-   while       \ Not a blank, see if it is a decimal point
-      dup c@   \ Get the digit again
-      ?#punct not    \ Is it a punctuation?
-      0 ?error \ Not a decimal point. It is an illegal 
-               \ character for a number. Issue an error 
-               \ message and quit.
-      0        \ A decimal point was found. Set DPL to 0 the
-               \ next time.
-   repeat      \ Exit here if a blank was detected. Otherwise
-               \ repeat the conversion process.
-   drop        \ Discard addr on stack
-   r>          \ Pop the flag of - sign back
-   0x62 .ps
-   if dnegate   \ Negate d if the first digit is a - sign.
-   then
-   ; \          All done. A double integer is on 
-
-: nn accept pad 0x40 .ps number 0 pad c! pad 16 dump ;
+.( *** start compile *** )
+: aho ." baka " ;
+\ : aho ' [ 0x44 emit ] 1+ ;
+\ : aho 1 ;

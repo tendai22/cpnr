@@ -25,7 +25,7 @@ word_t do_pop(context_t *cx)
     cx->sp += CELLS;
     if (cx->sp > DSTACK_END) {
         fprintf(stderr, "stack underflow at pc:%04X ip:%04X\n", cx->pc, cx->ip);
-        do_halt(cx);
+        do_abort(cx, "abort at pop\n");
     }
     return value;
 }
@@ -36,7 +36,7 @@ void do_pushr(context_t *cx, word_t value)
     cx->rs -= CELLS;
     if (cx->rs < 0) {
         fprintf(stderr, "rstack underflow at pc:%04X ip:%04X\n", cx->pc, cx->ip);
-        do_halt(cx);
+        do_abort(cx, "abort at pushr\n");
     }
     STAR(cx->rs) = value;
 }
@@ -114,6 +114,11 @@ void ungetch(context_t *cx, mem_t c)
 
 int lnum = 0;
 
+void do_lnum(context_t *cx)
+{
+    do_push(cx, lnum);
+}
+
 static void dump_line(const char *buf)
 {
     int n = strlen(buf);
@@ -131,9 +136,10 @@ static void dump_line(const char *buf)
 //
 // do_getline: ( -- )
 //
+static int outer_flag = 1;
+
 int do_getline(context_t *cx, char *buf, int size)
 {
-    static int outer_flag = 1;
     // now in-stream buffer emnty, refill it
     //fprintf(stderr, "do_getline: buf = %04x size = %d\n", (word_t)(buf - (char *)&mem[0]), size);
     memset(buf, ' ', size-1);
@@ -149,7 +155,7 @@ int do_getline(context_t *cx, char *buf, int size)
     }
     if (outer_flag == 0) {
         // input from keyboard
-        do_prompt(cx);
+        // do_prompt(cx);
         if (fgets (buf, size, stdin) == 0) {
             fprintf(stderr, "eof\n");
             return EOF;
@@ -413,6 +419,9 @@ void do_number(context_t *cx)
 
 void do_prompt(context_t *cx)
 {
+    if (outer_flag)
+        return;     
+    // print only if getline wait for keyboard input
     print_dstack(cx);
     if (STAR(STATE_ADDR))
         fprintf(stderr, " compile\n");
@@ -629,12 +638,27 @@ void dump_entry(context_t *cx)
             p = &mem[entry];
             n = (*p) & 0x1f;
             fprintf(stderr, "%04x %04x (%.*s)\n", ip, w, n, p+1);
-            if ((n == 7 && strncmp(p+1, "literal", n) == 0) ||
+            if ((n == 5 && strncmp(p+1, "dolit", n) == 0) ||
+                (n == 7 && strncmp(p+1, "compile", n) == 0) ||
                 (n == 6 && strncmp(p+1, "branch", n) == 0) ||
                 (n == 7 && strncmp(p+1, "?branch", n) == 0)) {
                 ip += CELLS;
                 w = STAR(ip);
                 fprintf(stderr, "%04x %04x (%d)\n", ip, w, w);
+            } else if (n == 7 && strncmp(p+1, "d_dolit", n) == 0) {
+                ip += CELLS;
+                w = STAR(ip);
+                fprintf(stderr, "%04x %04x (%d)\n", ip, w, w);
+                ip += CELLS;
+                w = STAR(ip);
+                fprintf(stderr, "%04x %04x (%d)\n", ip, w, w);
+            } else if (n == 7 && strncmp(p+1, "s_dolit", n) == 0) {
+                ip += CELLS;
+                n = mem[ip];
+                p = &mem[ip + 1];
+                fprintf(stderr, "%04x %4d \"%.*s\"\n", ip, n, n, p);
+                ip += n + 1 - CELLS;
+                //fprintf(stderr, "ip = %04x\n", ip);
             }
         }
         ip += CELLS;
