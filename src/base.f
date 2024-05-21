@@ -75,7 +75,6 @@
 \
 \ does>
 \
-
 : (does)
    last lfa cells +  \ code_addr
    rsp @            \ get semi addr
@@ -792,15 +791,17 @@ variable outer_flag
 \ : [.ps] 0x58 .ps cr ; immediate
 
 : ' \ comma ... find address of next string in dictionary
-   compile dolit
    bl word ( 0x66 .ps .hd cr ) 
    -find 
    not if abort then 
    ( 0x58 .ps )
-   , ( last 16 dump ) 
+   state @ if 
+      compile dolit
+      , 
+   then ( last 16 dump ) 
    ; immediate
 
-\ : baka ' getline ;
+\ : baka ' getline ; last dd
 
 : [char]
     compile dolit 
@@ -885,6 +886,15 @@ variable outer_flag
    [char] ) word
    count type cr 
    ;
+
+\
+\ vector ?error
+\
+variable 'error
+0 'error !
+: ?error
+   'error @ dup if ( 0x45 .ps ) execute else ." ?error not defined yet" trap then ;
+
 
 \ : baka ." aho" ;
 \ : baka2 S" aho" ;
@@ -1013,13 +1023,40 @@ variable #base
 \ test for (number)
  : nt 0 0 accept s0 0x40 .ps (number) 0 s0 c! s0 16 dump ;
 
-\ temporal stub
-: ?error drop drop ;
-
 : ?#eos \ space or nul
    dup bl = over 0 = or
    swap drop
 ;
+
+\ =======================================
+\ error handling
+\
+variable warning
+0 warning !
+
+\ variable 'abort   \ abort vector
+\ ' trap 'abort 0x41 .ps !
+
+: (abort)   \ execute vector 'abort
+   trap ( 'abort @ execute ) ;
+
+: -dup dup if dup then ;
+
+: message
+   warning @ if
+      dup  0=  if ." not found " else
+      dup  1 = if ." empty stack " else
+      dup  2 = if ." dictionary full " else
+      dup  3 = if ." has incorrect address mode " else
+      dup  4 = if ." is not unique " else
+      dup  5 = if ." (unknown) " else
+      dup  6 = if ." disc range ? " else
+      dup  7 = if ." full stack " else
+      dup  8 = if ." disc error ! " else
+      ." msg#" . 
+      then then then then then then then then then
+   then
+   ;
 
 \
 \ number
@@ -1147,3 +1184,20 @@ variable #base
 \ : baka aho ;
 
 \ last dd
+
+: (error) \ ( warning: -1: abort, 0: no descriptive, 1: descriptive )
+   warning @ 0< 
+   if (abort) then
+   here count type 
+   ." ? "
+   message
+   sp!
+   quit 
+   ;
+
+: (?error) \ ( flag n --- ) ... error abort/rewind text interpreter
+   swap if (error) else drop then ;
+
+' (?error) 'error !
+1 warning !
+
