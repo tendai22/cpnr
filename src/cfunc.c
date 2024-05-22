@@ -15,7 +15,7 @@
 
 void do_push(context_t *cx, word_t value)
 {
-    cx->sp -= 2;
+    cx->sp -= CELLS;
     STAR(cx->sp) = value;
 }
 
@@ -23,7 +23,7 @@ word_t do_pop(context_t *cx)
 {
     word_t value = STAR(cx->sp);
     cx->sp += CELLS;
-    if (cx->sp > DSTACK_END) {
+    if (STAR(STRICT_ADDR) && cx->sp > DSTACK_END) {
         fprintf(stderr, "stack underflow at pc:%04X ip:%04X\n", cx->pc, cx->ip);
         do_abort(cx, "abort at pop\n");
     }
@@ -34,10 +34,6 @@ word_t do_pop(context_t *cx)
 void do_pushr(context_t *cx, word_t value)
 {
     cx->rs -= CELLS;
-    if (cx->rs < 0) {
-        fprintf(stderr, "rstack underflow at pc:%04X ip:%04X\n", cx->pc, cx->ip);
-        do_abort(cx, "abort at pushr\n");
-    }
     STAR(cx->rs) = value;
 }
 
@@ -45,9 +41,9 @@ word_t do_popr(context_t *cx)
 {
     word_t value = STAR(cx->rs);
     cx->rs += CELLS;
-    if (cx->rs > RSTACK_END) {
-        fprintf(stderr, "rstack overflow at pc:%04X ip:%04X\n", cx->pc, cx->ip);
-        do_halt(cx);
+    if (STAR(STRICT_ADDR) && cx->rs > RSTACK_END) {
+        fprintf(stderr, "rstack underflow at pc:%04X ip:%04X\n", cx->pc, cx->ip);
+        do_abort(cx, "abort at popr\n");
     }
     return value;
 }
@@ -136,7 +132,7 @@ static void dump_line(const char *buf)
 //
 // do_getline: ( -- )
 //
-static int outer_flag = 1;
+int outer_flag = 1;
 
 int do_getline(context_t *cx, char *buf, int size)
 {
@@ -155,14 +151,11 @@ int do_getline(context_t *cx, char *buf, int size)
     }
     if (outer_flag == 0) {
         // input from keyboard
-        // do_prompt(cx);
         if (fgets (buf, size, stdin) == 0) {
             fprintf(stderr, "eof\n");
             return EOF;
         }
-        //lnum = -1;
     }
-    //dump_line(buf);
     return 0;
 }
 
@@ -419,12 +412,12 @@ void do_number(context_t *cx)
 
 void do_prompt(context_t *cx)
 {
-    if (outer_flag)
+    if (outer_flag || STAR(STATE_ADDR))
         return;     
     // print only if getline wait for keyboard input
     print_dstack(cx);
     if (STAR(STATE_ADDR))
-        fprintf(stderr, " compile\n");
+        fprintf(stderr, " compile mode\n");
     else
         fprintf(stderr, " ok\n");
 }
@@ -486,7 +479,7 @@ void do_end_colondef(context_t *cx)
 {
     char *p;
     word_t here_addr = STAR(H_ADDR);
-    //fprintf(stderr, "end_colondef: begin HERE = %04x\n", STAR(H_ADDR));
+    fprintf(stderr, "end_colondef: begin HERE = %04x\n", STAR(H_ADDR));
     // put EXIT(SEMI) in on-going dictionary entry
     STAR(here_addr) = STAR(SEMI_ADDR);  // put SEMI xt
     STAR(H_ADDR) += CELLS;

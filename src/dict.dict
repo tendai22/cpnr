@@ -127,6 +127,7 @@ opcode word
 //opcode _state
 //opcode accept
 opcode getline
+opcode outer
 opcode sp@ sp_at
 opcode rp! rsp_reset
 opcode sp! sp_reset

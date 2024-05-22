@@ -12,6 +12,8 @@
 : DEBUG_ADDR    0x4012 ;
 : PAD_ADDR      0x4014 ;
 : IN_ADDR       0x4016 ;
+: STRICT_ADDR   0x4018 ;
+: CSP_ADDR      0x401a ;
 
 \ debug
 : debug DEBUG_ADDR ! ;
@@ -23,6 +25,15 @@
 \ state
 : state STATE_ADDR ;
 0 state !
+
+\ strict
+: strict STRICT_ADDR ;
+1 strict !
+
+\ csp
+: csp CSP_ADDR ;
+0 csp !
+: !csp sp@ csp ! ;
 
 \ signbit
 : signbit 0x8000 ;
@@ -46,7 +57,8 @@
 : last LAST_ADDR @ ;
 : immediate last c@ 0x80 or last c! ;
 : , ( comma ) here ! cells allot ;
-: ] ( -- ) 1 state ! ; immediate
+\ [ is immediate, but ] is not immediate
+: ] ( -- ) 1 state ! ;
 : [ ( -- ) 0 state ! ; immediate
 
 \ lfa, link_addr ( addr -- link-addr )
@@ -524,36 +536,10 @@ variable outer_flag
    over 8 = or
    swap drop ;
 
-\ : w_getch 
-\   pad >in @ + c@ \ dup h2. space    \ pad[i]
-\ ;
-\ : w_i++ 
-\   >in dup @ 1+ swap ! ;
-
-\ : accept ( -- )
-\   0 pad c!              \ i = 1
-\   127 1 do
-\      w_getch 
-\      dup 0 = if
-\         leave
-\      else dup =whitespace if
-\         leave
-\      else dup 0 = if
-\         leave
-\      else dup 0 > if       \ valid char
-\         in_p c!        \ *p = c
-\         inc_p          \ i++ 
-\      then then then then
-\   loop
-\   bl in_p c!
-\   inc_p 
-\   1 >in ! 
-\   drop ;
-
 \ test getline
 : gtest 127 s0 1+ getline ;
 
-: abort 0x2a emit 0x2a emit 0x2a emit lnum . trap ;
+\ : abort 0x2a emit 0x2a emit 0x2a emit lnum . trap ;
 
 : strlen \ ( addr --- n )
    dup
@@ -567,26 +553,6 @@ variable outer_flag
 ;
 
 \ : aho 127 s0 1 + getline s0 1 + 16 dump ;
-
-: accept \ ( --- ) read a line to put it to s0
-   127 s0 1+ getline
-   not if 0 s0 c! abort then
-   \ now got a line on s0
-   s0 dup 1+ strlen +   \ &s0[strlen]
-   \ eliminate trailing cr/lf
-   s0 1+ swap do 
-      i c@
-      dup 13 = if 0 i c! else
-      dup 10 = if 0 i c!
-               else leave
-      then then
-      drop
-      -1 +loop
-   s0 dup 1+ strlen swap c!
-   1 >in !
-   ;
-
-: atest accept s0 16 dump 0 s0 c! ;
 
 \
 \ words for debugging
@@ -642,18 +608,6 @@ variable outer_flag
    drop drop here c@ if here else 0 then ( 0x46 .ps )
    ( .hd ) ;
 
-\ test word for accept-word
-: wtest accept begin bl word c@ while .hd repeat ;
-
-: >rest \ ( --- n ) rest of s0 buffer ;
-   s0 c@ 1+ >in @ ( 0x31 .ps ) - ;
-
-: wwtest
-   begin 
-      begin >rest 0x48 .ps 0> not while 0x23 emit space accept repeat
-      begin bl word while repeat
-   0 until ;
-
 \ =========================
 \ find ... search a word in the dictionary
 : compare ( c-addr1 u1 c-addr2 u2 -- n )
@@ -685,24 +639,24 @@ variable outer_flag
    ( 0x41 .ps ) here aligned H_ADDR ( 0x42 .ps ) ! ;
 
 
-0xe000 constant tmp 
-: tcom
-   here  \ save it on stack
-   tmp H_ADDR !
-   accept
-   32 word
-   1+
-   \ 0x30 emit .stack cr
-   here dup c@ 2 + + align H_ADDR ! \ new address
-   32 word
-   1+
-   \ 0x31 emit .stack cr
-   rot H_ADDR !
-   1 pick 1 - c@ swap dup 1 - c@
-   tmp 16 dump cr
-   .stack cr
-   compare
-   ;
+\ 0xe000 constant tmp 
+\ : tcom
+\    here  \ save it on stack
+\    tmp H_ADDR !
+\    accept
+\    32 word
+\    1+
+\    \ 0x30 emit .stack cr
+\    here dup c@ 2 + + align H_ADDR ! \ new address
+\    32 word
+\    1+
+\    \ 0x31 emit .stack cr
+\    rot H_ADDR !
+\    1 pick 1 - c@ swap dup 1 - c@
+\    tmp 16 dump cr
+\    .stack cr
+\    compare
+\    ;
 
 \ lfa ( entry -- link )
 \ : link_addr
@@ -778,12 +732,6 @@ variable outer_flag
 : find
    here 0x41 .ps -find dup if else swap drop then 0x42 .ps ;
 
-\ test word
-: ftest
-   accept
-   32 word
-   find ;
-
 \ ===================================
 \ compilation
 \
@@ -793,7 +741,7 @@ variable outer_flag
 : ' \ comma ... find address of next string in dictionary
    bl word ( 0x66 .ps .hd cr ) 
    -find 
-   not if abort then 
+   not if trap then 
    ( 0x58 .ps )
    state @ if 
       compile dolit
@@ -816,7 +764,7 @@ variable outer_flag
 : .( \ ( --- ) ... compile message
    [char] ) word
    count type cr 
-   ;
+   ; immediate
 
 
 : literal \ ( n --- ) ... compile literal instruction
@@ -858,9 +806,13 @@ variable outer_flag
    dup 1+ swap c@ ;
 
 : ." \ ( --- ) ... print the string
-   [compile] ["]
-   ' count ,
-   ' type ,
+   state @ if
+      [compile] ["]
+      ' count ,
+      ' type ,
+   else
+      [char] " word count type
+   then
    ; immediate
 
 : c" \ ( --- c-addr )... string constant with counted string
@@ -887,6 +839,13 @@ variable outer_flag
    count type cr 
    ;
 
+\ ." outer: " outer . cr 
+
+\ : baka ." aho" ;
+\ : baka2 s" aho" ;
+\ : baka3 c" aho" ;
+
+
 \
 \ vector ?error
 \
@@ -894,19 +853,48 @@ variable 'error
 0 'error !
 : ?error
    'error @ dup if ( 0x45 .ps ) execute else ." ?error not defined yet" trap then ;
+\
+\ vector abort
+\
+variable 'abort
+0 'abort !
+: abort
+   'abort @ dup if ( 0x45 .ps ) execute else ." abort not defined yet" trap then ;
 
+: accept \ ( --- ) read a line to put it to s0
+   127 s0 1+ getline
+   not if 0 s0 c! abort then
+   \ now got a line on s0
+   s0 dup 1+ strlen +   \ &s0[strlen]
+   \ eliminate trailing cr/lf
+   s0 1+ swap do 
+      i c@
+      dup 13 = if 0 i c! else
+      dup 10 = if 0 i c! else 
+               leave
+      then then
+      drop
+      -1 +loop
+   s0 dup 1+ strlen swap c!
+   1 >in !
+   ;
 
-\ : baka ." aho" ;
-\ : baka2 S" aho" ;
-\ : baka3 C" aho" ;
+: atest accept s0 16 dump 0 s0 c! ;
 
-\ : [compile] \ compile a word (even if it is immediate)
-\    bl word find not if abort": not found" then ,
-\    ; immediate
+\ test word for accept-word
+: wtest accept begin bl word c@ while .hd repeat ;
 
-\ : baka ' + , 1 , ; 
-\ : baka [char] x ;
-\ : baka [compile] [ ;
+: >rest \ ( --- n ) rest of s0 buffer ;
+   s0 c@ 1+ >in @ ( 0x31 .ps ) - ;
+
+: wwtest
+   begin 
+      begin >rest 0x48 .ps 0> not while 0x23 emit space accept repeat
+      begin bl word while repeat
+   0 until ;
+
+\ find test word
+: ftest accept 32 word find ;
 
 \ ===================================
 \ number
@@ -1037,9 +1025,6 @@ variable warning
 \ variable 'abort   \ abort vector
 \ ' trap 'abort 0x41 .ps !
 
-: (abort)   \ execute vector 'abort
-   trap ( 'abort @ execute ) ;
-
 : -dup dup if dup then ;
 
 : message
@@ -1053,8 +1038,10 @@ variable warning
       dup  6 = if ." disc range ? " else
       dup  7 = if ." full stack " else
       dup  8 = if ." disc error ! " else
+      dup 12 = if ." not exec mode " else
+      dup 14 = if ." unbalaced sp " else
       ." msg#" . 
-      then then then then then then then then then
+      then then then then then then then then then then then
    then
    ;
 
@@ -1098,50 +1085,59 @@ variable warning
 
 \
 : ?stack 
-   sp@ s0 >    \
-   1 ?error
-   sp@ here 128 + <
-   7 ?error ;
+   s0 sp@ - \ stack size
+   ( dup . cr )
+   dup 0< if 1 ( sp@ h4. space ) ?error else
+   127 >  if 7 ?error 
+   then then ;
+
+: ?exec \ --
+   state @ 12 ?error
+   ;
+
+: ?csp \ ---
+   sp@ csp @ - 14 ?error
+   ;
 \
 \ interpret ... interpret words in the line input
 \
 : interpret
    begin
-      0x30 .ps
+      ( 0x30 .ps )
       ( s0 16 dump )
       bl word  \ ( addr|0 ) 
-      0x31 .ps 
+      ( 0x31 .ps ) 
       dup
    while
       \ a valid word
       \ ( ) ... empty stack
-      0x32 .ps 
+      ( 0x32 .ps )
       -find
-      0x33 .ps
+      ( 0x33 .ps )
       dup
       if
          \ get the length
          \ state @ 0x42 .ps <
-         0x34 .ps state @ - 1+ 0x35 .ps 0<  
+         ( 0x34 .ps ) state @ - 1+ ( 0x35 .ps ) 0<  
          if ,    \ compile it
          else
-            0x36 .ps ." execute" cr execute
+            ( 0x36 .ps ." execute" cr ) execute
          then
-         \ ?stack
+         ?stack
       else  \ not found, check number
          drop
-         dup .cs cr
+         ( dup .cs cr )
          number
          dpl @ 1+    \ dpl + 1
-         0x37 .ps
+         ( 0x37 .ps )
          if
             [compile] dliteral
          else
             drop
             [compile] literal
          then
-         0x38 .ps
-         \ ?stack
+         ( 0x38 .ps )
+         ?stack
       then
    repeat
    drop
@@ -1149,32 +1145,33 @@ variable warning
 
 \ last dd
 
+: prompt 
+   outer state @ or 0= if
+      .stack ."  OK "
+   then
+   ;
+
 \
 \ quit ... outer interpreter main loop
 \
 
 : quit
+   0 strict !  \ disable pop/popr stack check in vertial machine
    [compile] [ \ start interpretive state
    begin
       rp!
-      cr
       begin
+         prompt
          accept
          s0 c@ 
       until
-      0x21 .ps s0 .cs
+      ( 0x21 .ps s0 .cs )
       interpret
-      0x22 .ps
-      state @ 0=
-      0x23 .ps
-      if
-         ." OK "
-      then
-      0x24 .ps
+      ( 0x22 .ps )
    again
    ;
 
-: aho ." baka " ;
+\ : aho ." baka " ;
 
 : 2, \ ( d --- ) ... compile a double length integer
    swap ' dolit , , ' dolit , , ;
@@ -1187,7 +1184,7 @@ variable warning
 
 : (error) \ ( warning: -1: abort, 0: no descriptive, 1: descriptive )
    warning @ 0< 
-   if (abort) then
+   if abort then
    here count type 
    ." ? "
    message
@@ -1201,3 +1198,59 @@ variable warning
 ' (?error) 'error !
 1 warning !
 
+\
+\ abort ... this word actially invokes a vector 'abort
+\ (abort) ... actial body word for 'abort
+\
+: (abort)
+   sp!
+   decimal
+   cr
+   ." nrForth" cr
+   \ forth 
+   \ definitions 
+   quit ;
+
+' (abort) 'abort !
+
+\ ========================================
+\ redefinition for replacing colon words
+\
+\ : and ; are needed to redefine
+
+: [compile] \ compile a word (even if it is immediate)
+   bl word find not if abort" : not found" then ,
+   ; immediate
+
+variable semicolon
+' ; semicolon !
+
+: ;
+   ?csp
+   ' semi ,
+   \ smudge
+   [
+   semicolon @ execute immediate
+
+last dd
+
+: :   \ --
+   ?exec
+   !csp
+   \ current @ context
+   create
+   ]
+   ' colon 2 + ,
+   ;
+
+0x41 .ps
+
+last dd
+
+\ : baka ' + , 1 , ; 
+\ : baka [char] x ;
+\ : baka [compile] [ ;
+
+cr ." End: " here h4. ." , " here 0x1000 - . ." bytes." cr 
+\ start nrForth system
+abort

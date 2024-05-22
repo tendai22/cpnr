@@ -126,8 +126,8 @@ BEGIN {
     ropcode[90 + opcode_base] = "m_lnum"
     opcode["m_getline"] = 98 + opcode_base
     ropcode[98 + opcode_base] = "m_getline"
-    opcode["m_accept"] = 99 + opcode_base
-    ropcode[99 + opcode_base] = "m_accept"
+    opcode["m_outer"] = 99 + opcode_base
+    ropcode[99 + opcode_base] = "m_outer"
     opcode["m_dadd"] = 100 + opcode_base
     ropcode[100 + opcode_base] = "m_dadd"
     opcode["m_madd"] = 101 + opcode_base

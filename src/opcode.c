@@ -379,21 +379,10 @@ undefined:
         do_push(cx, result);
         cx->pc += CELLS;
         break;
-#if 0
-    case 99: // m_accept
-        // getc from stdin
-        fprintf(stderr, "enter accept\n");
-        n = do_accept(cx);
-        fprintf(stderr, "do_accept: n = %d\n", n);
-        if (n == EOF) {
-            // empty buffer
-            p = &mem[STAR(S0_ADDR)];
-            *p = 0;
-        }
-        print_s0(cx);
+    case 99: // m_outer
+        do_push(cx, outer_flag);
         cx->pc += CELLS;
         break;
-#endif
     case 100:   // m_dadd
         // D+, double add
         ud1 = do_dpop(cx);
