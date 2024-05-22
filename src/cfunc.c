@@ -479,7 +479,7 @@ void do_end_colondef(context_t *cx)
 {
     char *p;
     word_t here_addr = STAR(H_ADDR);
-    fprintf(stderr, "end_colondef: begin HERE = %04x\n", STAR(H_ADDR));
+    //fprintf(stderr, "end_colondef: begin HERE = %04x\n", STAR(H_ADDR));
     // put EXIT(SEMI) in on-going dictionary entry
     STAR(here_addr) = STAR(SEMI_ADDR);  // put SEMI xt
     STAR(H_ADDR) += CELLS;

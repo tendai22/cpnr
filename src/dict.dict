@@ -103,6 +103,7 @@ opcode create
 //
 opcode : start_colondef
 opcode ; end_colondef immediate
+opcode ;; end_colondef immediate
 
 //
 // dd ... dictdump ( addr -- )

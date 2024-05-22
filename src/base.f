@@ -70,18 +70,16 @@
    + ;
 
 \ code_addr ( addr -- code-addr )
-: cfa 
-   lfa cells + ;
+: cfa lfa cells + ;
+: pfa cfa cells + ;
 
 \ create
 : create
    32 word drop
-   last              \ last
-   here lfa    \ last link_pos
-   dup rot swap      \ link_pos last link_pos
-   !                 \ STAR(link_pos) = last 
-   here LAST_ADDR !  \ link_pos
-   2 cells * + H_ADDR !
+   last here lfa !   \ STAR(link_pos) = last 
+   here LAST_ADDR !  \ advance last
+   here cfa dup cells + !  \ cfa = cfa + 2 (for )
+   here pfa H_ADDR ! \ h points pfa
    ;
 
 \
@@ -730,7 +728,7 @@ variable outer_flag
 \ find .. default is 'last' dictionary
 \
 : find
-   here 0x41 .ps -find dup if else swap drop then 0x42 .ps ;
+   here ( 0x41 .ps ) -find dup if else swap drop then ( 0x42 .ps ) ;
 
 \ ===================================
 \ compilation
@@ -863,7 +861,7 @@ variable 'abort
 
 : accept \ ( --- ) read a line to put it to s0
    127 s0 1+ getline
-   not if 0 s0 c! abort then
+   not if 0 s0 c! trap then
    \ now got a line on s0
    s0 dup 1+ strlen +   \ &s0[strlen]
    \ eliminate trailing cr/lf
@@ -1096,7 +1094,7 @@ variable warning
    ;
 
 : ?csp \ ---
-   sp@ csp @ - 14 ?error
+   sp@ csp @ - 0x44 .ps 14 ?error
    ;
 \
 \ interpret ... interpret words in the line input
@@ -1219,33 +1217,27 @@ variable warning
 \ : and ; are needed to redefine
 
 : [compile] \ compile a word (even if it is immediate)
-   bl word find not if abort" : not found" then ,
+   bl word -find not if abort" : not found" then ,
    ; immediate
 
-variable semicolon
-' ; semicolon !
-
-: ;
-   ?csp
+: ;   \ semicolon
+   \ ?csp
    ' semi ,
    \ smudge
-   [
-   semicolon @ execute immediate
+   [compile] [
+   ;; immediate
 
-last dd
-
-: :   \ --
-   ?exec
-   !csp
+: :   \ colon --
+   \ ?exec
+   \ !csp
    \ current @ context
    create
+   last cfa H_ADDR !
+\   [ ' dolit , ' colon 2 + , ] , 
+   [ ' colon cells + ] literal \ fill code field to colon+2
+   ,
    ]
-   ' colon 2 + ,
-   ;
-
-0x41 .ps
-
-last dd
+   ;;
 
 \ : baka ' + , 1 , ; 
 \ : baka [char] x ;
