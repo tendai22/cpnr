@@ -1366,7 +1366,7 @@ interpretにスタックチェック`?stack`を組み込んだ。インタプリ
 * クロス開発開始で、TARGET辞書へのTARGET PRIMARYのロード、base.fのTARGET辞書への追加、
 * ROMはワンパックでバイナリイメージの生成まで。
 * CONTEXT: FORTH辞書(ホスト環境、実行用ワード)
-* CURRENT: TARGET辞書
+* CURRENT: コンパイル対象。TARGET辞書
 * TARGET辞書を整える(./cpnrコマンド自体の挙動として)。
 * DEFINITIONS: はとりあえず不要。
 * EDITOR, ASSEMBLERは実装しない。
@@ -1435,3 +1435,91 @@ z80.dictをプリプロセスして z80.s を生成してアセンブラに食�
    + *.dictにアセンブリ命令を書けるようにする。
 2. 辞書イメージの設計
    + 開始アドレス、機械語アドレステーブル(colon)、エンディアン識別ワード
+
+## 機械語ページ
+
+```
+                org     0x1000
+1000            jmp     cold (coldにジャンプする) 
+1004            .db     'M','Z' (0x4d5a or 0x5a4d)
+1006 colonv:    .dw     colon
+1008 nextv:     .dw     next
+100A runv:      .dw     run
+100C sdoesv:    .dw     startdoes
+100E semiv:     .dw     semi
+1010 execv:     .dw     execute
+1012 trapv:     .dw     trap
+```
+
+内部インタプリタ
+
+```
+1014 colon:     m_colon1        ; PUSH IP -> RS
+                                ; WA -> IP
+1016            m_jmp next
+1018 semi:      .dw  .+2        ; code field address
+101A            m_semi1         ; POP RS -> IP
+101C next:      m_next1         ; @IP -> WA
+                                ; IP = IP + 2
+101E run:       m_run           ; @WA -> CA
+                                ; WA = WA + 2
+                                ; CA -> PC
+     entry_000:
+     e_execute:
+1020            .head "execute"
+1028            .dw   0
+     do_execute:
+102A            .dw  .+2
+102C execute:   m_exec1         ; POP SP -> WA
+102E            m_jmp  run
+```
+
+プリミティブワード
+
+```
+    entry_001:
+    e_dolit:
+1030            .head  "dolit"
+                .dw    entry_000
+    do_dolit:
+                .dw    .+2
+                m_dolit
+                m_jmp  next
+```
+
+`opcode dolit`で、
+
+```
+entry_001:
+e_dolit:
+    .head   "dolit"
+    .dw     entry_000
+do_dolit:
+    .dw     dw  .+2
+```
+
+まで生成し、アセンブラがバイナリを生成する。残りは手で打ち込む。よって、
+makedict.sh の入力としては、(dict.dict)
+
+```
+opcode dolit
+    m_dolit
+    jmp  next
+```
+
+だけ書けばよい。ターゲットCPUの場合、例えば、
+
+```
+opcode add
+    pop  hl
+    pop  de
+    add  hl,de
+    push hl
+    jmp  next
+```
+
+と書く。
+
+## v0.8 タグ付け
+
+現時点で動作するバージョンをタグ付けしておく。
