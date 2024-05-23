@@ -69,64 +69,21 @@ opcode /mod slashmod
 //
 // i/o primitives
 //
-//opcode getch
 opcode emit
-//opcode space
-//opcode cr
-//opcode . period
-//
-// type (addr n -- )
-//
-//opcode type
-//
-// user variables
-//
-//opcode h 
-//opcode last
-//opcode base
-//opcode bl
-//
-// ,(comma) ... put a word to the dict entry, cell_inc to (here_addr)
-//
-//opcode , comma
 //
 // compilers/outer interpreter
-//
-
-//
-// create ... read a word from input stream and 
-//            put it to the end-of-dictionary
-//
-//opcode create
-//
-// colon, semicolon
 //
 opcode : start_colondef
 opcode ; end_colondef immediate
 opcode ;; end_colondef immediate
 
-//
 // dd ... dictdump ( addr -- )
 opcode dd dictdump
 opcode lnum
 //
-// constant
-//
-//opcode docons
-//opcode constant
-
-//
 // compile
 //
-//opcode ] start_compile immediate
-//opcode [ end_compile immediate
 opcode +rsp add_rsp
-//opcode find
-//opcode compile
-//opcode [compile] bracompile immediate
-//opcode word
-//opcode _state
-//opcode accept
 opcode getline
 opcode outer
 opcode sp@ sp_at
@@ -142,7 +99,3 @@ opcode m*/ mmuldiv
 opcode d< dlt
 opcode u* umul
 opcode d_dolit
-
-
-
-
