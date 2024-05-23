@@ -1,8 +1,9 @@
 \ base.f ... cpnr secondary base word definition
 
 \ minimum user variables
+: USER_ADDR     0x4000 ;
 : LAST_ADDR     0x4000 ;
-: H_ADDR        0x4002 ;
+: dp            0x4002 ;
 : S0_ADDR       0x4004 ;
 : STATE_ADDR    0x4006 ;
 : BASE_ADDR     0x4008 ;
@@ -14,6 +15,12 @@
 : IN_ADDR       0x4016 ;
 : STRICT_ADDR   0x4018 ;
 : CSP_ADDR      0x401a ;
+: WORDXT_ADDR   0x401c ;
+: #field_addr   0x401e ;
+: #base_addr    0x4020 ;
+: outer_flag    0x4022 ;
+
+: space 32 emit ;
 
 \ debug
 : debug DEBUG_ADDR ! ;
@@ -35,31 +42,32 @@
 0 csp !
 : !csp sp@ csp ! ;
 
-\ signbit
-: signbit 0x8000 ;
-
 \ cells
 : cells 2 ;
+
+: s0 S0_ADDR @ ;
+
+\ ===========================================
+\ 1st stage definitions
+\
 
 \
 \ simple ones
 \
+: msb 0x8000 ;
 : 1+ 1 + ;
 : 1- 1 - ;
 
-\
-\ dictionary/compilation
-\
-
 \ here/allot/last/immediate
-: here H_ADDR @ ;
-: allot H_ADDR @ + H_ADDR ! ;
+: here dp @ ;
+: allot dp @ + dp ! ;
 : last LAST_ADDR @ ;
 : immediate last c@ 0x80 or last c! ;
 : , ( comma ) here ! cells allot ;
 \ [ is immediate, but ] is not immediate
 : ] ( -- ) 1 state ! ;
 : [ ( -- ) 0 state ! ; immediate
+: compile r> dup cells + >r @ , ;
 
 \ lfa, link_addr ( addr -- link-addr )
 : lfa
@@ -73,14 +81,8 @@
 : cfa lfa cells + ;
 : pfa cfa cells + ;
 
-\ create
-: create
-   32 word drop
-   last here lfa !   \ STAR(link_pos) = last 
-   here LAST_ADDR !  \ advance last
-   here cfa dup cells + !  \ cfa = cfa + 2 (for )
-   here pfa H_ADDR ! \ h points pfa
-   ;
+\ word ... vector definition
+
 
 \
 \ does>
@@ -100,10 +102,6 @@
    COLON_ADDR @ cells + ,  \ colon bincode
    ; immediate
 
-: constant
-   create , does> @ ;
-: variable
-   create cells allot does> ; 
 
 \ test constant
 \ 100 constant foo
@@ -117,18 +115,18 @@
 : decimal 10 BASE_ADDR ! ;
 
 \ constants
-0xff00 constant STACK_END
-STACK_END constant DSTACK_END
-DSTACK_END 0x100 - constant RSTACK_END
+: STACK_END 0xff00 ; 
+: DSTACK_END STACK_END ; 
+: RSTACK_END DSTACK_END 0x100 - ; 
 
 \ memory map
-0x1000 constant ROMSTART
-0x2000 constant ROMSIZE
-0x4000 constant RAMSTART
-0x4000 constant RAMSIZE
+: ROMSTART 0x1000 ;
+: ROMSIZE 0x2000 ;
+: RAMSTART 0x4000 ;
+: RAMSIZE 0x4000 ;
 
-0x1000 constant DICT_START
-0x4000 constant USER_START
+: DICT_START 0x1000 ;
+: USER_START 0x4000 ;
 
 \ uservar address
 
@@ -137,7 +135,7 @@ DSTACK_END 0x100 - constant RSTACK_END
 \ primitives
 : bl 32 ;
 : cr 13 emit 10 emit ;
-: h H_ADDR ;
+: h dp ;
 
 \
 \ control structure
@@ -151,14 +149,15 @@ DSTACK_END 0x100 - constant RSTACK_END
 
 \ ======================================
 \ if-else-then
-\
+\ 
 : if compile ?branch >mark ; immediate
 : then >resolve ; immediate
 : else compile branch >mark swap >resolve ; immediate
 
 \ ======================================
 \ operators
-\
+\ require: if-then-else
+\ 
 \ we can use '<'
 : boolean ( n -- ffff|0000 ) 
    if -1 else 0 then ;
@@ -297,8 +296,6 @@ DSTACK_END 0x100 - constant RSTACK_END
 
 \ ==== end of primary defintions
 
-: s0 S0_ADDR @ ;
-
 \ stack operations
 \ opcode rot
 \ opcode swap
@@ -317,8 +314,8 @@ DSTACK_END 0x100 - constant RSTACK_END
    sp@ swap 1+ cells * + @ ;
 
 
-: min 2dup - signbit and not if swap then drop ;
-: max 2dup - signbit and if swap then drop ;
+: min 2dup - msb and not if swap then drop ;
+: max 2dup - msb and if swap then drop ;
 : mod /mod drop ;
 
 : _p++ ( c addr -- c addr+1 )
@@ -381,7 +378,7 @@ DSTACK_END 0x100 - constant RSTACK_END
    ;
 
 : s->d \ ( n -- d ) ... sign extension
-   dup signbit and if \ negative
+   dup msb and if \ negative
       0xffff
    else \ positive
       0
@@ -401,9 +398,7 @@ DSTACK_END 0x100 - constant RSTACK_END
 : #i #nb c@ ;
 : #np #nb dup c@ + ;
 : #i-- #nb dup c@ 1 - swap c! ;
-variable #field_addr
 : #field #field_addr @ ;
-variable #base_addr
 : #base #base_addr @ ;
 
 10 #base_addr !
@@ -443,9 +438,9 @@ variable #base_addr
    swap 1- swap 1 do dup i + c@ emit loop drop ;
 
 : sign ( n xx xx - n xx xx ) \ print '-' if n is minus
-   2 pick signbit and if 45 #np c! #i-- then ;
+   2 pick msb and if 45 #np c! #i-- then ;
 
-: abs dup signbit and if 0 swap - then ;
+: abs dup msb and if 0 swap - then ;
 
 : d. 2dup dabs <# #s sign #> type drop drop space ;
 
@@ -479,9 +474,6 @@ variable #base_addr
 \ spaces ( n -- ) .. n spaces
 : spaces 1 do bl emit loop ;
 
-\ char ( -- c ) \ put an ascii value
-: char bl word 1+ c@ ; immediate
-
 \ exit
 : exit compile semi ; immediate
 
@@ -509,20 +501,19 @@ variable #base_addr
 
 : >in IN_ADDR ;
 
-variable outer_flag
 1 outer_flag !
 
 \ ======================================
 \ .stack ... debug word
 \
 : .stack 
-   dolit [ char [ , ] emit
+   0x5b emit
    sp@ s0 != if
       sp@ s0 cells - do
          i @ h4. space 
       0 cells - +loop
    then 
-   dolit [ char ] , ] emit
+   0x5d emit
    ;
 
 \ input buffer, s0, 128bytes
@@ -606,6 +597,25 @@ variable outer_flag
    drop drop here c@ if here else 0 then ( 0x46 .ps )
    ( .hd ) ;
 
+\ char ( -- c ) \ put an ascii value
+: char bl word 1+ c@ ; immediate
+
+\ create
+: create
+   32 word drop
+   last here lfa !   \ STAR(link_pos) = last 
+   here LAST_ADDR !  \ advance last
+   here cfa dup cells + !  \ cfa = cfa + 2 (for )
+   here pfa dp ! \ h points pfa
+   ;
+
+\ constant
+: constant create , does> @ ;
+\ variable
+: variable create cells allot does> ; 
+
+
+
 \ =========================
 \ find ... search a word in the dictionary
 : compare ( c-addr1 u1 c-addr2 u2 -- n )
@@ -634,22 +644,22 @@ variable outer_flag
    ;
 
 : align 
-   ( 0x41 .ps ) here aligned H_ADDR ( 0x42 .ps ) ! ;
+   ( 0x41 .ps ) here aligned dp ( 0x42 .ps ) ! ;
 
 
 \ 0xe000 constant tmp 
 \ : tcom
 \    here  \ save it on stack
-\    tmp H_ADDR !
+\    tmp dp !
 \    accept
 \    32 word
 \    1+
 \    \ 0x30 emit .stack cr
-\    here dup c@ 2 + + align H_ADDR ! \ new address
+\    here dup c@ 2 + + align dp ! \ new address
 \    32 word
 \    1+
 \    \ 0x31 emit .stack cr
-\    rot H_ADDR !
+\    rot dp !
 \    1 pick 1 - c@ swap dup 1 - c@
 \    tmp 16 dump cr
 \    .stack cr
@@ -788,9 +798,11 @@ variable outer_flag
 \
 \ string manipulation
 \
-
 \ 1 debug
-
+: [compile] \ compile a word (simple version)
+            \ later error checking version will appear
+   bl word -find drop ,
+   ; immediate
 
 : ["] \ ( --- c-addr )
     \ leave the address of a counted-string, on where 'here'
@@ -842,7 +854,6 @@ variable outer_flag
 \ : baka ." aho" ;
 \ : baka2 s" aho" ;
 \ : baka3 c" aho" ;
-
 
 \
 \ vector ?error
@@ -1216,8 +1227,8 @@ variable warning
 \
 \ : and ; are needed to redefine
 
-: [compile] \ compile a word (even if it is immediate)
-   bl word -find not if abort" : not found" then ,
+: [compile] \ ( --- ) 2nd definition, error check version
+   bl word -find not if abort" not found after [compile]" then ,
    ; immediate
 
 : ;   \ semicolon
@@ -1232,7 +1243,7 @@ variable warning
    \ !csp
    \ current @ context
    create
-   last cfa H_ADDR !
+   last cfa dp !
 \   [ ' dolit , ' colon 2 + , ] , 
    [ ' colon cells + ] literal \ fill code field to colon+2
    ,

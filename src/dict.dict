@@ -71,7 +71,7 @@ opcode /mod slashmod
 //
 //opcode getch
 opcode emit
-opcode space
+//opcode space
 //opcode cr
 //opcode . period
 //
@@ -97,7 +97,7 @@ opcode space
 // create ... read a word from input stream and 
 //            put it to the end-of-dictionary
 //
-opcode create
+//opcode create
 //
 // colon, semicolon
 //
@@ -121,10 +121,10 @@ opcode lnum
 //opcode ] start_compile immediate
 //opcode [ end_compile immediate
 opcode +rsp add_rsp
-// opcode find
-opcode compile
-opcode [compile] bracompile immediate
-opcode word
+//opcode find
+//opcode compile
+//opcode [compile] bracompile immediate
+//opcode word
 //opcode _state
 //opcode accept
 opcode getline
