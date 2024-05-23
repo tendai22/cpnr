@@ -241,17 +241,20 @@ undefined:
     //
     // i/o primitives
     //
+#if defined(UNUSED_PRIMITIVES)
     case 64: // m_getch
         //
         do_getch(cx);
         cx->pc += CELLS;
         break;
+#endif //UNUSED_PRIMITIVES
     case 65: // m_emit
         // put one byte to screen
         w = do_pop(cx);
         do_emit(cx, w);
         cx->pc += CELLS;
         break;
+#if defined(UNUSED_PRIMITIVES)
     case 66: // m_space
         do_emit(cx, ' ');
         cx->pc += CELLS;
@@ -287,12 +290,10 @@ undefined:
         do_push(cx, w);
         cx->pc += CELLS;
         break;
-#if !defined(MINIMUM)
     case 73: // m_bl
         do_push(cx, ' ');
         cx->pc += CELLS;
         break;
-#endif //MINIMUM
     case 74: // m_comma
         w = tos(cx);
         if (STAR(DEBUG_ADDR))
@@ -308,6 +309,7 @@ undefined:
         do_create(cx);
         cx->pc += CELLS;
         break;
+#endif //UNUSED_PRIMITIVES
     case 77: // m_start_colondef
         do_start_colondef(cx);
         cx->pc += CELLS;
@@ -320,7 +322,7 @@ undefined:
         dump_entry(cx);
         cx->pc += CELLS;
         break;
-#if 0 //!defined(MINIMUM)
+#if defined(UNUSED_PRIMITIVES)
     case 80: // m_docons
         // constant runtime routine
         w = STAR(cx->wa);
@@ -332,7 +334,6 @@ undefined:
         do_constant(cx);
         cx->pc += CELLS;
         break;
-#endif //!MINIMUM
     case 82: // m_start_compile
         STAR(STATE_ADDR) = 1;
         cx->pc += CELLS;
@@ -341,10 +342,12 @@ undefined:
         STAR(STATE_ADDR) = 0;
         cx->pc += CELLS;
         break;
+#endif //UNUSED_PRIMITIVES
     case 84: // m_add_rsp
         cx->rs += do_pop(cx);
         cx->pc += CELLS;
         break;
+#if defined(UNUSED_PRIMITIVES)
     case 85: // m_find
         do_find(cx);
         cx->pc += CELLS;
@@ -362,6 +365,7 @@ undefined:
         do_push(cx, STATE_ADDR);
         cx->pc += CELLS;
         break;
+#endif //UNUSED_PRIMITIVES
     case 89: // m_sp_at
         do_push(cx, cx->sp);
         cx->pc += CELLS;
@@ -436,6 +440,7 @@ undefined:
         cx->ip += n;
         cx->pc += CELLS;
         break;
+#if defined(UNUSED_PRIMITIVES)
     case 108: // m_bracompile
         // ( --- ) ... read the following word to find and compile xt
         // : [compile]
@@ -457,6 +462,7 @@ undefined:
         STAR(H_ADDR) += CELLS;
         cx->pc += CELLS;
         break;
+#endif //UNUSED_PRIMITIVES
     case 109: // m_d_dolit
         w = STAR(cx->ip);
         cx->ip += CELLS;
