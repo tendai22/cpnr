@@ -31,10 +31,10 @@ opcode s_dolit
 //
 // primitives ... memory access
 //
-opcode c! bytedeposite
-opcode ! exclamation
-opcode c@ bytefetch
-opcode @ atfetch
+opcode c! cdepo
+opcode ! depo
+opcode c@ cfetch
+opcode @ fetch
 
 //
 // stack operations
@@ -73,9 +73,9 @@ opcode emit
 //
 // compilers/outer interpreter
 //
-opcode : start_colondef
-opcode ; end_colondef immediate
-opcode ;; end_colondef immediate
+opcode : colondef
+opcode ; semidef immediate
+opcode ;; semidef immediate
 
 // dd ... dictdump ( addr -- )
 opcode dd dictdump

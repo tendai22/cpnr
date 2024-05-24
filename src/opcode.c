@@ -6,17 +6,24 @@
 #include <stdio.h>
 #include "machine.h"
 
-static int opcode_base = 0xc000;
-
 int machine_code(context_t *cx, word_t code)
 {
     word_t addr, *wp, w, w2, n;
     int32_t d1, d2;
     uint32_t ud1, ud2;
     mem_t *p, c;
-    int cc, result;
+    int cc, result, offset;
     // machine code
-    if ((code & 0xf000) != opcode_base) {
+    if ((code & 0x8000) != 0) {     // branck
+        offset = code;
+        if (code & 0x4000) { // negative address
+            offset |= ~0x3fff;
+        }
+        cx->pc += CELLS + offset;
+        return 0;
+    }
+    //fprintf(stderr, "%04X %04X\n", cx->pc, code);
+    if ((code & 0xf000) != OPCODE_BASE) {
 undefined:
         fprintf(stderr, "machine_code: undefined instruction: %04X at %04X\n", code, cx->pc);
         return -1;
@@ -100,26 +107,26 @@ undefined:
     //
     // fetch and deposite (memory read/write)
     //
-    case 12: // m_bytedeposite
+    case 12: // m_cdepo
         w = do_pop(cx);
         mem[w] = do_pop(cx);
         if (STAR(DEBUG_ADDR))
             fprintf(stderr, "mem[%04x] = %04x\n", w, mem[w]);
         cx->pc += CELLS;
         break;
-    case 13: // m_exclamation
+    case 13: // m_depo
         w = do_pop(cx);
         STAR(w) = do_pop(cx);
         if (STAR(DEBUG_ADDR))
             fprintf(stderr, "mem[%04x] = %04x\n", w, STAR(w));
         cx->pc += CELLS;
         break;
-    case 14: // m_bytefetch
+    case 14: // m_cfetch
         c = mem[tos(cx)];
         STAR(cx->sp) = c;
         cx->pc += CELLS;
         break;
-    case 15: // m_atfetch
+    case 15: // m_fetch
         w = STAR(tos(cx));
         STAR(cx->sp) = w;
         cx->pc += CELLS;
@@ -241,131 +248,28 @@ undefined:
     //
     // i/o primitives
     //
-#if defined(UNUSED_PRIMITIVES)
-    case 64: // m_getch
-        //
-        do_getch(cx);
-        cx->pc += CELLS;
-        break;
-#endif //UNUSED_PRIMITIVES
     case 36: // m_emit
         // put one byte to screen
         w = do_pop(cx);
         do_emit(cx, w);
         cx->pc += CELLS;
         break;
-#if defined(UNUSED_PRIMITIVES)
-    case 66: // m_space
-        do_emit(cx, ' ');
+    case 37: // m_colondef
+        do_colondef(cx);
         cx->pc += CELLS;
         break;
-    case 67: // m_cr
-        do_emit(cx, '\r');
-        do_emit(cx, '\n');
-        cx->pc += CELLS;
-        break;
-    case 68: // m_period
-        w = do_pop(cx);
-        printf("%d", w); fflush(stdout);
-        cx->pc += CELLS;
-        break;
-    case 69: // m_type
-        n = do_pop(cx);
-        addr = do_pop(cx);
-        p = &mem[addr];
-        while (n-- > 0)
-            do_emit(cx, *p++);
-        cx->pc += CELLS;
-        break;
-    case 70: // m_h
-        do_push(cx, H_ADDR);
-        cx->pc += CELLS;
-        break;
-    case 71: // m_last
-        do_push(cx, STAR(LAST_ADDR));
-        cx->pc += CELLS;
-        break;
-    case 72: // m_base
-        w = STAR(BASE_ADDR);
-        do_push(cx, w);
-        cx->pc += CELLS;
-        break;
-    case 73: // m_bl
-        do_push(cx, ' ');
-        cx->pc += CELLS;
-        break;
-    case 74: // m_comma
-        w = tos(cx);
-        if (STAR(DEBUG_ADDR))
-            fprintf(stderr, "m_comma: addr = %04x, value = %04x\n", *wp, w);
-        STAR(STAR(H_ADDR)) = w;
-        STAR(H_ADDR) += CELLS;
-        cx->pc += CELLS;
-        break;
-    //
-    // high level words
-    //
-    case 75: // m_create
-        do_create(cx);
-        cx->pc += CELLS;
-        break;
-#endif //UNUSED_PRIMITIVES
-    case 37: // m_start_colondef
-        do_start_colondef(cx);
-        cx->pc += CELLS;
-        break;
-    case 38: // m_end_colondef
-        do_end_colondef(cx);
+    case 38: // m_semidef
+        do_semidef(cx);
         cx->pc += CELLS;
         break;
     case 39: // m_dictdump
         dump_entry(cx);
         cx->pc += CELLS;
         break;
-#if defined(UNUSED_PRIMITIVES)
-    case 80: // m_docons
-        // constant runtime routine
-        w = STAR(cx->wa);
-        //fprintf(stderr, "docons: WA:%04X, w = %04x\n", cx->wa, w);
-        do_push(cx, w);
-        cx->pc += CELLS;
-        break;
-    case 81: // m_constant
-        do_constant(cx);
-        cx->pc += CELLS;
-        break;
-    case 82: // m_start_compile
-        STAR(STATE_ADDR) = 1;
-        cx->pc += CELLS;
-        break;
-    case 83: // m_end_compile
-        STAR(STATE_ADDR) = 0;
-        cx->pc += CELLS;
-        break;
-#endif //UNUSED_PRIMITIVES
     case 40: // m_add_rsp
         cx->rs += do_pop(cx);
         cx->pc += CELLS;
         break;
-#if defined(UNUSED_PRIMITIVES)
-    case 85: // m_find
-        do_find(cx);
-        cx->pc += CELLS;
-        break;
-    case 86: // m_compile
-        do_compile(cx);
-        cx->pc += CELLS;
-        break;
-    case 87: // m_word
-        do_word(cx);
-        cx->pc += CELLS;
-        break;
-    case 88: // m__state
-        // interpret/compile state user variable
-        do_push(cx, STATE_ADDR);
-        cx->pc += CELLS;
-        break;
-#endif //UNUSED_PRIMITIVES
     case 41: // m_sp_at
         do_push(cx, cx->sp);
         cx->pc += CELLS;
@@ -440,29 +344,6 @@ undefined:
         cx->ip += n;
         cx->pc += CELLS;
         break;
-#if defined(UNUSED_PRIMITIVES)
-    case 108: // m_bracompile
-        // ( --- ) ... read the following word to find and compile xt
-        // : [compile]
-        // bl word find
-        do_push(cx, ' ');
-        do_word(cx);
-        do_find(cx); 
-        // not if here count type ." not found" abort then ,
-        if (do_pop(cx) == 0) {
-            w = STAR(H_ADDR);       // count
-            w2 = w + 1;             // string
-            fprintf(stderr, "%.*s: not found\n", mem[w], &mem[w2]);
-        }
-        // , (compile it)
-        w = do_pop(cx);
-        if (STAR(DEBUG_ADDR))
-            fprintf(stderr, "STAR[%04x] = %04x\n", STAR(H_ADDR), w);
-        STAR(STAR(H_ADDR)) = w;
-        STAR(H_ADDR) += CELLS;
-        cx->pc += CELLS;
-        break;
-#endif //UNUSED_PRIMITIVES
     case 53: // m_d_dolit
         w = STAR(cx->ip);
         cx->ip += CELLS;

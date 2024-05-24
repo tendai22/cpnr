@@ -11,6 +11,10 @@ BEGIN {
         s/^\(.*\)$/    opcode_base = strtonum(\1)/
         b
     }
+    /^#define  *OPCODE_BASE /{
+        s/^#define  *OPCODE_BASE  *\([^ ][^ ]*\).*$/    opcode_base = strtonum(\1)/
+        b
+    }
     /case [^:][^:]*:  *\/\/  *m_/{
         s/case  *\([^ :][^:]*\):  *\/\/  *\(m_[a-zA-Z_][a-zA-Z0-9_*]*\).*$/opcode["\2"] = \1 + opcode_base\
     ropcode[\1 + opcode_base] = "\2"/

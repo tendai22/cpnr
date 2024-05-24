@@ -41,6 +41,7 @@ int do_machine(context_t *cx)
         // no break occurs
         // do one instruction
         code = STAR(cx->pc);
+        //fprintf(stderr, "pc: %04x code: %04x\n", cx->pc, code);
         if (STAR(DEBUG_ADDR) & 1)
             do_print_status(cx);
         if ((result = machine_code(cx, code)) != 0) {
@@ -63,7 +64,6 @@ void do_execute (context_t *cx)
     cx->pc = cx->ca;
     cx->ip = HALT_ADDR;     // ipはxtの置き場を指すようにする。
                             // それはHALT_ADDRだ。
-    //fprintf(stderr, "execute: WA: %04x CA:%04x\n", cx->wa, cx->ca);
     // do infinite loop
     do_machine(cx);
 }

@@ -415,7 +415,7 @@ void do_prompt(context_t *cx)
     if (outer_flag || STAR(STATE_ADDR))
         return;     
     // print only if getline wait for keyboard input
-    print_dstack(cx);
+    print_stack(cx);
     if (STAR(STATE_ADDR))
         fprintf(stderr, " compile mode\n");
     else
@@ -461,51 +461,32 @@ void do_create(context_t *cx)
 }
 
 // entity of colon word, or machine code "m_start_colondef"
-void do_start_colondef(context_t *cx)
+void do_colondef(context_t *cx)
 {
     do_create(cx);
     // put COLON xt to cfa
-    //fprintf(stderr, "start_colondef: begin LAST = %04x, HERE = %04x\n", STAR(LAST_ADDR), STAR(H_ADDR));
+    //fprintf(stderr, "colondef: begin LAST = %04x, HERE = %04x\n", STAR(LAST_ADDR), STAR(H_ADDR));
     STAR(STAR(H_ADDR)) = STAR(STAR(COLON_ADDR));
         // code address should specify "body of machine code"
         // so, xt is not sufficient, one more dereferencing is needed
     STAR(H_ADDR) += CELLS;      // allot'ed
     // change to compile mode
     STAR(STATE_ADDR) = 1;
-    //fprintf(stderr, "start_colondef: end   HERE = %04x\n", STAR(H_ADDR));
+    //fprintf(stderr, "colondef: end   HERE = %04x\n", STAR(H_ADDR));
 }
 
-void do_end_colondef(context_t *cx)
+void do_semidef(context_t *cx)
 {
     char *p;
     word_t here_addr = STAR(H_ADDR);
-    //fprintf(stderr, "end_colondef: begin HERE = %04x\n", STAR(H_ADDR));
+    //fprintf(stderr, "semidef: begin HERE = %04x\n", STAR(H_ADDR));
     // put EXIT(SEMI) in on-going dictionary entry
     STAR(here_addr) = STAR(SEMI_ADDR);  // put SEMI xt
     STAR(H_ADDR) += CELLS;
     // change compile mode
     STAR(STATE_ADDR) = 0;   // interpretive mode
-    //fprintf(stderr, "end_colondef: end   HERE = %04x\n", STAR(H_ADDR));
+    //fprintf(stderr, "semidef: end   HERE = %04x\n", STAR(H_ADDR));
 }
-
-#if 0
-// entity of colon word, or machine code "m_start_colondef"
-void do_constant(context_t *cx)
-{
-    word_t w = do_pop(cx);  // const value
-    do_create(cx);
-    // put COLON xt to cfa
-    //fprintf(stderr, "constant: begin LAST = %04x, HERE = %04x\n", STAR(LAST_ADDR), STAR(H_ADDR));
-    STAR(STAR(H_ADDR)) = STAR(STAR(DOCONS_ADDR));
-        // code address should specify "body of machine code"
-        // so, xt is not sufficient, one more dereferencing is needed
-    STAR(H_ADDR) += CELLS;      // allot'ed
-    // change to compile mode
-    STAR(STAR(H_ADDR)) = w;     // set constant 
-    STAR(H_ADDR) += CELLS;      // allot'ed
-    //fprintf(stderr, "constant: end   HERE = %04x\n", STAR(H_ADDR));
-}
-#endif
 
 // do_compile_token
 void do_compile_token(context_t *cx)
@@ -540,31 +521,6 @@ void do_compile(context_t *cx)
     if (STAR(DEBUG_ADDR))
         fprintf(stderr, "C:%04X %04X (%.*s)\n", STAR(H_ADDR), w, (*p)&0x1f, (p+1));
     STAR(H_ADDR) += CELLS;
-}
-
-void do_bracompile(context_t *cx)
-{
-    int flag;
-    fprintf(stderr, "[COMPILE]: \n");
-    while (1) {
-        do_push(cx, ' ');
-        do_word(cx);
-        if (tos(cx) != 0)
-            break;
-        do_pop(cx); // discard it
-        if (do_accept(cx) == EOF)
-            do_abort(cx, "need a word");
-        print_s0(cx);
-    }
-    //print_cstr(cx, "H", STAR(H_ADDR));
-    //print_stack(cx);
-    do_find(cx);
-    //if (do_pop(cx))
-    //    do_pop(cx); // clear the result of do_find
-    //continue;
-    if ((flag = do_pop(cx)) == 0)
-        do_abort(cx, "not find in [COMPILE]");
-    do_compile_token(cx);
 }
 
 //

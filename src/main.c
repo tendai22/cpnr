@@ -15,8 +15,6 @@ void reset(context_t *cx)
     cx->pc = ROMSTART;
 }
 
-#define USER(n) (0x4000+(n))
-
 static void initialize_ctx(context_t *cx)
 {
     cx->ip = 0;
@@ -136,9 +134,9 @@ static int fgethex(FILE *fp)
         return -1;
 }
 
-void init_dict(context_t *cx)
+void init_dict(context_t *cx, const char *filename)
 {
-    char *filename = "dict.X", *p;
+    char *p;
     FILE *fp = fopen(filename, "r");
     int c, n, i;
     word_t addr = 0, *wp;
@@ -298,10 +296,10 @@ int main (int ac, char **av)
     while (1) {
         cx = &_ctx;
         initialize_ctx(cx);
-        init_dict(cx);
+        init_dict(cx, "dict.X");
         if (init_mem(cx) < 0)
             break;
-        if (monitor(cx) < 0)
+        if (do_mainloop(cx) < 0)
             break;
     }
 }

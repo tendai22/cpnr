@@ -15,7 +15,7 @@ typedef uint8_t mem_t;    // ROM/RAM memory array for the target machine
 //
 // little or big
 //
-#define BIG_ENDIAN 1
+//#define BIG_ENDIAN 1      // in <stdlib.h> we have it
 
 //
 // word/cell size, per byte
@@ -82,6 +82,11 @@ typedef struct _ctx {
     word_t bp[BPTBL_SIZE];      // break point table
 } context_t;
 
+// C virtual cpu emulation
+#define OPCODE_BASE 0x7000
+#define OPCODE(n) (OPCODE_BASE+((n)&0xff))
+
+
 // external functions
 extern char *str(mem_t *c_ptr);
 extern void do_halt(context_t *cx);
@@ -101,7 +106,6 @@ extern void do_print_status(context_t *cx);
 extern void print_s0(context_t *cx);
 extern void print_cstr(context_t *cx, char *title, word_t addr);
 extern void print_stack(context_t *cx);
-extern void print_dstack(context_t *cx);
 extern const char *opcode_name(word_t mcode);
 extern void init_optable(void);
 extern word_t entry_head(context_t *cx, word_t addr);
@@ -130,13 +134,13 @@ extern void do_dup(context_t *cx);
 extern word_t do_pop(context_t *cx);
 extern word_t do_popr(context_t *cx);
 
-extern void do_start_colondef(context_t *cx);
-extern void do_end_colondef(context_t *cx);
+extern void do_colondef(context_t *cx);
+extern void do_semidef(context_t *cx);
 extern void do_create(context_t *cx);
 extern void do_compile_token(context_t *cx);
 extern void do_compile_number(context_t *cx);
-extern void do_compile(context_t *cx);
-extern void do_constant(context_t *cx);
+//extern void do_compile(context_t *cx);
+//extern void do_constant(context_t *cx);
 extern void do_emit(context_t *cx, word_t w);
 extern void dump_entry(context_t *cx);
 extern word_t code_addr(word_t entry);

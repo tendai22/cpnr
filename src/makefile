@@ -16,8 +16,8 @@ dict.list: dict.s
 dict.s: dict.dict opcode.inc makedict.sh
 	sh makedict.sh $< > $@
 
-opcode.inc: opcode.c makeopcode.sh
-	sh makeopcode.sh $< > $@
+opcode.inc: opcode.c machine.h makeopcode.sh
+	sh makeopcode.sh machine.h opcode.c > $@
 
 opname.h: opcode.inc gen_opname.sh
 	sh gen_opname.sh opcode.inc > $@

@@ -6,6 +6,7 @@
 #include <setjmp.h>
 #include <termios.h>
 #include <unistd.h>
+#include <stdlib.h>
 #include "machine.h"
 
 //
@@ -15,8 +16,12 @@
 
 const char *opcode_name(word_t mcode)
 {
-    mcode -= 0xc000;
+    static int count = 10;
+    mcode -= OPCODE_BASE;
     if (mcode > sizeof optable / sizeof (const char *)) {
+        if (count-- <= 0) {
+            exit(1);
+        }
         return "*toobig*";
     }
     return optable[mcode] ? optable[mcode] : "*undef*";
@@ -131,7 +136,7 @@ void do_print_status(context_t *cx)
 {
     int first;
     word_t mcode = STAR(cx->pc);
-    if (mcode == 0xc001 || mcode == 0xc003)
+    if (mcode == OPCODE(1) || mcode == OPCODE(3))
         return;
     fprintf(stderr, "%04X %04X %-12.12s IP:%04X WA:%04X CA:%04X SP:%04X RS:%04X ",
         cx->pc, STAR(cx->pc), opcode_name(STAR(cx->pc)), cx->ip, cx->wa, cx->ca, cx->sp, cx->rs);
@@ -158,6 +163,7 @@ void print_cstr(context_t *cx, char *title, word_t addr)
     fprintf(stderr, "]\n");
 }
 
+#if 0
 void print_dstack(context_t *cx)
 {
     word_t w = DSTACK_END - CELLS;
@@ -171,7 +177,7 @@ void print_dstack(context_t *cx)
     }
     fprintf(stderr, "]");
 }
-
+#endif
 
 // debugger
 
