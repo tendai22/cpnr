@@ -98,7 +98,7 @@
 : does>
    compile (does)
    SEMI_ADDR @ ,
-   0xc005 ,       \ m_startdoes
+   0x7005 ,       \ m_startdoes
    COLON_ADDR @ cells + ,  \ colon bincode
    ; immediate
 
