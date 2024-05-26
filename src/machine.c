@@ -4,6 +4,7 @@
 
 #include <stdio.h>
 #include "machine.h"
+#include "user.h"
 
 //
 // macros
@@ -93,7 +94,7 @@ void do_abort(context_t *cx, const char *mes)
     char *p;
     int count;
     if (tos(cx)) {
-        p = &mem[STAR(H_ADDR)];      // entry top, word name
+        p = &mem[STAR(DP_ADDR)];      // entry top, word name
         count = *p & 0x1f;
         fprintf(stderr, ">>> %d: %.*s %s\n", (int)lnum, count, p+1, mes);
     }
@@ -131,7 +132,7 @@ int do_mainloop(context_t *cx)
                 print_s0(cx);
                 continue;
             }
-            //print_cstr(cx, "H", STAR(H_ADDR));
+            //print_cstr(cx, "H", STAR(DP_ADDR));
             //print_stack(cx);
             do_find(cx);
             //if (do_pop(cx))
@@ -143,7 +144,7 @@ int do_mainloop(context_t *cx)
                 else
                     do_execute(cx);
             } else {
-                do_push(cx, STAR(H_ADDR));
+                do_push(cx, STAR(DP_ADDR));
                 do_number(cx);  // (addr -- n r)
                 if (do_pop(cx) != 0) {
                     do_push(cx, 1);

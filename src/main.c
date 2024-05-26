@@ -5,6 +5,7 @@
 #include <stdio.h>
 #include <string.h>
 #include "machine.h"
+#include "user.h"
 
 //
 // forth interpreter initializer
@@ -12,7 +13,7 @@
 
 void reset(context_t *cx)
 {
-    cx->pc = ROMSTART;
+    cx->pc = 0;
 }
 
 static void initialize_ctx(context_t *cx)
@@ -60,12 +61,14 @@ int gets_outer(mem_t *buf, int len)
             return 0;
         }
         if (fp == 0) {
+            fprintf(stderr, "open: %s\n", filenames[0]);
             if ((fp = fopen(filenames[0], "r")) == 0) {
                 fprintf(stderr, "gets_outer: cannot open %s, no file input any more\n", filenames[0]);
                 filenames = 0;
                 return 0;
             }
             // now file input established
+            lnum = 1;
         }
         if (fgets(buf, len-1, fp) != 0) {
             //fprintf(stderr, "gets_outer: [%s]\n", buf);
@@ -91,6 +94,10 @@ char *str(mem_t *c_str)
     p[n] = '\0';
     return buf;
 }
+
+//
+// dictdump
+//
 
 
 
@@ -134,19 +141,25 @@ static int fgethex(FILE *fp)
         return -1;
 }
 
-void init_dict(context_t *cx, const char *filename)
+static int filetype(const char *name)
 {
-    char *p;
-    FILE *fp = fopen(filename, "r");
-    int c, n, i;
-    word_t addr = 0, *wp;
-
-    if (fp == 0) {
-        fprintf(stderr, "no dict file: %s\n", filename);
-        return;
+    char *p = rindex(name, '.');
+    if (p) {
+        p++;
+        if (strcmp(p, "bin") == 0)
+            return 1;
+        else if (strcmp(p, "X") == 0)
+            return 2;
     }
-    // read it
-    int value, min = 0xffff, max = 0;
+    return 0;
+}
+
+static int read_xfile(FILE *fp)
+{
+    int c;
+    int i, n, value, min = 0xffff, max = 0;
+    word_t addr;
+
     while ((c = fgetc(fp)) != EOF) {
         if (c == ' ' || c == '\r' || c == '\n')
             continue;
@@ -201,9 +214,65 @@ void init_dict(context_t *cx, const char *filename)
     fprintf(stderr, "\n");
 #endif
     // init user vars
+    STAR(DICTTOP_ADDR) = STAR(min);
+    STAR(DP_ADDR) = STAR(min + 2);
     STAR(LAST_ADDR) = STAR(min + 4);
-    STAR(H_ADDR) = STAR(min + CELLS);
-    fprintf(stderr, "last: %04x, h: %04x\n", STAR(LAST_ADDR), STAR(H_ADDR));
+    fprintf(stderr, "dicttop: %04x, last: %04x, h: %04x\n", STAR(DICTTOP_ADDR), STAR(LAST_ADDR), STAR(DP_ADDR));
+    return 0;
+}
+
+static int init_dict(context_t *cx, const char *filename)
+{
+    char *p;
+    FILE *fp;
+    int c, n, i, type;
+    word_t addr = 0, *wp;
+    word_t header[3];
+
+    if (filename == 0) {
+        fprintf(stderr, "no filename\n");
+        return -1;
+
+    }
+    if ((type = filetype(filename)) == 0) {
+        fprintf(stderr, "unexpected file type: %s\n", filename);
+        return -1;
+    }
+    if ((fp = fopen(filename, "r")) == 0) {
+        fprintf(stderr, "open error in init_dict: %s\n", filename);
+        return -1;
+    }
+    if (type == 1) {     // bin file
+        n = sizeof header / sizeof (word_t);
+        if (fread(&header, n, sizeof(word_t), fp) != n) {
+            fprintf(stderr, "bin file, header read error\n");
+            fclose(fp);
+            return -1;
+        }
+        // header[0] ... DICTTOP
+        // header[1] ... DP
+        // header[2] ... LAST
+        fprintf(stderr, "%s: dicttop = %04x, dp = %04x, last = %04x\n", filename, header[0], header[1], header[2]);
+        p = &mem[header[0]];
+        n = header[1] - header[0];
+        fseek(fp, 0L, SEEK_SET);
+        fprintf(stderr, "n = %x(%d)\n", n, n);
+        if (fread(p, n, 1, fp) != n) {
+            fprintf(stderr, "%s: dict read error\n", filename);
+            fclose(fp);
+            return -1;
+        }
+        STAR(DICTTOP_ADDR) = header[0];
+        STAR(DP_ADDR) = header[1];
+        STAR(LAST_ADDR) = header[2];
+        return 0;
+    } else if (type == 2) {
+        fprintf(stderr, "%s: read_xfile\n", filename);
+        read_xfile(fp);
+        return 0;
+    } else {
+        return -1;
+    }
 }
 
 // set xt to a user var
@@ -213,7 +282,7 @@ static int name2xt(context_t *cx, char *name)
     char *p;
     int n;
     word_t w;
-    word_t cstr_addr = STAR(H_ADDR);
+    word_t cstr_addr = STAR(DP_ADDR);
     // get 'name' entry address
     p = &mem[cstr_addr];
     *p++ = n = strlen(name);
@@ -236,7 +305,10 @@ static int init_mem(context_t *cx)
 {
     mem_t *p;
     int flag = 0;
+    // DICTTOP has already been set, no need to care here
     STAR(S0_ADDR) = DSTACK_END;  // s0 line buffer
+    STAR(R0_ADDR) = RSTACK_END;
+    STAR(TIB_ADDR) = TIB_START;
     STAR(STATE_ADDR) = 0;    // interpretive mode
     STAR(BASE_ADDR) = 10;     // DECIMAL mode
     flag |= name2xt(cx, "halt");
@@ -247,8 +319,14 @@ static int init_mem(context_t *cx)
     STAR(SEMI_ADDR) = do_pop(cx);
     flag |= name2xt(cx, "dolit");
     STAR(LITERAL_ADDR) = do_pop(cx);
+    STAR(ABORT_ADDR) = 0;
+    if (name2xt(cx, "abort") == 0)
+        STAR(ABORT_ADDR) = do_pop(cx);
+    STAR(ABORT_ADDR) = 0;
+    if (name2xt(cx, "cold") == 0)
+        STAR(COLD_ADDR) = do_pop(cx);
     STAR(DEBUG_ADDR) = 0;
-    STAR(PAD_ADDR) = DSTACK_END;
+    STAR(PAD_ADDR) = STAR(DP_ADDR);
     STAR(IN_ADDR) = 0;
     //flag |= name2xt(cx, "docons");
     //STAR(DOCONS_ADDR) = do_pop(cx);
@@ -262,45 +340,36 @@ static int init_mem(context_t *cx)
     //fprintf(stderr, "init_mem: halt xt = %04X, semi xt = %04X\n", STAR(HALT_ADDR), STAR(SEMI_ADDR));
     return 0;
 }
-/*
-word_t tos(context_t *cx)
-{
-    return cx->stack[cx->sp];
-}
-*/
-
-// do_accept: read one line
-
-// do_word: cut a word to top-of-dictionary
-
-
-
-// do_execute: invoke xt on tos
-// (xt -- )
-// xt actually is a code-address of the dict-entry
-
-// innter interpreter
-//
 
 int main (int ac, char **av)
 {
     // outer interpreter
     char buf[80];
     int n;
+    word_t abort_addr = STAR(ABORT_ADDR);
     context_t _ctx, *cx;
 
     // init source file args
-    init_outer_buf(ac - 1, av + 1);
-    init_optable();
     // initialize ctx
-    while (1) {
-        cx = &_ctx;
-        initialize_ctx(cx);
-        init_dict(cx, "dict.X");
-        if (init_mem(cx) < 0)
-            break;
-        if (do_mainloop(cx) < 0)
-            break;
+    cx = &_ctx;
+    initialize_ctx(cx);
+    if (init_dict(cx, av[1]) != 0) {
+        fprintf(stderr, "exit init_dict error\n");
+        return 1;
     }
+    init_outer_buf(ac - 2, av + 2);
+    init_optable();
+    if (init_mem(cx) < 0) {
+        fprintf(stderr, "exit init_mem error\n");
+        return 1;
+    }
+    if (abort_addr) {
+        fprintf(stderr, "start abort at %04x\n", abort_addr);
+        do_push(cx, abort_addr);
+    } else {
+        fprintf(stderr, "start text interpreter\n");
+        do_mainloop(cx);
+    }
+    return 0;
 }
 

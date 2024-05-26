@@ -5,6 +5,7 @@
 
 #include <stdio.h>
 #include "machine.h"
+#include "user.h"
 
 int machine_code(context_t *cx, word_t code)
 {
@@ -352,6 +353,28 @@ undefined:
         cx->ip += CELLS;
         do_push(cx, w);
         cx->pc += CELLS;
+        break;
+    case 54: // m_cold
+        // machine dependent cold start routine
+        // C vertual CPU, no actions needed
+        fprintf(stderr, "m_cold: so far no actions\n");
+        // init_dict, init_mem has done, so 
+        if ((w = STAR(ABORT_ADDR)) != 0) {
+            fprintf(stderr, "m_cold: start abort at %04x\n", w);
+            do_push(cx, w);
+            do_execute(cx);
+            // not return
+        }
+        cx->pc += CELLS;
+        break;
+    case 55: // m_dictdump
+        // ( begin end --- )
+        w2 = do_pop(cx);
+        w = do_pop(cx);
+        fprintf(stderr, "m_dictdump: begin: %04x, end: %04x\n", w, w2);
+        // save it
+        do_savefile("forth.bin", w, w2);
+        cx->pc += CELLS; 
         break;
     default:
         goto undefined;

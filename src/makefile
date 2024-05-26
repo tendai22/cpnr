@@ -7,7 +7,7 @@ NAME=cpnr
 
 ALL=dict.X
 
-all: cpnr dict.X
+all: cpnr dict.X user.f
 
 dict.X: dict.list
 	sh dump.sh $< > $@
@@ -22,11 +22,15 @@ opcode.inc: opcode.c machine.h makeopcode.sh
 opname.h: opcode.inc gen_opname.sh
 	sh gen_opname.sh opcode.inc > $@
 
+user.f user.h: user.def makeuser.sh
+	sh makeuser.sh -f user.def > user.f
+	sh makeuser.sh -h user.def > user.h
+
 COBJS=main.o machine.o monitor.o cfunc.o opcode.o
 CFLAGS+=-g
 CFLAGS+=-Wno-pointer-sign 
 
-main.o machine.o monitor.o cfunc.o: machine.h
+main.o machine.o monitor.o cfunc.o: machine.h user.h
 monitor.o: opname.h
 
 cpnr: $(COBJS)

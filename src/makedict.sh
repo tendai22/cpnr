@@ -10,7 +10,7 @@ case "$ORG" in
 esac
 # prefix
 cat <<EOF
-    .org   0x1000
+    .org   $ORG
     .section DICT
 dict:
     .dw   dict
@@ -22,7 +22,8 @@ last_addr:
     .dw  entry_head
 tail_addr:
     .dw  entry_end
-
+entry_addr:
+    .dw  0
 EOF
 # dict definitions
 cat "$@" |

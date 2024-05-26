@@ -1,24 +1,7 @@
 \ base.f ... cpnr secondary base word definition
 
 \ minimum user variables
-: USER_ADDR     0x4000 ;
-: LAST_ADDR     0x4000 ;
-: dp            0x4002 ;
-: S0_ADDR       0x4004 ;
-: STATE_ADDR    0x4006 ;
-: BASE_ADDR     0x4008 ;
-\ for compile instruction/constant
-: COLON_ADDR    0x400c ;
-: SEMI_ADDR     0x400e ;
-: DEBUG_ADDR    0x4012 ;
-: PAD_ADDR      0x4014 ;
-: IN_ADDR       0x4016 ;
-: STRICT_ADDR   0x4018 ;
-: CSP_ADDR      0x401a ;
-: WORDXT_ADDR   0x401c ;
-: #field_addr   0x401e ;
-: #base_addr    0x4020 ;
-: outer_flag    0x4022 ;
+\ are moved to user.f
 
 : space 32 emit ;
 
@@ -46,6 +29,8 @@
 : cells 2 ;
 
 : s0 S0_ADDR @ ;
+: dp DP_ADDR ;
+: dicttop DICTTOP_ADDR ;
 
 \ ===========================================
 \ 1st stage definitions
@@ -125,7 +110,7 @@
 : RAMSTART 0x4000 ;
 : RAMSIZE 0x4000 ;
 
-: DICT_START 0x1000 ;
+\ : DICT_START 0x1000 ;
 : USER_START 0x4000 ;
 
 \ uservar address
@@ -390,11 +375,10 @@
 \
 
 \ number conversion buffer
-\ size 32 bytes, right adjustment 
-\ (tail of 32bytes are occupied)
+\ size max 64 bytes, right adjustment 
 \ #nb[0]: index
 \ #nb[1-31]: character buffer
-: #nb 32 0xe000 + ;
+: #nb 64 here + ;
 : #i #nb c@ ;
 : #np #nb dup c@ + ;
 : #i-- #nb dup c@ 1 - swap c! ;
@@ -476,6 +460,7 @@
 
 \ exit
 : exit compile semi ; immediate
+
 
 \ outer interpreter
 
@@ -561,7 +546,6 @@
    cr ;
 
 \ : cstest accept s0 .cs 0 s0 c! ;
-
 \ ====================================
 \ word ... extract a word
 \
@@ -671,6 +655,9 @@
 \    dup c@ 0x1f and   \ n = *entry & 0x1f
 \    dup 1 and + 2 + +
 \ ;
+
+
+
 
 \ prev_link ( entry -- prev-entry )
 : prev_link
@@ -1254,6 +1241,10 @@ variable warning
 \ : baka [char] x ;
 \ : baka [compile] [ ;
 
-cr ." End: " here h4. ." , " here 0x1000 - . ." bytes." cr 
+cr ." End: " here h4. ." , " here dicttop @ - dup h4. ." (" . ." ) bytes." cr 
 \ start nrForth system
+\ dump dictionary
+' cold cells + dicttop 4 cells * + 0x5a .ps !
+\ dictdump
 abort
+

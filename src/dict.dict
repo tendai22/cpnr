@@ -2,7 +2,11 @@
 # base.dict .... makedict.sh sample dictionary template
 #
 
-    org 0x1000
+    org 0x8000
+//
+// cold start primitive
+//
+opcode cold
 //
 // nop, halt
 //
@@ -99,3 +103,8 @@ opcode m*/ mmuldiv
 opcode d< dlt
 opcode u* umul
 opcode d_dolit
+//
+// misc
+//
+opcode cold
+opcode dictdump

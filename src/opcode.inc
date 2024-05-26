@@ -108,5 +108,9 @@ BEGIN {
     ropcode[52 + opcode_base] = "m_s_dolit"
     opcode["m_d_dolit"] = 53 + opcode_base
     ropcode[53 + opcode_base] = "m_d_dolit"
+    opcode["m_cold"] = 54 + opcode_base
+    ropcode[54 + opcode_base] = "m_cold"
+    opcode["m_dictdump"] = 55 + opcode_base
+    ropcode[55 + opcode_base] = "m_dictdump"
 }
 

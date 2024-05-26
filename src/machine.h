@@ -1,6 +1,6 @@
 //
-//
-//
+// narrowForth C Portable machine definitions
+//  Norihiro Kumagai 2024-5-26
 
 #if !defined(__MACHINE_H)
 #include <inttypes.h>
@@ -25,37 +25,19 @@ typedef uint8_t mem_t;    // ROM/RAM memory array for the target machine
 //
 // taget machine ROM/RAM size
 //
-#define ROMSTART 0x1000
-#define ROMSIZE 0x2000
-#define RAMSTART 0x4000
-#define RAMSIZE 0x4000
 
 //
 // memory map
 //
-#define DICT_START    0x1000
-#define USER_START    0x4000
-#define STACK_END     0xff00
-
-// stack area
-#define DSTACK_END    STACK_END
-#define RSTACK_END    (DSTACK_END-0x100)
+#define USER_PAGE     0xf000
+#define DSTACK_END    (USER_PAGE+256)
+#define TIB_START     DSTACK_END
+#define RSTACK_END    (TIB_START+256)
+#define USER_START    (RSTACK_END)
+#define USER_END      (RSTACK_END+256)
 
 // user variables
-#define LAST_ADDR     USER_START
-#define H_ADDR        (USER_START+2)
-#define S0_ADDR       (USER_START+4)
-#define STATE_ADDR    (USER_START+6)
-#define BASE_ADDR     (USER_START+8)
-#define HALT_ADDR     (USER_START+10)
-#define COLON_ADDR    (USER_START+12)
-#define SEMI_ADDR     (USER_START+14)
-#define LITERAL_ADDR  (USER_START+16)
-//#define DOCONS_ADDR   (USER_START+18)
-#define DEBUG_ADDR    (USER_START+18)
-#define PAD_ADDR      (USER_START+20)
-#define IN_ADDR       (USER_START+22)
-#define STRICT_ADDR   (USER_START+24)
+// are moved to user.h
 
 #define MEMSIZE 65536
 extern mem_t mem[];
@@ -63,7 +45,9 @@ extern mem_t mem[];
 #define STAR(addr) (*((word_t *)&mem[addr]))
 #define AMPERSANT(p) ((word_t)((p)-&mem[0]))
 
-#define STACK_SIZE 256
+//
+// break point address table
+//
 #define BPTBL_SIZE 16
 
 typedef struct _ctx {
@@ -86,7 +70,6 @@ typedef struct _ctx {
 #define OPCODE_BASE 0x7000
 #define OPCODE(n) (OPCODE_BASE+((n)&0xff))
 
-
 // external functions
 extern char *str(mem_t *c_ptr);
 extern void do_halt(context_t *cx);
@@ -100,6 +83,9 @@ extern int getch_outer(void);
 extern void reset_outer(void);
 extern void reset_instream(context_t *cx);
 extern int get_instream(context_t *cx);
+
+extern void do_savefile(const char *path, word_t start, word_t end);
+extern void do_execute(context_t *cx);
 
 // monitor
 extern void do_print_status(context_t *cx);

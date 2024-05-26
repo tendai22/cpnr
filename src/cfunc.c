@@ -6,6 +6,7 @@
 #include <stdio.h>
 #include <string.h>
 #include "machine.h"
+#include "user.h"
 
 //
 // primitive functions
@@ -130,6 +131,31 @@ static void dump_line(const char *buf)
 }
 
 //
+// do_savefile
+//
+void do_savefile(const char *path, word_t start, word_t end)
+{
+    FILE *fp = fopen(path, "w");
+    const char *p1, *p2;
+    size_t len;
+    p1 = (const char *)&mem[start];
+    p2 = (const char *)&mem[end];
+    len = p2 - p1;
+    if (p1 > p2) {
+        fprintf(stderr, "savefile: bad address, %04x-%04x\n", start, end);
+        return;
+    }
+    if (fp == 0) {
+        fprintf(stderr,"savefile: cannot open file %s\n", path);
+        return;
+    }
+    if (fwrite(p1, 1, len, fp) != len) {
+        fprintf(stderr,"savefile: write error\n");
+    }
+    fclose(fp);
+}
+
+//
 // do_getline: ( -- )
 //
 int outer_flag = 1;
@@ -197,7 +223,7 @@ void do_word(context_t *cx)
     word_t wp;
     int n, c, count = 0;
     delim = tos(cx);
-    here = h0 = &mem[STAR(H_ADDR)];
+    here = h0 = &mem[STAR(DP_ADDR)];
     // skip if the first is space
     while (1) {
         if ((c = getch(cx)) == 0) {
@@ -236,7 +262,7 @@ void do_word(context_t *cx)
                     ;
             }
             //fprintf(stderr, "comment: end-of-line\n");
-            mem[STAR(H_ADDR)] = 0;
+            mem[STAR(DP_ADDR)] = 0;
             tos(cx) = 0;
             return;
          }
@@ -246,7 +272,7 @@ void do_word(context_t *cx)
 
     *here = delim;   // trailing delim char, not counted
     *h0 = here - h0 - 1;        // count byte
-    tos(cx) = STAR(H_ADDR);
+    tos(cx) = STAR(DP_ADDR);
 }
 
 static word_t link_addr(word_t entry)
@@ -449,15 +475,15 @@ void do_create(context_t *cx)
     do_pop(cx); 
     // check its name
     prev_link = STAR(LAST_ADDR);
-    link_pos = link_addr(STAR(H_ADDR));
-    //fprintf(stderr, "create: head = %04x, link_pos - %04x\n", STAR(H_ADDR), link_pos);
+    link_pos = link_addr(STAR(DP_ADDR));
+    //fprintf(stderr, "create: head = %04x, link_pos - %04x\n", STAR(DP_ADDR), link_pos);
     // put link pointer
     STAR(link_pos) = prev_link;
     //fprintf(stderr, "prev_link: %04x to %04x\n", prev_link, link_pos);
     // uvar last update
-    STAR(LAST_ADDR) = STAR(H_ADDR);
+    STAR(LAST_ADDR) = STAR(DP_ADDR);
     // user h update
-    STAR(H_ADDR) = link_pos + CELLS;    // allot'ed 
+    STAR(DP_ADDR) = link_pos + CELLS;    // allot'ed 
 }
 
 // entity of colon word, or machine code "m_start_colondef"
@@ -465,27 +491,27 @@ void do_colondef(context_t *cx)
 {
     do_create(cx);
     // put COLON xt to cfa
-    //fprintf(stderr, "colondef: begin LAST = %04x, HERE = %04x\n", STAR(LAST_ADDR), STAR(H_ADDR));
-    STAR(STAR(H_ADDR)) = STAR(STAR(COLON_ADDR));
+    //fprintf(stderr, "colondef: begin LAST = %04x, HERE = %04x\n", STAR(LAST_ADDR), STAR(DP_ADDR));
+    STAR(STAR(DP_ADDR)) = STAR(STAR(COLON_ADDR));
         // code address should specify "body of machine code"
         // so, xt is not sufficient, one more dereferencing is needed
-    STAR(H_ADDR) += CELLS;      // allot'ed
+    STAR(DP_ADDR) += CELLS;      // allot'ed
     // change to compile mode
     STAR(STATE_ADDR) = 1;
-    //fprintf(stderr, "colondef: end   HERE = %04x\n", STAR(H_ADDR));
+    //fprintf(stderr, "colondef: end   HERE = %04x\n", STAR(DP_ADDR));
 }
 
 void do_semidef(context_t *cx)
 {
     char *p;
-    word_t here_addr = STAR(H_ADDR);
-    //fprintf(stderr, "semidef: begin HERE = %04x\n", STAR(H_ADDR));
+    word_t here_addr = STAR(DP_ADDR);
+    //fprintf(stderr, "semidef: begin HERE = %04x\n", STAR(DP_ADDR));
     // put EXIT(SEMI) in on-going dictionary entry
     STAR(here_addr) = STAR(SEMI_ADDR);  // put SEMI xt
-    STAR(H_ADDR) += CELLS;
+    STAR(DP_ADDR) += CELLS;
     // change compile mode
     STAR(STATE_ADDR) = 0;   // interpretive mode
-    //fprintf(stderr, "semidef: end   HERE = %04x\n", STAR(H_ADDR));
+    //fprintf(stderr, "semidef: end   HERE = %04x\n", STAR(DP_ADDR));
 }
 
 // do_compile_token
@@ -495,9 +521,9 @@ void do_compile_token(context_t *cx)
     word_t entry = entry_head(cx, xt);
     char *p = &mem[entry];
     if (STAR(DEBUG_ADDR))
-        fprintf(stderr, "C:%04x %04x (%.*s)\n", STAR(H_ADDR), xt, (*p)&0x1f, p+1);
-    STAR(STAR(H_ADDR)) = do_pop(cx);
-    STAR(H_ADDR) += CELLS;
+        fprintf(stderr, "C:%04x %04x (%.*s)\n", STAR(DP_ADDR), xt, (*p)&0x1f, p+1);
+    STAR(STAR(DP_ADDR)) = do_pop(cx);
+    STAR(DP_ADDR) += CELLS;
 }
 
 void do_compile_number(context_t *cx)
@@ -516,11 +542,11 @@ void do_compile(context_t *cx)
     mem_t *p;
     w= STAR(cx->ip);
     cx->ip += CELLS;
-    STAR(STAR(H_ADDR)) = w;
+    STAR(STAR(DP_ADDR)) = w;
     p = &mem[entry_head(cx, w)];
     if (STAR(DEBUG_ADDR))
-        fprintf(stderr, "C:%04X %04X (%.*s)\n", STAR(H_ADDR), w, (*p)&0x1f, (p+1));
-    STAR(H_ADDR) += CELLS;
+        fprintf(stderr, "C:%04X %04X (%.*s)\n", STAR(DP_ADDR), w, (*p)&0x1f, (p+1));
+    STAR(DP_ADDR) += CELLS;
 }
 
 //
@@ -542,7 +568,7 @@ word_t entry_head(context_t *cx, word_t addr)
 
 word_t entry_tail(context_t *cx, word_t addr)
 {
-    word_t entry = STAR(LAST_ADDR), link, prev = STAR(H_ADDR);
+    word_t entry = STAR(LAST_ADDR), link, prev = STAR(DP_ADDR);
     mem_t *p;
     while (addr < entry) {
         link = link_addr(entry);

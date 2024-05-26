@@ -8,6 +8,7 @@
 #include <unistd.h>
 #include <stdlib.h>
 #include "machine.h"
+#include "user.h"
 
 //
 // optable

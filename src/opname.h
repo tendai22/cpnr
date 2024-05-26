@@ -55,4 +55,6 @@ void init_optable(void)
         optable[51] = "m_sp_reset";
         optable[52] = "m_s_dolit";
         optable[53] = "m_d_dolit";
+        optable[54] = "m_cold";
+        optable[55] = "m_dictdump";
 }
