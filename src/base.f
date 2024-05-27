@@ -631,34 +631,6 @@
    ( 0x41 .ps ) here aligned dp ( 0x42 .ps ) ! ;
 
 
-\ 0xe000 constant tmp 
-\ : tcom
-\    here  \ save it on stack
-\    tmp dp !
-\    accept
-\    32 word
-\    1+
-\    \ 0x30 emit .stack cr
-\    here dup c@ 2 + + align dp ! \ new address
-\    32 word
-\    1+
-\    \ 0x31 emit .stack cr
-\    rot dp !
-\    1 pick 1 - c@ swap dup 1 - c@
-\    tmp 16 dump cr
-\    .stack cr
-\    compare
-\    ;
-
-\ lfa ( entry -- link )
-\ : link_addr
-\    dup c@ 0x1f and   \ n = *entry & 0x1f
-\    dup 1 and + 2 + +
-\ ;
-
-
-
-
 \ prev_link ( entry -- prev-entry )
 : prev_link
    lfa @
@@ -875,10 +847,10 @@ variable 'abort
    1 >in !
    ;
 
-: atest accept s0 16 dump 0 s0 c! ;
+\ : atest accept s0 16 dump 0 s0 c! ;
 
 \ test word for accept-word
-: wtest accept begin bl word c@ while .hd repeat ;
+\ : wtest accept begin bl word c@ while .hd repeat ;
 
 : >rest \ ( --- n ) rest of s0 buffer ;
    s0 c@ 1+ >in @ ( 0x31 .ps ) - ;
@@ -890,7 +862,7 @@ variable 'abort
    0 until ;
 
 \ find test word
-: ftest accept 32 word find ;
+\ : ftest accept 32 word find ;
 
 \ ===================================
 \ number
@@ -1005,7 +977,7 @@ variable #base
    ;
 
 \ test for (number)
- : nt 0 0 accept s0 0x40 .ps (number) 0 s0 c! s0 16 dump ;
+\ : nt 0 0 accept s0 0x40 .ps (number) 0 s0 c! s0 16 dump ;
 
 : ?#eos \ space or nul
    dup bl = over 0 = or
@@ -1077,7 +1049,7 @@ variable warning
    then
    ; \          All done. A double integer is on 
 
-: nn accept s0 0x40 .ps number 0 s0 c! s0 16 dump ;
+\ : nn accept s0 0x40 .ps number 0 s0 c! s0 16 dump ;
 
 \
 : ?stack 
@@ -1202,7 +1174,7 @@ variable warning
    sp!
    decimal
    cr
-   ." nrForth" cr
+   ." narrowForth v0.9dev" cr
    \ forth 
    \ definitions 
    quit ;
@@ -1244,7 +1216,6 @@ variable warning
 cr ." End: " here h4. ." , " here dicttop @ - dup h4. ." (" . ." ) bytes." cr 
 \ start nrForth system
 \ dump dictionary
-' cold cells + dicttop 4 cells * + 0x5a .ps !
+' cold cells + dicttop 4 cells * + ( 0x5a .ps ) !
 \ dictdump
 abort
-

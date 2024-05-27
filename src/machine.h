@@ -84,7 +84,7 @@ extern void reset_outer(void);
 extern void reset_instream(context_t *cx);
 extern int get_instream(context_t *cx);
 
-extern void do_savefile(const char *path, word_t start, word_t end);
+extern void do_savefile(const char *path, word_t start, word_t end, word_t last);
 extern void do_execute(context_t *cx);
 
 // monitor

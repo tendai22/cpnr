@@ -9,7 +9,7 @@
 
 int machine_code(context_t *cx, word_t code)
 {
-    word_t addr, *wp, w, w2, n;
+    word_t addr, *wp, w, w2, w3, n;
     int32_t d1, d2;
     uint32_t ud1, ud2;
     mem_t *p, c;
@@ -263,7 +263,7 @@ undefined:
         do_semidef(cx);
         cx->pc += CELLS;
         break;
-    case 39: // m_dictdump
+    case 39: // m_dd
         dump_entry(cx);
         cx->pc += CELLS;
         break;
@@ -368,12 +368,13 @@ undefined:
         cx->pc += CELLS;
         break;
     case 55: // m_dictdump
-        // ( begin end --- )
+        // ( begin end last --- )
+        w3 = do_pop(cx);
         w2 = do_pop(cx);
         w = do_pop(cx);
-        fprintf(stderr, "m_dictdump: begin: %04x, end: %04x\n", w, w2);
+        fprintf(stderr, "m_dictdump: begin: %04x, end: %04x, last: %04x\n", w, w2, w3);
         // save it
-        do_savefile("forth.bin", w, w2);
+        do_savefile("forth.bin", w, w2, w3);
         cx->pc += CELLS; 
         break;
     default:

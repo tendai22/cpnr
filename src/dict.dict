@@ -81,8 +81,8 @@ opcode : colondef
 opcode ; semidef immediate
 opcode ;; semidef immediate
 
-// dd ... dictdump ( addr -- )
-opcode dd dictdump
+// dd ... dumpentry ( addr -- )
+opcode dd
 opcode lnum
 //
 // compile

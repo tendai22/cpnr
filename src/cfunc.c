@@ -133,11 +133,17 @@ static void dump_line(const char *buf)
 //
 // do_savefile
 //
-void do_savefile(const char *path, word_t start, word_t end)
+void do_savefile(const char *path, word_t start, word_t end, word_t last)
 {
     FILE *fp = fopen(path, "w");
     const char *p1, *p2;
     size_t len;
+    word_t header[3];
+
+    header[0] = start;
+    header[1] = end;
+    header[2] = last;
+
     p1 = (const char *)&mem[start];
     p2 = (const char *)&mem[end];
     len = p2 - p1;
@@ -149,7 +155,9 @@ void do_savefile(const char *path, word_t start, word_t end)
         fprintf(stderr,"savefile: cannot open file %s\n", path);
         return;
     }
-    if (fwrite(p1, 1, len, fp) != len) {
+    if (fwrite(header, sizeof(word_t), 3, fp) != 3) {
+        fprintf(stderr,"savefile: write header error\n");
+    } else if (fwrite(p1+6, 1, len-6, fp) != len-6) {
         fprintf(stderr,"savefile: write error\n");
     }
     fclose(fp);

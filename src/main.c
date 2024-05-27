@@ -225,7 +225,7 @@ static int init_dict(context_t *cx, const char *filename)
 {
     char *p;
     FILE *fp;
-    int c, n, i, type;
+    int c, n, i, type, result;
     word_t addr = 0, *wp;
     word_t header[3];
 
@@ -244,7 +244,7 @@ static int init_dict(context_t *cx, const char *filename)
     }
     if (type == 1) {     // bin file
         n = sizeof header / sizeof (word_t);
-        if (fread(&header, n, sizeof(word_t), fp) != n) {
+        if ((result = fread(&header, sizeof(word_t), n, fp)) != n) {
             fprintf(stderr, "bin file, header read error\n");
             fclose(fp);
             return -1;
@@ -257,7 +257,7 @@ static int init_dict(context_t *cx, const char *filename)
         n = header[1] - header[0];
         fseek(fp, 0L, SEEK_SET);
         fprintf(stderr, "n = %x(%d)\n", n, n);
-        if (fread(p, n, 1, fp) != n) {
+        if (fread(p, 1, n, fp) != n) {
             fprintf(stderr, "%s: dict read error\n", filename);
             fclose(fp);
             return -1;
@@ -265,10 +265,12 @@ static int init_dict(context_t *cx, const char *filename)
         STAR(DICTTOP_ADDR) = header[0];
         STAR(DP_ADDR) = header[1];
         STAR(LAST_ADDR) = header[2];
+        fclose(fp);
         return 0;
     } else if (type == 2) {
         fprintf(stderr, "%s: read_xfile\n", filename);
         read_xfile(fp);
+        fclose(fp);
         return 0;
     } else {
         return -1;
@@ -289,9 +291,10 @@ static int name2xt(context_t *cx, char *name)
     strncpy(p, name, n);
     p[n] = ' ';
     do_push(cx, cstr_addr);
+    //fprintf(stderr, "find: [%.*s]\n", mem[cstr_addr], p);
     do_find(cx);
     if (do_pop(cx) == 0) {
-        fprintf(stderr, "init_mem: %s: no entry, error\n", name);
+        fprintf(stderr, "name2xt: %s: no entry, error\n", name);
         return -1;
     }
     //w = code_addr(do_pop(cx));
@@ -320,9 +323,11 @@ static int init_mem(context_t *cx)
     flag |= name2xt(cx, "dolit");
     STAR(LITERAL_ADDR) = do_pop(cx);
     STAR(ABORT_ADDR) = 0;
-    if (name2xt(cx, "abort") == 0)
+    if (name2xt(cx, "abort") == 0) {
         STAR(ABORT_ADDR) = do_pop(cx);
-    STAR(ABORT_ADDR) = 0;
+        fprintf(stderr, "abort_addr: %04x\n", STAR(ABORT_ADDR));
+    }
+    STAR(COLD_ADDR) = 0;
     if (name2xt(cx, "cold") == 0)
         STAR(COLD_ADDR) = do_pop(cx);
     STAR(DEBUG_ADDR) = 0;
@@ -346,7 +351,7 @@ int main (int ac, char **av)
     // outer interpreter
     char buf[80];
     int n;
-    word_t abort_addr = STAR(ABORT_ADDR);
+    word_t abort_addr;
     context_t _ctx, *cx;
 
     // init source file args
@@ -363,9 +368,12 @@ int main (int ac, char **av)
         fprintf(stderr, "exit init_mem error\n");
         return 1;
     }
+    abort_addr = STAR(ABORT_ADDR);
     if (abort_addr) {
         fprintf(stderr, "start abort at %04x\n", abort_addr);
         do_push(cx, abort_addr);
+        // STAR(DEBUG_ADDR) = 1;
+        do_execute(cx);
     } else {
         fprintf(stderr, "start text interpreter\n");
         do_mainloop(cx);

@@ -78,8 +78,8 @@ BEGIN {
     ropcode[37 + opcode_base] = "m_colondef"
     opcode["m_semidef"] = 38 + opcode_base
     ropcode[38 + opcode_base] = "m_semidef"
-    opcode["m_dictdump"] = 39 + opcode_base
-    ropcode[39 + opcode_base] = "m_dictdump"
+    opcode["m_dd"] = 39 + opcode_base
+    ropcode[39 + opcode_base] = "m_dd"
     opcode["m_add_rsp"] = 40 + opcode_base
     ropcode[40 + opcode_base] = "m_add_rsp"
     opcode["m_sp_at"] = 41 + opcode_base

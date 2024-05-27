@@ -40,7 +40,7 @@ void init_optable(void)
         optable[36] = "m_emit";
         optable[37] = "m_colondef";
         optable[38] = "m_semidef";
-        optable[39] = "m_dictdump";
+        optable[39] = "m_dd";
         optable[40] = "m_add_rsp";
         optable[41] = "m_sp_at";
         optable[42] = "m_lnum";
