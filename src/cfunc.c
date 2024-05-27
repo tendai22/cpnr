@@ -137,9 +137,14 @@ void do_savefile(const char *path, word_t start, word_t end, word_t last)
 {
     FILE *fp = fopen(path, "w");
     const char *p1, *p2;
-    size_t len;
+    size_t len, n;
     word_t header[3];
 
+    if ((fp = fopen(path, "w")) == 0) {
+        fprintf(stderr, "savefile: cannot open %s\n", path);
+        return;
+    }
+    
     header[0] = start;
     header[1] = end;
     header[2] = last;
@@ -149,17 +154,29 @@ void do_savefile(const char *path, word_t start, word_t end, word_t last)
     len = p2 - p1;
     if (p1 > p2) {
         fprintf(stderr, "savefile: bad address, %04x-%04x\n", start, end);
-        return;
+        goto terminate;
     }
     if (fp == 0) {
         fprintf(stderr,"savefile: cannot open file %s\n", path);
-        return;
+        goto terminate;
     }
     if (fwrite(header, sizeof(word_t), 3, fp) != 3) {
         fprintf(stderr,"savefile: write header error\n");
+        goto terminate;
     } else if (fwrite(p1+6, 1, len-6, fp) != len-6) {
         fprintf(stderr,"savefile: write error\n");
+        goto terminate;
+    } else if (fwrite(header, sizeof(word_t), 3, fp) != 3) {
+        fprintf(stderr,"savefile: 2nd write header error\n");
+        goto terminate;
     }
+    n = END_ADDR - DICTTOP_ADDR - 3 * CELLS;
+    p1 = &mem[DICTTOP_ADDR];
+    if (fwrite(p1, 1, n, fp) != n) {
+        fprintf(stderr,"savefile: user variable write error\n");
+        goto terminate;
+    }
+terminate: 
     fclose(fp);
 }
 

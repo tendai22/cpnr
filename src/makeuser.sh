@@ -20,9 +20,16 @@ case "$flag" in
         name = $2
         if ($2 ~ /^[A-Z][A-Z0-9]*$/)
             name = $2 "_ADDR"
-        printf(": %-16s 0x%04x ;\n", name, addr);
+        expr = "[ " $3 " " $4 " " $5 " " $6 " " $7 " ]"
+        body = body " " sprintf("%-10s literal %-16s !\n", expr, name);
+        printf(": %-16s 0x%04x ;\n", name, addr, expr, name);
         addr += 2;
     }
+    # END {
+    #    print ": init_user" > "upost.f"
+    #    print body > "upost.f"
+    #    print "  ;" > "upost.f"
+    # }
     '
     ;;
 *)

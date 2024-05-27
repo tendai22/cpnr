@@ -1,24 +1,31 @@
+// #define USER_PAGE     0xf000
+// #define DSTACK_END    (USER_PAGE+256)
+// #define TIB_START     DSTACK_END
+// #define RSTACK_END    (TIB_START+256)
+// #define USER_START    (RSTACK_END)
+// #define USER_END      (RSTACK_END+256)
+
     .org 0xf000
-    .user DICTTOP
-    .user LAST
-    .user DP
-    .user S0
-    .user R0
-    .user TIB
-    .user STATE
-    .user DEBUG
-    .user BASE
-    .user HALT
-    .user COLON
-    .user SEMI
-    .user LITERAL
-    .user PAD
-    .user IN
-    .user STRICT
-    .user CSP
-    .user WORDXT
-    .user COLD
-    .user ABORT
-    .user #field_addr
-    .user #base_addr
-    .user outer_flag
+    .user DICTTOP 0
+    .user LAST  0
+    .user DP    0
+    .user S0    USER_PAGE 256 +
+    .user R0    USER_PAGE 512 +
+    .user TIB   USER_PAGE 256 +
+    .user STATE 0
+    .user DEBUG 0
+    .user BASE  10
+    .user HALT  ' halt 
+    .user COLON ' colon
+    .user SEMI  ' semi
+    .user LITERAL ' dolit
+    .user PAD   0
+    .user IN    0
+    .user STRICT 0
+    .user CSP   0
+    .user COLD  ' cold
+    .user ABORT ' abort
+    .user #field_addr   10
+    .user #base_addr    0
+    .user outer_flag    1
+    .user END   0

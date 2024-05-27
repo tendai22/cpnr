@@ -30,6 +30,7 @@
 
 : s0 S0_ADDR @ ;
 : dp DP_ADDR ;
+: dicttop DICTTOP_ADDR ;
 
 \ ===========================================
 \ 1st stage definitions
@@ -374,11 +375,10 @@
 \
 
 \ number conversion buffer
-\ size 32 bytes, right adjustment 
-\ (tail of 32bytes are occupied)
+\ size max 64 bytes, right adjustment 
 \ #nb[0]: index
 \ #nb[1-31]: character buffer
-: #nb 32 0xe000 + ;
+: #nb 64 here + ;
 : #i #nb c@ ;
 : #np #nb dup c@ + ;
 : #i-- #nb dup c@ 1 - swap c! ;
@@ -460,6 +460,7 @@
 
 \ exit
 : exit compile semi ; immediate
+
 
 \ outer interpreter
 
@@ -545,7 +546,6 @@
    cr ;
 
 \ : cstest accept s0 .cs 0 s0 c! ;
-
 \ ====================================
 \ word ... extract a word
 \
@@ -630,31 +630,6 @@
 : align 
    ( 0x41 .ps ) here aligned dp ( 0x42 .ps ) ! ;
 
-
-\ 0xe000 constant tmp 
-\ : tcom
-\    here  \ save it on stack
-\    tmp dp !
-\    accept
-\    32 word
-\    1+
-\    \ 0x30 emit .stack cr
-\    here dup c@ 2 + + align dp ! \ new address
-\    32 word
-\    1+
-\    \ 0x31 emit .stack cr
-\    rot dp !
-\    1 pick 1 - c@ swap dup 1 - c@
-\    tmp 16 dump cr
-\    .stack cr
-\    compare
-\    ;
-
-\ lfa ( entry -- link )
-\ : link_addr
-\    dup c@ 0x1f and   \ n = *entry & 0x1f
-\    dup 1 and + 2 + +
-\ ;
 
 \ prev_link ( entry -- prev-entry )
 : prev_link
@@ -872,10 +847,10 @@ variable 'abort
    1 >in !
    ;
 
-: atest accept s0 16 dump 0 s0 c! ;
+\ : atest accept s0 16 dump 0 s0 c! ;
 
 \ test word for accept-word
-: wtest accept begin bl word c@ while .hd repeat ;
+\ : wtest accept begin bl word c@ while .hd repeat ;
 
 : >rest \ ( --- n ) rest of s0 buffer ;
    s0 c@ 1+ >in @ ( 0x31 .ps ) - ;
@@ -887,7 +862,7 @@ variable 'abort
    0 until ;
 
 \ find test word
-: ftest accept 32 word find ;
+\ : ftest accept 32 word find ;
 
 \ ===================================
 \ number
@@ -1002,7 +977,7 @@ variable #base
    ;
 
 \ test for (number)
- : nt 0 0 accept s0 0x40 .ps (number) 0 s0 c! s0 16 dump ;
+\ : nt 0 0 accept s0 0x40 .ps (number) 0 s0 c! s0 16 dump ;
 
 : ?#eos \ space or nul
    dup bl = over 0 = or
@@ -1074,7 +1049,7 @@ variable warning
    then
    ; \          All done. A double integer is on 
 
-: nn accept s0 0x40 .ps number 0 s0 c! s0 16 dump ;
+\ : nn accept s0 0x40 .ps number 0 s0 c! s0 16 dump ;
 
 \
 : ?stack 
@@ -1199,7 +1174,7 @@ variable warning
    sp!
    decimal
    cr
-   ." nrForth" cr
+   ." narrowForth v0.9dev" cr
    \ forth 
    \ definitions 
    quit ;
@@ -1237,7 +1212,42 @@ variable warning
 \ : baka ' + , 1 , ; 
 \ : baka [char] x ;
 \ : baka [compile] [ ;
+: (restore) dicttop , 23 , 22 0 do i cells * dicttop + @ , loop ; immediate
+: restore (restore) ;
 
-cr ." End: " here h4. ." , " here 0x1000 - . ." bytes." cr 
+cr ." End: " here h4. ." , " here dicttop @ - dup h4. ." (" . ." ) bytes." cr 
 \ start nrForth system
+\ dump dictionary
+' cold cells + dicttop 4 cells * + ( 0x5a .ps ) !
+\ dictdump
+\
+\ save user variables
+\
+: USER_PAGE DICTTOP_ADDR ;
+: init_user
+ [ 0     ]  literal DICTTOP_ADDR     !
+ [ 0     ]  literal LAST_ADDR        !
+ [ 0     ]  literal DP_ADDR          !
+ [ USER_PAGE 256 +   ] literal S0_ADDR          !
+ [ USER_PAGE 512 +   ] literal R0_ADDR          !
+ [ USER_PAGE 256 +   ] literal TIB_ADDR         !
+ [ 0     ]  literal STATE_ADDR       !
+ [ 0     ]  literal DEBUG_ADDR       !
+ [ 10     ] literal BASE_ADDR        !
+ [ ' halt    ] literal HALT_ADDR        !
+ [ ' colon    ] literal COLON_ADDR       !
+ [ ' semi    ] literal SEMI_ADDR        !
+ [ ' dolit    ] literal LITERAL_ADDR     !
+ [ 0     ]  literal PAD_ADDR         !
+ [ 0     ]  literal IN_ADDR          !
+ [ 0     ]  literal STRICT_ADDR      !
+ [ 0     ]  literal CSP_ADDR         !
+ [ ' cold    ] literal COLD_ADDR        !
+ [ ' abort    ] literal ABORT_ADDR       !
+ [ 10     ] literal #field_addr      !
+ [ 0     ]  literal #base_addr       !
+ [ 1     ]  literal outer_flag       !
+
+  ;
+
 abort
