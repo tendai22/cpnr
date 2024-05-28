@@ -1739,4 +1739,64 @@ array user_area でワード配列を切って、upからend_user - up をバイ
 
 arrayはダンプの際にワード列化して、エンディアンを吸収できるようにする。
 
+## arrayで作った。
 
+* `dumpuser`: user変数領域を保持するarray配列。
+* `cold`内部で`restore_user`を呼び出し、テキストインタプリタを起動
+* `cold`のxtを`COLD_ADDR`に保存したうえで、
+
+```
+: cold restore_user abort ;
+' cold COLD_ADDR !
+```
+
+* `dumpuser`へのコピー
+
+```
+DICTTOP_ADDR dumpuser END_ADDR DICTTOP_ADDR - cmove
+```
+
+これで、`cold`のアドレス含めて最新のuser領域を辞書に保存できる。
+
+## 辞書バイナリの生成
+
+```
+$ ./cpnr dict.X user.f base.f upost.f
+dict.X: read_xfile
+dicttop: 8000, last: 8306, h: 8318
+name2xt: abort: no entry, error
+name2xt: cold: no entry, error
+start text interpreter
+open: user.f
+open: base.f
+
+End: A12C, 212C(8492 ) bytes.
+open: upost.f
+
+narrowForth v0.9dev
+dicttop @ here last dictdump
+m_dictdump: begin: 8000, end: a19e, last: a18e
+[] OK
+```
+
+```
+$ ./cpnr dict.X user.f base.f upost.f
+```
+
+でインタプリタを起動する。この時点で辞書領域にuser領域のコピーまで済ませてある。
+
+```
+dicttop @ here last dictdump
+```
+
+で辞書ダンプ、`forth.bin`ファイルが生成される。
+
+```
+$ ./cpnr forth.bin
+```
+
+でForth処理系が起動できる。
+
+## 残件
+
+forth.bin を起動後、Ctrl-Dを入力するとtrapがかかるが、Segmentation Faultしてしまう。

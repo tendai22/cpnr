@@ -27,12 +27,15 @@ case "$flag" in
         addr += 2;
     }
     END {
-       print ": init_user" > "upost.f"
-       print body > "upost.f"
-       print "  ;" > "upost.f"
-       print ": cold init_user abort ;" > "upost.f"
-       print "'\'' cold COLD_ADDR !" > "upost.f"
-       print "cold" > "upost.f"
+    #   print ": init_user" > "upost.f"
+    #   print body > "upost.f"
+    #   print "  ;" > "upost.f"
+        print "variable dumpuser END_ADDR DICTTOP_ADDR - cells + ( 0x41 .ps ) allot" > "upost.f"
+        print ": restore_user dumpuser DICTTOP_ADDR END_ADDR DICTTOP_ADDR - cmove ;" > "upost.f"
+        print ": cold restore_user abort ;" > "upost.f"
+        print "'\'' cold COLD_ADDR !" > "upost.f"
+        print "DICTTOP_ADDR dumpuser END_ADDR DICTTOP_ADDR - cmove" > "upost.f"
+        print "cold" > "upost.f"
     }
     '
     ;;

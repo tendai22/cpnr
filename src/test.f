@@ -1210,12 +1210,11 @@ variable warning
    ]
    ;;
 
+
+
 \ : baka ' + , 1 , ; 
 \ : baka [char] x ;
 \ : baka [compile] [ ;
-: (restore) dicttop , 23 , 22 0 do i cells * dicttop + @ , loop ; immediate
-: restore (restore) ;
-
 cr ." End: " here h4. ." , " here dicttop @ - dup h4. ." (" . ." ) bytes." cr 
 \ start nrForth system
 \ dump dictionary

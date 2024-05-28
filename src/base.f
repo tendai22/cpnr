@@ -7,6 +7,7 @@
 
 \ debug
 : debug DEBUG_ADDR ! ;
+0 debug
 
 \ base
 : base BASE_ADDR @ ;
@@ -440,7 +441,7 @@
 : h4.  \ print hex number
   0 <# #hex # # # # #> type ;
 
-: dump ( addr n -- ) \ simple dump
+: cdump ( addr n -- ) \ simple dump
    swap dup h4. space
    swap
    256 min
@@ -534,7 +535,7 @@
 : .ps ( char -- ) \ dump stack with char
    emit .stack cr ;
 : .hd             \ dump here buffer
-   here 10 dump cr ;
+   here 10 cdump cr ;
 : .cs \ ( c-addr --- ) dump counted string
    dup h4. space 
    dup c@ dup .   \ c-addr n
@@ -1209,13 +1210,41 @@ variable warning
    ]
    ;;
 
+\
+\ comments
+\
+: X 0 word drop ; immediate
+last 1+ 0x5c swap c!
+: X [char] ) word drop ; immediate
+last 1+ 0x28 swap c!
+
+: dump \ ( addr n -- ) \ simple dump
+   1 -  \ n--
+   127 min
+   0             \ addr n 1
+   do            \ addr
+      i 0= 1 pick 14 and 0= ( 0x42 .ps ) or if dup h4. space then
+      \ 0x42 .ps
+      \ 0x41 .ps
+      dup @ h4. space
+      dup 14 and 14 = if cr then
+      2 + 
+      loop 
+      14 and 0= not if cr then ;
+
+: cmove ( from to count --- )
+   1 - \ from to count-1
+   0 do \ from to
+      over i + c@ \ from to c
+      over i + c!
+   loop drop drop
+   ;
+
 \ : baka ' + , 1 , ; 
 \ : baka [char] x ;
 \ : baka [compile] [ ;
-
 cr ." End: " here h4. ." , " here dicttop @ - dup h4. ." (" . ." ) bytes." cr 
 \ start nrForth system
 \ dump dictionary
-' cold cells + dicttop 4 cells * + ( 0x5a .ps ) !
+\ ' cold cells + dicttop 4 cells * + ( 0x5a .ps ) !
 \ dictdump
-abort
