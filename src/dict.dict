@@ -4,10 +4,6 @@
 
     org 0x8000
 //
-// cold start primitive
-//
-opcode cold
-//
 // nop, halt
 //
 opcode nop
@@ -106,5 +102,4 @@ opcode d_dolit
 //
 // misc
 //
-opcode cold
 opcode dictdump

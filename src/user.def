@@ -6,12 +6,14 @@
 // #define USER_END      (RSTACK_END+256)
 
     .org 0xf000
-    .user DICTTOP 0
-    .user LAST  0
-    .user DP    0
-    .user S0    USER_PAGE 256 +
-    .user R0    USER_PAGE 512 +
-    .user TIB   USER_PAGE 256 +
+    .user DICTTOP
+    .user LAST
+    .user DP
+    .user UP
+    .user USIZE 
+    .user S0    DICTTOP_ADDR 256 +
+    .user R0    DICTTOP_ADDR 512 +
+    .user TIB   DICTTOP_ADDR 256 +
     .user STATE 0
     .user DEBUG 0
     .user BASE  10
@@ -23,7 +25,7 @@
     .user IN    0
     .user STRICT 0
     .user CSP   0
-    .user COLD  ' cold
+    .user COLD
     .user ABORT ' abort
     .user #field_addr   10
     .user #base_addr    0

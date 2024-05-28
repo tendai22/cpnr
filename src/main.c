@@ -351,7 +351,7 @@ int main (int ac, char **av)
     // outer interpreter
     char buf[80];
     int n;
-    word_t abort_addr;
+    word_t cold_addr;
     context_t _ctx, *cx;
 
     // init source file args
@@ -368,14 +368,15 @@ int main (int ac, char **av)
         fprintf(stderr, "exit init_mem error\n");
         return 1;
     }
-    abort_addr = STAR(ABORT_ADDR);
-    if (abort_addr) {
-        fprintf(stderr, "start abort at %04x\n", abort_addr);
-        do_push(cx, abort_addr);
+    cold_addr = STAR(COLD_ADDR);
+    if (cold_addr) {
+        fprintf(stderr, "start cold at %04x\n", cold_addr);
+        do_push(cx, cold_addr);
         // STAR(DEBUG_ADDR) = 1;
         do_execute(cx);
     } else {
         fprintf(stderr, "start text interpreter\n");
+        STAR(DEBUG_ADDR) = 0;
         do_mainloop(cx);
     }
     return 0;
