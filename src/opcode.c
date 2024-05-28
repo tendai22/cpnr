@@ -354,6 +354,7 @@ undefined:
         do_push(cx, w);
         cx->pc += CELLS;
         break;
+#if 0
     case 54: // m_cold
         // machine dependent cold start routine
         // C vertual CPU, no actions needed
@@ -367,6 +368,7 @@ undefined:
         }
         cx->pc += CELLS;
         break;
+#endif
     case 55: // m_dictdump
         // ( begin end last --- )
         w3 = do_pop(cx);

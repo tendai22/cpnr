@@ -20,16 +20,20 @@ case "$flag" in
         name = $2
         if ($2 ~ /^[A-Z][A-Z0-9]*$/)
             name = $2 "_ADDR"
-        expr = "[ " $3 " " $4 " " $5 " " $6 " " $7 " ]"
-        body = body " " sprintf("%-10s literal %-16s !\n", expr, name);
-        printf(": %-16s 0x%04x ;\n", name, addr, expr, name);
+        expr = $3 " " $4 " " $5 " " $6 " " $7
+        if (NF > 2)
+            body = body " " sprintf("%-10s %-16s !\n", expr, name);
+        printf(": %-16s 0x%04x ;\n", name, addr);
         addr += 2;
     }
-    # END {
-    #    print ": init_user" > "upost.f"
-    #    print body > "upost.f"
-    #    print "  ;" > "upost.f"
-    # }
+    END {
+       print ": init_user" > "upost.f"
+       print body > "upost.f"
+       print "  ;" > "upost.f"
+       print ": cold init_user abort ;" > "upost.f"
+       print "'\'' cold COLD_ADDR !" > "upost.f"
+       print "cold" > "upost.f"
+    }
     '
     ;;
 *)

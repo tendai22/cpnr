@@ -7,6 +7,7 @@
 
 \ debug
 : debug DEBUG_ADDR ! ;
+0 debug
 
 \ base
 : base BASE_ADDR @ ;
@@ -1218,36 +1219,5 @@ variable warning
 cr ." End: " here h4. ." , " here dicttop @ - dup h4. ." (" . ." ) bytes." cr 
 \ start nrForth system
 \ dump dictionary
-' cold cells + dicttop 4 cells * + ( 0x5a .ps ) !
+\ ' cold cells + dicttop 4 cells * + ( 0x5a .ps ) !
 \ dictdump
-\
-\ save user variables
-\
-: USER_PAGE DICTTOP_ADDR ;
-: init_user
- [ 0     ]  literal DICTTOP_ADDR     !
- [ 0     ]  literal LAST_ADDR        !
- [ 0     ]  literal DP_ADDR          !
- [ USER_PAGE 256 +   ] literal S0_ADDR          !
- [ USER_PAGE 512 +   ] literal R0_ADDR          !
- [ USER_PAGE 256 +   ] literal TIB_ADDR         !
- [ 0     ]  literal STATE_ADDR       !
- [ 0     ]  literal DEBUG_ADDR       !
- [ 10     ] literal BASE_ADDR        !
- [ ' halt    ] literal HALT_ADDR        !
- [ ' colon    ] literal COLON_ADDR       !
- [ ' semi    ] literal SEMI_ADDR        !
- [ ' dolit    ] literal LITERAL_ADDR     !
- [ 0     ]  literal PAD_ADDR         !
- [ 0     ]  literal IN_ADDR          !
- [ 0     ]  literal STRICT_ADDR      !
- [ 0     ]  literal CSP_ADDR         !
- [ ' cold    ] literal COLD_ADDR        !
- [ ' abort    ] literal ABORT_ADDR       !
- [ 10     ] literal #field_addr      !
- [ 0     ]  literal #base_addr       !
- [ 1     ]  literal outer_flag       !
-
-  ;
-
-abort
