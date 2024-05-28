@@ -1721,3 +1721,22 @@ main関数でname2xt, do_push, do_executeでabort起動する。テキストイ�
 
 あと、これで Ctrl-Dするとtrapが起動してSegmentation Faultする。テキストインタプリタ版の`trap`が必要ですね。
 
+## いやだめでしょう。
+
+```
+: cold init_addr abort ;
+' cold COLD_ADDR !
+cold
+```
+
+これで辞書ダンプしているので、辞書イメージの中に`forth.bin`の中に`COLD_ADDR`を初期化するコードは入っていないはず。たまたま動いているだけですね。
+
+これ、`cold`と`COLD_ADDR`への代入が循環参照している。ベクタを使って解決？
+
+## やっぱり array ですね。
+
+array user_area でワード配列を切って、upからend_user - up をバイトコピーする。そのあとでdictdumpして、起動時にcoldでuser_areaからupにバイトコピーする。
+
+arrayはダンプの際にワード列化して、エンディアンを吸収できるようにする。
+
+
