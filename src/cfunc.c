@@ -676,7 +676,7 @@ uint32_t do_dpop(context_t *cx)
     return (((uint32_t)high)<<16)|((uint32_t)low);
 }
 
-uint32_t do_dpush(context_t *cx, uint32_t u)
+void do_dpush(context_t *cx, uint32_t u)
 {
     // push low first, hight next
     do_push(cx, u&0xffff);
