@@ -1,5 +1,8 @@
 src/*.o
 src/*.s
+src/user.[hf]
+src/forth*.bin
+src/upost.f
 *.list
 *.X
 cpnr
