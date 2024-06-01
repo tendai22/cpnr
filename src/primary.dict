@@ -2,7 +2,7 @@
 # base.dict .... makedict.sh sample dictionary template
 #
 
-    org 0x8000
+//    org 0x8000
 //
 // nop, halt
 //
@@ -19,6 +19,7 @@ opcode startdoes
 opcode semi
 opcode execute
 opcode trap
+opcode ' quote
 
 //
 // primitives .. thread instructions

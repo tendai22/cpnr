@@ -1,6 +1,6 @@
-//
 // main.c ... cpnr main functions
 // March 24, 2024  Norihiro Kumagai
+//
 
 #include <stdio.h>
 #include <string.h>
@@ -256,7 +256,7 @@ static int init_dict(context_t *cx, const char *filename)
         p = &mem[header[0]];
         n = header[1] - header[0];
         fseek(fp, 0L, SEEK_SET);
-        fprintf(stderr, "n = %x(%d)\n", n, n);
+        //fprintf(stderr, "n = %x(%d)\n", n, n);
         if (fread(p, 1, n, fp) != n) {
             fprintf(stderr, "%s: dict read error\n", filename);
             fclose(fp);
@@ -294,7 +294,7 @@ static int name2xt(context_t *cx, char *name)
     //fprintf(stderr, "find: [%.*s]\n", mem[cstr_addr], p);
     do_find(cx);
     if (do_pop(cx) == 0) {
-        fprintf(stderr, "name2xt: %s: no entry, error\n", name);
+        fprintf(stderr, "name2xt: %s: no entry\n", name);
         return -1;
     }
     //w = code_addr(do_pop(cx));
@@ -322,11 +322,11 @@ static int init_mem(context_t *cx)
     STAR(SEMI_ADDR) = do_pop(cx);
     flag |= name2xt(cx, "dolit");
     STAR(LITERAL_ADDR) = do_pop(cx);
-    STAR(ABORT_ADDR) = 0;
-    if (name2xt(cx, "abort") == 0) {
-        STAR(ABORT_ADDR) = do_pop(cx);
-        fprintf(stderr, "abort_addr: %04x\n", STAR(ABORT_ADDR));
-    }
+//    STAR(ABORT_ADDR) = 0;
+//    if (name2xt(cx, "abort") == 0) {
+//        STAR(ABORT_ADDR) = do_pop(cx);
+//        fprintf(stderr, "abort_addr: %04x\n", STAR(ABORT_ADDR));
+//    }
     STAR(COLD_ADDR) = 0;
     if (name2xt(cx, "cold") == 0)
         STAR(COLD_ADDR) = do_pop(cx);

@@ -379,6 +379,11 @@ undefined:
         do_savefile("forth.bin", w, w2, w3);
         cx->pc += CELLS; 
         break;
+    case 56: // m_quote
+        do_quote(cx);
+        //fprintf(stderr, "do_quote: pc = %04x\n", cx->pc);
+        cx->pc += CELLS;
+        break;
     default:
         goto undefined;
     }

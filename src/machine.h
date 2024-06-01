@@ -120,6 +120,7 @@ extern void do_dup(context_t *cx);
 extern word_t do_pop(context_t *cx);
 extern word_t do_popr(context_t *cx);
 
+extern int  do_quote(context_t *cx);
 extern void do_colondef(context_t *cx);
 extern void do_semidef(context_t *cx);
 extern void do_create(context_t *cx);

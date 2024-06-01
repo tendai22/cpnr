@@ -57,4 +57,5 @@ void init_optable(void)
         optable[53] = "m_d_dolit";
         optable[54] = "m_cold";
         optable[55] = "m_dictdump";
+        optable[56] = "m_quote";
 }

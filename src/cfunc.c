@@ -683,3 +683,20 @@ void do_dpush(context_t *cx, uint32_t u)
     do_push(cx, (word_t)((u>>16)&0xffff));
 }
 
+//
+// '(quote) as clang primitive
+//
+int do_quote(context_t *cx)
+{
+    mem_t *p;
+    do_push(cx, ' ');       // push BL
+    do_word(cx);            // ( delim --- c-addr )
+    p = &mem[tos(cx)];
+    do_find(cx);            // ( c-addr --- 0 | xt flag )
+    if (do_pop(cx) == 0) {
+        fprintf(stderr, "do_quote: %.*s: not found¥n", *p, p+1);
+        return -1;
+    }
+    // now xt on stack
+    return 0;
+}

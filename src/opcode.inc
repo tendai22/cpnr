@@ -112,5 +112,7 @@ BEGIN {
     ropcode[54 + opcode_base] = "m_cold"
     opcode["m_dictdump"] = 55 + opcode_base
     ropcode[55 + opcode_base] = "m_dictdump"
+    opcode["m_quote"] = 56 + opcode_base
+    ropcode[56 + opcode_base] = "m_quote"
 }
 

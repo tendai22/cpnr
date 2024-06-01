@@ -5,12 +5,11 @@ ORG=`cat "$@" |sed -n '/^[     ]*org/{
     s/^[     ]*org[     ][  ]*\([^  ][^     ]*\).*$/\1/p
     q
 }'`
-case "$ORG" in
-'')   echo "no org directive, abort">&2; exit 2;;
-esac
+#case "$ORG" in
+#'')   echo "no org directive, abort">&2; exit 2;;
+# esac
 # prefix
 cat <<EOF
-    .org   $ORG
     .section DICT
 dict:
     .dw   dict

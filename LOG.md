@@ -1853,9 +1853,147 @@ C言語版テキストインタプリタでexecuteはbase.fの1行目から必�
 
 `'`(comma)もC言語プリミティブにしてもよい。これを使用して生成したワード中には`'`(comma)のxtは含まれないからだ。正確には、「xtを含まないようにできるはず」だからだ。
 
+## 辞書ダンプ完成
+
+ユーザ領域初期化も含めて辞書ダンプの仕組みを仕上げた。
+
+### 辞書ダンプ
+
+`base.f`を持つ辞書を作成してダンプする(file: `forth.bin`)には以下のように行う。
+
+```
+$ ./cpnr dict.X user.f base.f dictdump.f
+```
+
+* user.f: ユーザ変数の定義、base.fで頻繁に参照されるので最初にロードする。
+* base.f: Forthテキストインタプリタ本体。word, find, number, 数値出力, does>, :, ;, '、テキストインタプリタ実行に必要なワードすべてが最低限のプリミティブだけを使用してコロン定義で存在する。
+* dictdump.f: init_user, coldを定義してから、COLD_ADDR に `' cold`(coldベクタ)を保存してから、実行中のユーザ領域を辞書先頭にコピーして、最後に辞書領域をすべてバイナリのまま`forth.bin`に書き込む。
+
+バイナリ辞書は以下のように起動する。
+
+```
+$ ./cpnr forth.bin
+```
+
+cpnrは、COLD_ADDRが非ゼロであれば、それがスタートアップワードのxtとみなしてC言語版executeを実行する。coldの最初でスタックを初期化しておけば何も問題ない。現在はそうなっていないが。
+
+coldでは、まず、辞書先頭のユーザ変数領域をメモリ上にコピー(init_user)して、abortを呼び出す。
+
+init_user, coldは、dictdump.fで定義されている。
+
+### ユーザ変数領域の初期化
+
+辞書先頭にユーザ変数の初期値領域がある。辞書先頭から`(END_ADDR - DICTTOP_ADDR)`バイトがそれである。
+
+現在は、C言語関数init_dictでユーザ変数領域上に値を並べている。一方で、辞書領域先頭に雛形を作るところまでできているので、辞書ロード、インタプリタ実行開始の前に(init_dict呼び出しを廃して)それをユーザ変数領域にコピーするようにすればよい。
+
+領域コピーをbase.f以前にForth手続きで書くのはしんどい。C言語版インタプリタではinit_dict中で(値を並べるのではなく)、辞書先頭をユーザ変数領域にコピーするようにすることになるだろう。init_dict関数を変更してバイトコピーするだけにしてしまう。
+
+base.fを読み込みdicdump.fでダンプすると、dictdump.f内部で定義されるcoldワードの最初で「辞書先頭からユーザ変数領域にコピー」を行なっている。init_userがそれを行なっている。base.f内部にcmoveワードが定義されているので楽勝なのである。
+
+### ユーザ変数定義ファイルと、３ファイルの生成
+
+ユーザ変数定義ファイルでは、ユーザ変数の名前と初期値を記述している。
+
+ファイル名`user.def`がそれで、
+
+```
+    .org 0x8000         // 
+    .user_org 0xf000
+dict:
+    .user DICTTOP dict
+    .global here_addr
+here_addr:
+    .user DICTEND entry_end
+    .global last_addr
+last_addr:
+    .user DICTENTRY entry_head
+    .user DP here_addr
+    .user LAST entry_head
+    .user UP
+    .user USIZE 
+    .user S0        // DICTTOP_ADDR 256 +
+    .user R0        // DICTTOP_ADDR 512 +
+    .user TIB       // DICTTOP_ADDR 256 +
+    .user STATE     0
+    .user DEBUG     0
+    .user BASE      10
+    .user HALT      // ' halt
+    .user COLON     // ' colon 
+    .user SEMI      // ' semi
+    .user LITERAL   // ' dolit
+    .user PAD       0
+    .user IN        0
+    ...
+    .user END
+
+```
+
+`.org`は辞書領域の先頭を、`.user_org`はユーザ領域先頭を指定する。ROM/RAM構成で動作させることを考えているので、ユーザ領域は辞書と連続でない、別の場所を指定できるようにしてある。
 
 
+この定義からアセンブリ言語`user.s`、Forthワード定義`user.f`、C言語ヘッダ`user.h`を生成する。生成プログラムは`makeuser.sh`である。第一引数でどの形式を生成するかのオプションで指定する。
+
+アセンブリ言語は、`.org`をはじめ辞書ヘッダの初期値を`.dw`を使って生成する。
+
+```
+    .org 0x8000         
+dict:
+    .dw   dict        ; DICTTOP_ADDR
+    .global here_addr
+here_addr:
+    .dw   entry_end        ; DICTEND_ADDR
+    .global last_addr
+last_addr:
+    .dw   entry_head        ; DICTENTRY_ADDR
+    .dw   here_addr        ; DP_ADDR
+    .dw   entry_head        ; LAST_ADDR
+    .dw   0    ; UP_ADDR
+    .dw   0    ; USIZE_ADDR
+    ...
+```
+
+先頭３ワードが「辞書先頭アドレス」「辞書末尾アドレス」「最新ワード先頭」を表す。アセンブラのラベルでそれらのアドレスを表すようにしているので、`.dw`のオペランドにはそれらラベルを書くだけでよい。
+
+定数は普通に整数値を書く。仮想CPU用アセンブラが雑くてオペランドを式を評価することができないので、ラベルで書くか定数で書くかのいずれかしかできない。例えば、ユーザ領域のサイズ(バイト数)USIZE_ADDRに`END_ADDR - dict`と書けないのである。よって、user.f内部でForth定義として計算させることになる。
+
+アセンブラの`.dw`擬似命令で辞書先頭にエリアをきちんと確保することが本プログラムのキモとなる。
+
+Forthワード定義は、ユーザ変数アドレスシンボルを定義し、いくつかの値を計算して設定する。
+
+```
+: DICTTOP_ADDR     0xf000 ;
+: DICTEND_ADDR     0xf002 ;
+: DICTENTRY_ADDR   0xf004 ;
+: DP_ADDR          0xf006 ;
+: LAST_ADDR        0xf008 ;
+: UP_ADDR          0xf00a ;
+...
+```
+
+本ファイル末尾で式で計算して代入している。これは、定義ファイルの`//`以後の式を使っている。
+
+```
+ DICTTOP_ADDR 256 +   S0_ADDR          !
+ DICTTOP_ADDR 512 +   R0_ADDR          !
+ DICTTOP_ADDR 256 +   TIB_ADDR         !
+ ' halt     HALT_ADDR        !
+ ' colon    COLON_ADDR       !
+ ' semi     SEMI_ADDR        !
+ ' dolit    LITERAL_ADDR     !
+
+```
+
+計算結果はRAM上のユーザ変数領域に格納されている。辞書ダンプの時にはこの値を辞書先頭に反映させるためのコピーする。
 
 
-　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　
+辞書エントリのアドレスを計算できるように、`'`(quote)をC言語プリミティブとして作成・追加した。quoteは`base.f`内で再定義され置き換えられる。この辺りの置き換え処理はまだ怪しい。見直し必要。
 
+C言語ヘッダファイルは以下の通り。C言語内でユーザ変数にアクセス(read/write)する際に使用できるようにマクロを定義している。
+
+```
+#define DICTTOP_ADDR     0xf000
+#define DICTEND_ADDR     0xf002
+#define DICTENTRY_ADDR   0xf004
+#define DP_ADDR          0xf006
+```

@@ -12,9 +12,11 @@ all: cpnr dict.X user.f
 dict.X: dict.list
 	sh dump.sh $< > $@
 dict.list: dict.s
-	sh as.sh $< > $@
-dict.s: dict.dict opcode.inc makedict.sh
+	sh as.sh dict.s > $@
+primary.s: primary.dict opcode.inc makedict.sh
 	sh makedict.sh $< > $@
+dict.s: user.s primary.s
+	cat user.s primary.s > dict.s
 
 opcode.inc: opcode.c machine.h makeopcode.sh
 	sh makeopcode.sh machine.h opcode.c > $@
@@ -22,9 +24,10 @@ opcode.inc: opcode.c machine.h makeopcode.sh
 opname.h: opcode.inc gen_opname.sh
 	sh gen_opname.sh opcode.inc > $@
 
-user.f user.h: user.def makeuser.sh
+user.f user.h user.s: user.def makeuser.sh
 	sh makeuser.sh -f user.def > user.f
 	sh makeuser.sh -h user.def > user.h
+	sh makeuser.sh -s user.def > user.s
 
 COBJS=main.o machine.o monitor.o cfunc.o opcode.o
 CFLAGS+=-g
