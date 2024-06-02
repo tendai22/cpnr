@@ -9,24 +9,12 @@ ORG=`cat "$@" |sed -n '/^[     ]*org/{
 #'')   echo "no org directive, abort">&2; exit 2;;
 # esac
 # prefix
-cat <<EOF
-    .section DICT
-dict:
-    .dw   dict
-    .global here_addr
-here_addr:
-    .dw  entry_end
-    .global last_addr
-last_addr:
-    .dw  entry_head
-tail_addr:
-    .dw  entry_end
-entry_addr:
-    .dw  0
-EOF
 # dict definitions
 cat "$@" |
 # preprocessor
+sed '
+/^\/\//d
+' |
 awk '#
 /^opcode/ {
     n = NF
@@ -120,7 +108,7 @@ BEGIN {
     if (flag == 1) {
         print "    .dw    do_exit"
     } else {
-        print "    m_next"
+        print "    m_jmp NEXT"
     }
     prev_link = sprintf("entry_%03d", nels);
     nels++;

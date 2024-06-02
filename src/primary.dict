@@ -12,11 +12,11 @@ opcode halt
 //
 // inner interpreter
 //
-opcode colon
-opcode next
+//opcode colon
+//opcode next
 opcode run 
 opcode startdoes
-opcode semi
+//opcode semi
 opcode execute
 opcode trap
 opcode ' quote

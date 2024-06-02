@@ -10,8 +10,11 @@ do  case "$f" in
         s/^\([^: ][^: ]*\):.*$/Label: \1/
         b
     }
+    # comment out
+    /^#/d
+    /^\/\//d
     s/\/\*.*\*\// /
-    ' |
+    ' | #cat ; exit
     awk '#
     @include "opcode.inc"
     function expand(k,n,v){
@@ -71,6 +74,28 @@ do  case "$f" in
         }
         return pc
     }
+    function operand(str,n){
+        if (str ~ /^[0-9][0-9]*$/) 
+            n = strtonum(str)
+        else if (str ~ /^0[xX][0-9A-Fa-f][0-9A-Fa-f]*$/)
+            n = strtonum(str)
+        else {
+            n = label[str]
+            if (n ~ /^$/) {
+                n = eval(str)
+            } else {
+                # macro expansion
+                if (n !~ /^[0-9]+/ && n !~ /^$/) {
+                    n = expand(str)
+                }
+                if (n > 0) {
+                    #print "label[" str "] = " n "," label[str]
+                }
+            }
+        }
+        # print "operand: n = " n
+        return n
+    }
     # main actions
     BEGIN {
         stderr = "/dev/tty"
@@ -86,7 +111,7 @@ do  case "$f" in
     end_flag == 1{
         next
     }
-    $1 ~ /^Label:/ && $2 ~ /^[A-Za-z_][A-Za-z0-9_]+/ {
+    $1 == "Label:" && $2 ~ /^[A-Za-z_][A-Za-z0-9]+/ {
         label[$2] = pc
         next
     }
@@ -121,24 +146,7 @@ do  case "$f" in
         next
     }
     $1 ~ /^\.dw/ {
-        if ($2 ~ /^[0-9][0-9]*$/) 
-            n = strtonum($2)
-        else if ($2 ~ /^0[xX][0-9A-Fa-f][0-9A-Fa-f]*$/)
-            n = strtonum($2)
-        else {
-            n = label[$2]
-            if (n ~ /^$/) {
-                n = eval($2)
-            } else {
-                # macro expansion
-                if (n !~ /^[0-9]+/ && n !~ /^$/) {
-                    n = expand($2)
-                }
-                if (n > 0) {
-                    #print "label[" $2 "] = " n "," label[$2]
-                }
-            }
-        }
+        n = operand($2)
         if (pass2) {
             if (n ~ /^$/) {
                 print "ERROR: " NR - linebase ": label " $2 ", not defined" >> stderr
@@ -164,7 +172,28 @@ do  case "$f" in
         print
         next
     }
-    { 
+    $1 == "m_jmp" {
+        #print "m_jmp $2 = " $2
+        n = operand($2)
+        if (pass2) {
+            v = n - pc - 2;
+            #print "v = " v
+            if (v <= -16384 || v >= 16384) {
+                # print "ERROR: " NR - linebase ": " $2 " jmp operand out of range" >> stderr
+                next
+            }
+            if (v >= 0)
+                v += 32768
+            else
+                v += 65536
+            printf "%04X %04X %s\n", pc, v, $0
+        }
+        pc += 2
+        next
+    }
+    {
+        if ($1 == "Label:")
+            next 
         if (opcode[$1] ~ /^$/) {
             print "ERROR: " NR - linebase ": opcode " $0 ", not defined" >> stderr
             next

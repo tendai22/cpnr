@@ -3,11 +3,11 @@ void init_optable(void)
 {
         optable[0] = "m_nop";
         optable[1] = "m_halt";
-        optable[2] = "m_colon";
-        optable[3] = "m_next";
+        optable[2] = "m_colon1";
+        optable[3] = "m_next1";
         optable[4] = "m_run";
         optable[5] = "m_startdoes";
-        optable[6] = "m_semi";
+        optable[6] = "m_semi1";
         optable[7] = "m_execute";
         optable[8] = "m_trap";
         optable[9] = "m_dolit";

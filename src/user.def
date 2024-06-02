@@ -8,15 +8,15 @@
     .org 0x8000         // 
     .user_org 0xf000
 dict:
-    .user DICTTOP dict
+    .user DICTTOP   dict
     .global here_addr
 here_addr:
-    .user DICTEND entry_end
+    .user DICTEND   entry_end
     .global last_addr
 last_addr:
     .user DICTENTRY entry_head
-    .user DP here_addr
-    .user LAST entry_head
+    .user DP        entry_end
+    .user LAST      entry_head
     .user UP
     .user USIZE 
     .user S0        // DICTTOP_ADDR 256 +
@@ -26,8 +26,8 @@ last_addr:
     .user DEBUG     0
     .user BASE      10
     .user HALT      // ' halt
-    .user COLON     // ' colon 
-    .user SEMI      // ' semi
+    .user COLON     COLON
+    .user SEMI      SEMI
     .user LITERAL   // ' dolit
     .user PAD       0
     .user IN        0

@@ -19,6 +19,9 @@ const char *opcode_name(word_t mcode)
 {
     static int count = 10;
     mcode -= OPCODE_BASE;
+    if (mcode & 0x8000) {   // m_jmp relative jump
+        return "m_jmp";
+    }
     if (mcode > sizeof optable / sizeof (const char *)) {
         if (count-- <= 0) {
             exit(1);

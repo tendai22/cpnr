@@ -1423,6 +1423,8 @@ z80.dictをプリプロセスして z80.s を生成してアセンブラに食�
 
 うーん、あまり前倒しの効果はなさそう。
 
+> のちに(5/29)、C言語プリミティブとして実装した。ユーザ変数を最初に初期化するためである。
+
 ## エンディアン識別ワード
 
 辞書はビッグ/リトルの区別が必要、ターゲットビルドの際に`!`, `@`でバイトスワップするかどうかを判断する。
@@ -1432,6 +1434,8 @@ z80.dictをプリプロセスして z80.s を生成してアセンブラに食�
 ターゲット側にコンパイルするときは、`!`, `@`の定義も変える必要がある。base.fの精査が必要だ。
 
 ターゲットへの書き込みは`,`でバイト順を合わせる(スワップするかしないか)ターゲット辞書の読み出し(find系)の定義は要注意。明示的にターゲット読み出しを記載する。
+
+> X形式ファイルがエンディアン依存ない形式なので、辞書に書き込む際にエンディアンを扱うのではなく、辞書ダンプ(ddコマンドを改造して作る)で、エンディアン非依存形式にすることを考えている。が、dict.s部分はしんどいかな。もう少し考える。
 
 ## クロス開発のイメージ
 
@@ -1570,10 +1574,14 @@ do_find, mainloopなどすべて消してしまう。
 * 先頭からlastまで。最初はプリミティブとする。名前は`savedic`
 * インタプリタ時に文字列を置く方法を決めてから、`savedic \ ( addr1 addr2 c-str --- )`にする。
 
+> dictdumpになった。`dictdump @ here last dictdump`でファイル`forth.bin`を生成する。決め打ちもどうかと思うが。
+
 #### ユーザページ
 
 * ユーザ変数、スタック2個、行入力バッファ、出力`pad`を一塊にする。
 * ユーザ変数(max 128b)/SP/行入力バッファ(max 128b)/RS
+
+> 結局、辞書先頭にそのままユーザページの初期データを置くことにした。Forthロード開始までは仮データだが、Forthロード`user.f`の中と、`base.f`ロードの過程でユーザページの設定が増え、dicdumpの前にライブのユーザ領域を(ターゲット)辞書先頭に書き戻している。
 
 #### ターゲットバイナリビルト
 
@@ -1997,3 +2005,66 @@ C言語ヘッダファイルは以下の通り。C言語内でユーザ変数に
 #define DICTENTRY_ADDR   0xf004
 #define DP_ADDR          0xf006
 ```
+
+## 内部インタプリタの改造
+
+現在の実装では、COLON, SEMIは辞書エントリとして作っている。ターゲットCPUのアセンブリ言語で書くことを考えると、辞書エントリまるごとは不便である。仮想CPU命令がCOLON,SEMI,NEXTそれぞれを1エントリとして分けているが、アセンブリ言語で書くと、
+
+
+    Location   Mnemonic Instruction  Comment  
+
+    0140       COLON   PSH I -> RS  
+    0142               WA -> I  
+    0144               JMP         ; Jump to NEXT  
+    0146               0104          
+
+    0100       SEMI    0102        ; Code address of SEMI  
+    0102               POP RS -> I  
+    0104       NEXT    @I -> WA  
+    0106               I = I + 2  
+    0108       RUN     @WA -> CA  
+    01OA               WA = WA + 2  
+    010C               CA -> PC  
+
+    0050               7E          ; Dictionary  
+    0052               XE          ; header  
+    0054               LA          ; for EXECUTE  
+    0056       EXECUTE 0058        ; Code address of  EXECUTE  
+    0058               POP SP -> WA
+    005A               JMP         ; Jump to RUN
+    005C               0108  
+
+なので、
+
+    COLON:    m_colon1
+              m_jmp     NEXT
+    SEMI:     .+2
+              m_semi1
+    NEXT:     m_next1
+    RUN:      m_run
+
+と書きたい。
+
+従来の m_colon は、
+
+    m_colon1
+    m_next1
+    m_run
+
+m_nextは、
+
+    m_next1
+    m_run
+
+m_semiは、
+
+    m_semi1
+    m_next1
+    m_run
+
+に相当する。C言語版`machine_code`関数では、goto命令を用いて switch文内部で飛び回っていたが、すべて単一の命令に分割するイメージである。
+
+ユーザ変数の、COLON_ADDR, SEMI_ADDR は、Forthプログラム内で辞書引き('(comma)ワード)でえるのではなく、アセンブラ言語中のシンボルを `.dw` の後ろに書く。
+
+m_executeは、従来通り`opcode execute`でエントリを作る。
+

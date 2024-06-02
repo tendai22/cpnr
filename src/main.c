@@ -263,8 +263,8 @@ static int init_dict(context_t *cx, const char *filename)
             return -1;
         }
         STAR(DICTTOP_ADDR) = header[0];
-        STAR(DP_ADDR) = header[1];
-        STAR(LAST_ADDR) = header[2];
+        STAR(DICTEND_ADDR) = header[1];
+        STAR(DICTENTRY_ADDR) = header[2];
         fclose(fp);
         return 0;
     } else if (type == 2) {
@@ -306,9 +306,18 @@ static int name2xt(context_t *cx, char *name)
 
 static int init_mem(context_t *cx)
 {
-    mem_t *p;
-    int flag = 0;
+    mem_t *src, *dest;
+    int size, flag = 0;
     // DICTTOP has already been set, no need to care here
+    src = &mem[STAR(DICTTOP_ADDR)];
+    dest = &mem[DICTTOP_ADDR];
+    size = END_ADDR - DICTTOP_ADDR;
+    memcpy(dest, src, size);
+    fprintf(stderr, "init_mem: user copy: dest = %04x, src = %04x, size = %d\n", (unsigned int)(dest - mem), (unsigned int)(src - mem), size);
+    // halt addr is needed for 'execute'
+    flag |= name2xt(cx, "halt");
+    STAR(HALT_ADDR) = do_pop(cx);
+#if 0
     STAR(S0_ADDR) = DSTACK_END;  // s0 line buffer
     STAR(R0_ADDR) = RSTACK_END;
     STAR(TIB_ADDR) = TIB_START;
@@ -316,10 +325,10 @@ static int init_mem(context_t *cx)
     STAR(BASE_ADDR) = 10;     // DECIMAL mode
     flag |= name2xt(cx, "halt");
     STAR(HALT_ADDR) = do_pop(cx);
-    flag |= name2xt(cx, "colon");
-    STAR(COLON_ADDR) = do_pop(cx);
-    flag |= name2xt(cx, "semi");
-    STAR(SEMI_ADDR) = do_pop(cx);
+    //flag |= name2xt(cx, "colon");
+    //STAR(COLON_ADDR) = do_pop(cx);
+    //flag |= name2xt(cx, "semi");
+    //STAR(SEMI_ADDR) = do_pop(cx);
     flag |= name2xt(cx, "dolit");
     STAR(LITERAL_ADDR) = do_pop(cx);
 //    STAR(ABORT_ADDR) = 0;
@@ -327,12 +336,13 @@ static int init_mem(context_t *cx)
 //        STAR(ABORT_ADDR) = do_pop(cx);
 //        fprintf(stderr, "abort_addr: %04x\n", STAR(ABORT_ADDR));
 //    }
-    STAR(COLD_ADDR) = 0;
-    if (name2xt(cx, "cold") == 0)
-        STAR(COLD_ADDR) = do_pop(cx);
     STAR(DEBUG_ADDR) = 0;
     STAR(PAD_ADDR) = STAR(DP_ADDR);
     STAR(IN_ADDR) = 0;
+#endif
+    STAR(COLD_ADDR) = 0;
+    if (name2xt(cx, "cold") == 0)
+        STAR(COLD_ADDR) = do_pop(cx);
     //flag |= name2xt(cx, "docons");
     //STAR(DOCONS_ADDR) = do_pop(cx);
     if (flag) {

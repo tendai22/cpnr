@@ -517,7 +517,7 @@ void do_colondef(context_t *cx)
     do_create(cx);
     // put COLON xt to cfa
     //fprintf(stderr, "colondef: begin LAST = %04x, HERE = %04x\n", STAR(LAST_ADDR), STAR(DP_ADDR));
-    STAR(STAR(DP_ADDR)) = STAR(STAR(COLON_ADDR));
+    STAR(STAR(DP_ADDR)) = STAR(COLON_ADDR);
         // code address should specify "body of machine code"
         // so, xt is not sufficient, one more dereferencing is needed
     STAR(DP_ADDR) += CELLS;      // allot'ed
@@ -533,7 +533,11 @@ void do_semidef(context_t *cx)
     //fprintf(stderr, "semidef: begin HERE = %04x\n", STAR(DP_ADDR));
     // put EXIT(SEMI) in on-going dictionary entry
     STAR(here_addr) = STAR(SEMI_ADDR);  // put SEMI xt
+    if (STAR(DEBUG_ADDR))
+        fprintf(stderr, "C:%04x %04x(STAR(SEMI_ADDR)))\n", here_addr, STAR(SEMI_ADDR));
     STAR(DP_ADDR) += CELLS;
+    do_push(cx, STAR(LAST_ADDR));
+    dump_entry(cx);
     // change compile mode
     STAR(STATE_ADDR) = 0;   // interpretive mode
     //fprintf(stderr, "semidef: end   HERE = %04x\n", STAR(DP_ADDR));
@@ -604,6 +608,11 @@ word_t entry_tail(context_t *cx, word_t addr)
         //fprintf(stderr, "[%d %.*s]", ((*p)&0x1f),((*p)&0x1f),(p+1));
     }
     return prev;
+}
+
+static int opcode_type(context_t *cx, word_t code)
+{
+    
 }
 
 // dump entry (addr -- )

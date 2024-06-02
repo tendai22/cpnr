@@ -7,7 +7,7 @@ NAME=cpnr
 
 ALL=dict.X
 
-all: cpnr dict.X user.f
+all: cpnr dict.X user.f inner.s
 
 dict.X: dict.list
 	sh dump.sh $< > $@
@@ -15,8 +15,8 @@ dict.list: dict.s
 	sh as.sh dict.s > $@
 primary.s: primary.dict opcode.inc makedict.sh
 	sh makedict.sh $< > $@
-dict.s: user.s primary.s
-	cat user.s primary.s > dict.s
+dict.s: user.s inner.s primary.s
+	cat user.s inner.s primary.s > dict.s
 
 opcode.inc: opcode.c machine.h makeopcode.sh
 	sh makeopcode.sh machine.h opcode.c > $@

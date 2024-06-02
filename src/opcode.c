@@ -15,15 +15,16 @@ int machine_code(context_t *cx, word_t code)
     mem_t *p, c;
     int cc, result, offset;
     // machine code
-    if ((code & 0x8000) != 0) {     // branck
+    if ((code & 0x8000)) {     // branck
         offset = code;
-        if (code & 0x4000) { // negative address
-            offset |= ~0x3fff;
+        if ((code & 0x4000) == 0) { // positive address
+            offset &= 0x3fff;
         }
         cx->pc += CELLS + offset;
+        fprintf(stderr, "m_jmp %04x\n", cx->pc);
         return 0;
     }
-    //fprintf(stderr, "%04X %04X\n", cx->pc, code);
+    fprintf(stderr, "%04X %04X\n", cx->pc, code);
     if ((code & 0xf000) != OPCODE_BASE) {
 undefined:
         fprintf(stderr, "machine_code: undefined instruction: %04X at %04X\n", code, cx->pc);
@@ -47,19 +48,20 @@ undefined:
     //
     // inner interpreter
     //
-    case 2: // m_colon
+    case 2: // m_colon1
         do_pushr(cx, cx->ip);
         cx->ip = cx->wa;
-        // falling down
-    case 3: // m_next
-    do_next_label:
+        cx->pc += CELLS;
+        break;
+    case 3: // m_next1
         cx->wa = STAR(cx->ip);
         if (STAR(DEBUG_ADDR))
             print_next(cx, cx->wa);
         cx->ip += CELLS;
-        // falling down
+        cx->pc += CELLS;
+        break;
     case 4: // m_run
-    do_run_label:
+do_run_label:
         cx->ca = STAR(cx->wa);    // WA->CA, seems not @WA->CA
         cx->wa += CELLS;
         cx->pc = cx->ca;
@@ -68,7 +70,7 @@ undefined:
         do_push(cx, cx->wa);
         cx->wa = cx->pc + CELLS;
         goto do_run_label;
-    case 6: // m_semi
+    case 6: // m_semi1
         cx->ip = do_popr(cx);
         cx->pc += CELLS;
         break;
