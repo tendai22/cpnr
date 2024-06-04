@@ -2068,3 +2068,51 @@ m_semiは、
 
 m_executeは、従来通り`opcode execute`でエントリを作る。
 
+## init_memのユーザ領域初期化を無しとすると、
+
+辞書先頭の初期値を0xf000にコピーして試行した。動かなかった。
+`dolit`のベクタ初期化だけは必要だった。これは辞書エントリとしても必要なので、アセンブラのラベルで初期化するわけにはいかない、こともないか。
+
+辞書アセンブリコード生成時に各エントリのxtにラベルがつけてあるので、`user.def`中でそれを参照すればよい。
+
+```
+    .user LITERAL   do_dolit
+```
+
+これでC言語版インタプリタでユーザ変数アドレスの定義が通った。
+
+## semiが通らない。
+
+user.fは通った。base.fはsemi not foundが出る。ワードsemiの定義がなくなったため。とりあえず、`SEMI_ADDR @ ,`で代用しておく。
+
+## :, ;の定義でもcolon, semiの辞書エントリを検索していた
+
+ので、ここも`SEMI_ADDR @`, `COLON_ADDR @`で置き換えた。
+
+## これで forth.binイメージダンプと、実行ができるようになった。
+
+```
+$ ./cpnr dict.X user.f base.f dictdump.f
+```
+
+で、forth.bin辞書イメージのダンプができる。
+
+```
+kuma@Norihiros-MacBook-Air src % ./cpnr dict.X user.f base.f dictdump.f
+dict.X: read_xfile
+dicttop: 8000, last: 831c, h: 832e
+init_mem: user copy: dest = f000, src = 8000, size = 50
+name2xt: cold: no entry
+start text interpreter
+open: user.f
+open: base.f
+here comes 
+
+End: A160, 2160(8544 ) bytes.
+open: dictdump.f
+m_dictdump: begin: 8000, end: a190, last: a180
+eof
+```
+
+辞書サイズ8.4kBぐらいでしょうか。仮想CPUのコードは効率が良すぎてこれですので、ターゲット用の機械語コードを入れると、9kB超えそうです。
+

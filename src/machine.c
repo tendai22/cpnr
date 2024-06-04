@@ -28,7 +28,7 @@ int do_machine(context_t *cx)
     word_t code;
     // one instruction execution loop,
     // check if a break occurs of not
-    STAR(DEBUG_ADDR) = 1;
+    //STAR(DEBUG_ADDR) = 1;
     cx->halt_flag = 0;
     while (1) {
         // breakpoints?
@@ -47,7 +47,7 @@ int do_machine(context_t *cx)
             do_print_status(cx);
         if ((result = machine_code(cx, code)) != 0) {
             if (result < 0) {
-                fprintf(stderr, "trap: result = %d\n", result);
+                fprintf(stderr, "trap: result = %d, lnum = %d\n", result, lnum);
                 longjmp(cx->env, -result);
             }
             return result;
@@ -61,7 +61,7 @@ void do_execute (context_t *cx)
     cx->wa = do_pop(cx);
     // code of m_run(cx);
     cx->ca = STAR(cx->wa);
-    fprintf(stderr, "execute: wa = %04x, ca = %04x\n", cx->wa, cx->ca);
+    //printf(stderr, "execute: wa = %04x, ca = %04x\n", cx->wa, cx->ca);
     cx->wa += CELLS;
     cx->pc = cx->ca;
     cx->ip = HALT_ADDR;     // ipはxtの置き場を指すようにする。
@@ -144,14 +144,14 @@ int do_mainloop(context_t *cx)
                 print_s0(cx);
                 continue;
             }
-            print_cstr(cx, "H", STAR(DP_ADDR));
-            print_stack(cx); print_crlf(cx);
+            //print_cstr(cx, "H", STAR(DP_ADDR));
+            //print_stack(cx); print_crlf(cx);
             do_find(cx);
             //if (do_pop(cx))
             //    do_pop(cx); // clear the result of do_find
             //continue;
-            print_emit(cx, 'A'); 
-            print_stack(cx);print_crlf(cx);
+            //print_emit(cx, 'A'); 
+            //print_stack(cx);print_crlf(cx);
             if ((flag = do_pop(cx)) != 0) {
                 if (STAR(STATE_ADDR) && (flag & 0x8000) == 0)
                     do_compile_token(cx);

@@ -339,6 +339,11 @@ static int init_mem(context_t *cx)
     STAR(DEBUG_ADDR) = 0;
     STAR(PAD_ADDR) = STAR(DP_ADDR);
     STAR(IN_ADDR) = 0;
+#else
+    // tentative one, need to write with target machine code
+    //flag |= name2xt(cx, "dolit");
+    //STAR(LITERAL_ADDR) = do_pop(cx);
+    //fprintf(stderr, "init_mem: dolit vector = %04x\n", STAR(LITERAL_ADDR));
 #endif
     STAR(COLD_ADDR) = 0;
     if (name2xt(cx, "cold") == 0)

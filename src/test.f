@@ -441,7 +441,7 @@
 : h4.  \ print hex number
   0 <# #hex # # # # #> type ;
 
-: dump ( addr n -- ) \ simple dump
+: cdump ( addr n -- ) \ simple dump
    swap dup h4. space
    swap
    256 min
@@ -460,8 +460,7 @@
 : spaces 1 do bl emit loop ;
 
 \ exit
-: exit compile semi ; immediate
-
+: exit SEMI_ADDR @ , ; immediate
 
 \ outer interpreter
 
@@ -535,7 +534,7 @@
 : .ps ( char -- ) \ dump stack with char
    emit .stack cr ;
 : .hd             \ dump here buffer
-   here 10 dump cr ;
+   here 10 cdump cr ;
 : .cs \ ( c-addr --- ) dump counted string
    dup h4. space 
    dup c@ dup .   \ c-addr n
@@ -822,6 +821,8 @@ variable 'error
 0 'error !
 : ?error
    'error @ dup if ( 0x45 .ps ) execute else ." ?error not defined yet" trap then ;
+
+
 \
 \ vector abort
 \
@@ -984,6 +985,7 @@ variable #base
    dup bl = over 0 = or
    swap drop
 ;
+
 
 \ =======================================
 \ error handling
@@ -1182,6 +1184,9 @@ variable warning
 
 ' (abort) 'abort !
 
+.( here comes )
+
+
 \ ========================================
 \ redefinition for replacing colon words
 \
@@ -1191,9 +1196,11 @@ variable warning
    bl word -find not if abort" not found after [compile]" then ,
    ; immediate
 
+0x41 .ps cr
+
 : ;   \ semicolon
    \ ?csp
-   ' semi ,
+   SEMI_ADDR @ ,
    \ smudge
    [compile] [
    ;; immediate
@@ -1205,18 +1212,8 @@ variable warning
    create
    last cfa dp !
 \   [ ' dolit , ' colon 2 + , ] , 
-   [ ' colon cells + ] literal \ fill code field to colon+2
+   [ LITERAL_ADDR @ , COLON_ADDR @ , ] \ fill code field to colon+2
    ,
    ]
    ;;
 
-
-
-\ : baka ' + , 1 , ; 
-\ : baka [char] x ;
-\ : baka [compile] [ ;
-cr ." End: " here h4. ." , " here dicttop @ - dup h4. ." (" . ." ) bytes." cr 
-\ start nrForth system
-\ dump dictionary
-\ ' cold cells + dicttop 4 cells * + ( 0x5a .ps ) !
-\ dictdump

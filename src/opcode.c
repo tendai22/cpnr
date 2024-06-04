@@ -21,10 +21,10 @@ int machine_code(context_t *cx, word_t code)
             offset &= 0x3fff;
         }
         cx->pc += CELLS + offset;
-        fprintf(stderr, "m_jmp %04x\n", cx->pc);
+        //fprintf(stderr, "m_jmp %04x\n", cx->pc);
         return 0;
     }
-    fprintf(stderr, "%04X %04X\n", cx->pc, code);
+    //fprintf(stderr, "%04X %04X\n", cx->pc, code);
     if ((code & 0xf000) != OPCODE_BASE) {
 undefined:
         fprintf(stderr, "machine_code: undefined instruction: %04X at %04X\n", code, cx->pc);

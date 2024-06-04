@@ -460,8 +460,7 @@
 : spaces 1 do bl emit loop ;
 
 \ exit
-: exit compile semi ; immediate
-
+: exit SEMI_ADDR @ , ; immediate
 
 \ outer interpreter
 
@@ -822,6 +821,8 @@ variable 'error
 0 'error !
 : ?error
    'error @ dup if ( 0x45 .ps ) execute else ." ?error not defined yet" trap then ;
+
+
 \
 \ vector abort
 \
@@ -984,6 +985,7 @@ variable #base
    dup bl = over 0 = or
    swap drop
 ;
+
 
 \ =======================================
 \ error handling
@@ -1182,6 +1184,9 @@ variable warning
 
 ' (abort) 'abort !
 
+.( here comes )
+
+
 \ ========================================
 \ redefinition for replacing colon words
 \
@@ -1193,7 +1198,7 @@ variable warning
 
 : ;   \ semicolon
    \ ?csp
-   ' semi ,
+   SEMI_ADDR @ ,
    \ smudge
    [compile] [
    ;; immediate
@@ -1205,7 +1210,7 @@ variable warning
    create
    last cfa dp !
 \   [ ' dolit , ' colon 2 + , ] , 
-   [ ' colon cells + ] literal \ fill code field to colon+2
+   [ LITERAL_ADDR @ , COLON_ADDR @ , ] \ fill code field to colon+2
    ,
    ]
    ;;
@@ -1243,6 +1248,7 @@ last 1+ 0x28 swap c!
 \ : baka ' + , 1 , ; 
 \ : baka [char] x ;
 \ : baka [compile] [ ;
+
 cr ." End: " here h4. ." , " here dicttop @ - dup h4. ." (" . ." ) bytes." cr 
 \ start nrForth system
 \ dump dictionary

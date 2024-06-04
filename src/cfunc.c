@@ -404,7 +404,7 @@ void do_find(context_t *cx)
         n1 = mem[link] & 0x1f;
         if (n1 != n3)
             continue;
-        //fprintf(stderr, "find: %04x %d %04x %d\n", addr1, n3, link, n1);
+        //fprintf(stderr, "find: %04x %d %04x %d (%.*s)\n", addr1, n3, link, n1, n1, &mem[link+1]);
         do_push(cx, addr1+1);
         do_push(cx, n3);
         do_push(cx, link+1);
@@ -536,8 +536,8 @@ void do_semidef(context_t *cx)
     if (STAR(DEBUG_ADDR))
         fprintf(stderr, "C:%04x %04x(STAR(SEMI_ADDR)))\n", here_addr, STAR(SEMI_ADDR));
     STAR(DP_ADDR) += CELLS;
-    do_push(cx, STAR(LAST_ADDR));
-    dump_entry(cx);
+    //do_push(cx, STAR(LAST_ADDR));
+    //dump_entry(cx);
     // change compile mode
     STAR(STATE_ADDR) = 0;   // interpretive mode
     //fprintf(stderr, "semidef: end   HERE = %04x\n", STAR(DP_ADDR));
@@ -546,11 +546,12 @@ void do_semidef(context_t *cx)
 // do_compile_token
 void do_compile_token(context_t *cx)
 {
-    word_t xt = tos(cx);
-    word_t entry = entry_head(cx, xt);
-    char *p = &mem[entry];
-    if (STAR(DEBUG_ADDR))
+    if (STAR(DEBUG_ADDR)) {
+        word_t xt = tos(cx);
+        word_t entry = entry_head(cx, xt);
+        char *p = &mem[entry];
         fprintf(stderr, "C:%04x %04x (%.*s)\n", STAR(DP_ADDR), xt, (*p)&0x1f, p+1);
+    }
     STAR(STAR(DP_ADDR)) = do_pop(cx);
     STAR(DP_ADDR) += CELLS;
 }
@@ -610,11 +611,6 @@ word_t entry_tail(context_t *cx, word_t addr)
     return prev;
 }
 
-static int opcode_type(context_t *cx, word_t code)
-{
-    
-}
-
 // dump entry (addr -- )
 void dump_entry(context_t *cx)
 {
@@ -642,11 +638,14 @@ void dump_entry(context_t *cx)
     ip += CELLS;
     while (ip < tail) {
         w = STAR(ip);
+        //fprintf(stderr, "xt = %04x\n", w);
         entry = entry_head(cx, w);
-        if (entry) {
+        if (entry == 0) {
+            fprintf(stderr, "%04x %04x\n", ip, w);
+        } else {
             p = &mem[entry];
             n = (*p) & 0x1f;
-            fprintf(stderr, "%04x %04x (%.*s)\n", ip, w, n, p+1);
+            fprintf(stderr, ">%04x %04x (%.*s)\n", ip, w, n, p+1);
             if ((n == 5 && strncmp(p+1, "dolit", n) == 0) ||
                 (n == 7 && strncmp(p+1, "compile", n) == 0) ||
                 (n == 6 && strncmp(p+1, "branch", n) == 0) ||

@@ -28,7 +28,7 @@ last_addr:
     .user HALT      // ' halt
     .user COLON     COLON
     .user SEMI      SEMI
-    .user LITERAL   // ' dolit
+    .user LITERAL   do_dolit
     .user PAD       0
     .user IN        0
     .user STRICT    0
