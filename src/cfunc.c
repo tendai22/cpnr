@@ -627,7 +627,7 @@ void dump_entry(context_t *cx)
     // dump it
     p = &mem[entry];
     n = (*p) & 0x1f;
-    fprintf(stderr, "%04x .head [%.*s]", entry, n, p+1);
+    fprintf(stderr, "%04x .head \"%.*s\"", entry, n, p+1);
     if ((*p) & 0xe0)
         fprintf(stderr, "[%02x]", (*p) & 0xe0);
     fprintf(stderr, "\n");
@@ -639,13 +639,19 @@ void dump_entry(context_t *cx)
     while (ip < tail) {
         w = STAR(ip);
         //fprintf(stderr, "xt = %04x\n", w);
-        entry = entry_head(cx, w);
-        if (entry == 0) {
-            fprintf(stderr, "%04x %04x\n", ip, w);
+        if (w == STAR(COLON_ADDR) ) {
+            fprintf(stderr, "%04x %04x (colon)\n", ip, w);
+        } else if (w == STAR(SEMI_ADDR) ) {
+            fprintf(stderr, "%04x %04x (semi)\n", ip, w);
+        } else if (w == STAR(LITERAL_ADDR) ) {
+            fprintf(stderr, "%04x %04x (dolit)\n", ip, w);
+            ip += CELLS;
+            w = STAR(ip);
+            fprintf(stderr, "%04x %04x (%d)\n", ip, w, w);
         } else {
+            entry = entry_head(cx, w);
             p = &mem[entry];
             n = (*p) & 0x1f;
-            fprintf(stderr, ">%04x %04x (%.*s)\n", ip, w, n, p+1);
             if ((n == 5 && strncmp(p+1, "dolit", n) == 0) ||
                 (n == 7 && strncmp(p+1, "compile", n) == 0) ||
                 (n == 6 && strncmp(p+1, "branch", n) == 0) ||
@@ -664,9 +670,11 @@ void dump_entry(context_t *cx)
                 ip += CELLS;
                 n = mem[ip];
                 p = &mem[ip + 1];
-                fprintf(stderr, "%04x %4d \"%.*s\"\n", ip, n, n, p);
+                fprintf(stderr, "%04x .string %d \"%.*s\"\n", ip, n, n, p);
                 ip += n + 1 - CELLS;
                 //fprintf(stderr, "ip = %04x\n", ip);
+            } else {
+                fprintf(stderr, "%04x %04x (%.*s)\n", ip, w, n, p+1);
             }
         }
         ip += CELLS;

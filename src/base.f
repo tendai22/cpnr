@@ -1184,9 +1184,6 @@ variable warning
 
 ' (abort) 'abort !
 
-.( here comes )
-
-
 \ ========================================
 \ redefinition for replacing colon words
 \
