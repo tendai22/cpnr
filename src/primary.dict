@@ -14,8 +14,8 @@ opcode halt
 //
 //opcode colon
 //opcode next
-opcode run 
-opcode startdoes
+//opcode run 
+//opcode startdoes
 //opcode semi
 opcode execute
 opcode trap
@@ -51,8 +51,8 @@ opcode dup
 opcode rsp
 opcode r> r2s
 opcode >r s2r
-opcode r2> r22s
-opcode >r2 s2r2
+//opcode r2> r22s
+//opcode >r2 s2r2
 
 //
 // operators

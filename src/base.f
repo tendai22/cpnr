@@ -454,7 +454,7 @@
 \ : xx #field 1 + #nb dump ;
 
 \ space ( -- ) .. type a space
-: space bl emit ;
+\ : space bl emit ;
 
 \ spaces ( n -- ) .. n spaces
 : spaces 1 do bl emit loop ;
@@ -771,8 +771,8 @@
    align ( here h4. cr )
    ; immediate
 
-: count \ ( c-addr --- count addr+1 )
-   dup 1+ swap c@ ;
+\ : count \ ( c-addr --- count addr+1 )
+\    dup 1+ swap c@ ;
 
 : ." \ ( --- ) ... print the string
    state @ if
@@ -803,10 +803,10 @@
    ' trap ,
    ; immediate
 
-: .( \ ( --- ) ... compile message
-   [char] ) word
-   count type cr 
-   ;
+\ : .( \ ( --- ) ... compile message
+\    [char] ) word
+\    count type cr 
+\    ;
 
 \ ." outer: " outer . cr 
 
@@ -857,11 +857,11 @@ variable 'abort
 : >rest \ ( --- n ) rest of s0 buffer ;
    s0 c@ 1+ >in @ ( 0x31 .ps ) - ;
 
-: wwtest
-   begin 
-      begin >rest 0x48 .ps 0> not while 0x23 emit space accept repeat
-      begin bl word while repeat
-   0 until ;
+\ : wwtest
+\    begin 
+\       begin >rest 0x48 .ps 0> not while 0x23 emit space accept repeat
+\       begin bl word while repeat
+\    0 until ;
 
 \ find test word
 \ : ftest accept 32 word find ;
@@ -910,8 +910,8 @@ variable 'abort
 
 variable dpl
 0 dpl !
-variable #base
-10 #base !
+\ variable #base
+\ 10 #base !
 
 : digit \ ( c base --- n2 flag )
    swap     ( base c )
@@ -1144,8 +1144,8 @@ variable warning
 
 \ : aho ." baka " ;
 
-: 2, \ ( d --- ) ... compile a double length integer
-   swap ' dolit , , ' dolit , , ;
+\ : 2, \ ( d --- ) ... compile a double length integer
+\    swap ' dolit , , ' dolit , , ;
 
 
 \ : aho 100000 0x44 .ps 2, ; immediate

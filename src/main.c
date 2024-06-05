@@ -199,20 +199,6 @@ static int read_xfile(FILE *fp)
             }
         }
     }
-#if 0
-    int first = 1;
-    fprintf(stderr, "init_dict: min = %04x, max=%04x\n", min, max);
-    for (int i = min; i <= max; i += 2) {
-        if (first || (i % 16) == 0) {
-            fprintf(stderr, "%04X: ", i);
-            first = 0;
-        }
-        fprintf(stderr, "%04X ", STAR(i));
-        if ((i % 16) == 14)
-            fprintf(stderr, "\n");
-    }
-    fprintf(stderr, "\n");
-#endif
     // init user vars
     STAR(DICTTOP_ADDR) = STAR(min);
     STAR(DP_ADDR) = STAR(min + 2);
@@ -317,39 +303,10 @@ static int init_mem(context_t *cx)
     // halt addr is needed for 'execute'
     flag |= name2xt(cx, "halt");
     STAR(HALT_ADDR) = do_pop(cx);
-#if 0
-    STAR(S0_ADDR) = DSTACK_END;  // s0 line buffer
-    STAR(R0_ADDR) = RSTACK_END;
-    STAR(TIB_ADDR) = TIB_START;
-    STAR(STATE_ADDR) = 0;    // interpretive mode
-    STAR(BASE_ADDR) = 10;     // DECIMAL mode
-    flag |= name2xt(cx, "halt");
-    STAR(HALT_ADDR) = do_pop(cx);
-    //flag |= name2xt(cx, "colon");
-    //STAR(COLON_ADDR) = do_pop(cx);
-    //flag |= name2xt(cx, "semi");
-    //STAR(SEMI_ADDR) = do_pop(cx);
-    flag |= name2xt(cx, "dolit");
-    STAR(LITERAL_ADDR) = do_pop(cx);
-//    STAR(ABORT_ADDR) = 0;
-//    if (name2xt(cx, "abort") == 0) {
-//        STAR(ABORT_ADDR) = do_pop(cx);
-//        fprintf(stderr, "abort_addr: %04x\n", STAR(ABORT_ADDR));
-//    }
-    STAR(DEBUG_ADDR) = 0;
-    STAR(PAD_ADDR) = STAR(DP_ADDR);
-    STAR(IN_ADDR) = 0;
-#else
-    // tentative one, need to write with target machine code
-    //flag |= name2xt(cx, "dolit");
-    //STAR(LITERAL_ADDR) = do_pop(cx);
-    //fprintf(stderr, "init_mem: dolit vector = %04x\n", STAR(LITERAL_ADDR));
-#endif
+    // cold vector, startup point if it is defined.
     STAR(COLD_ADDR) = 0;
     if (name2xt(cx, "cold") == 0)
         STAR(COLD_ADDR) = do_pop(cx);
-    //flag |= name2xt(cx, "docons");
-    //STAR(DOCONS_ADDR) = do_pop(cx);
     if (flag) {
         return -1;
     }
