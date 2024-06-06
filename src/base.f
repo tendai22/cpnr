@@ -7,23 +7,23 @@
 
 \ debug
 : debug DEBUG_ADDR ! ;
-0 debug
+\ 0 debug
 
 \ base
 : base BASE_ADDR @ ;
-10 BASE_ADDR !
+\ 10 BASE_ADDR !
 
 \ state
 : state STATE_ADDR ;
-0 state !
+\ 0 state !
 
 \ strict
 : strict STRICT_ADDR ;
-1 strict !
+\ 1 strict !
 
 \ csp
 : csp CSP_ADDR ;
-0 csp !
+\ 0 csp !
 : !csp sp@ csp ! ;
 
 \ cells
@@ -486,7 +486,7 @@
 
 : >in IN_ADDR ;
 
-1 outer_flag !
+\ 1 outer_flag !
 
 \ ======================================
 \ .stack ... debug word
@@ -1184,34 +1184,6 @@ variable warning
 
 ' (abort) 'abort !
 
-\ ========================================
-\ redefinition for replacing colon words
-\
-\ : and ; are needed to redefine
-
-: [compile] \ ( --- ) 2nd definition, error check version
-   bl word -find not if abort" not found after [compile]" then ,
-   ; immediate
-
-: ;   \ semicolon
-   \ ?csp
-   SEMI_ADDR @ ,
-   \ smudge
-   [compile] [
-   ;; immediate
-
-: :   \ colon --
-   \ ?exec
-   \ !csp
-   \ current @ context
-   create
-   last cfa dp !
-\   [ ' dolit , ' colon 2 + , ] , 
-   [ LITERAL_ADDR @ , COLON_ADDR @ , ] \ fill code field to colon+2
-   ,
-   ]
-   ;;
-
 \
 \ comments
 \
@@ -1245,6 +1217,35 @@ last 1+ 0x28 swap c!
 \ : baka ' + , 1 , ; 
 \ : baka [char] x ;
 \ : baka [compile] [ ;
+
+\ ========================================
+\ redefinition for replacing colon words
+\ (these redefintion should be at the last tail of base.f)
+\ 
+\ : and ; are needed to redefine
+
+: [compile] \ ( --- ) 2nd definition, error check version
+   bl word -find not if abort" not found after [compile]" then ,
+   ; immediate
+
+: ;   \ semicolon
+   \ ?csp
+   SEMI_ADDR @ ,
+   \ smudge
+   [compile] [
+   ;; immediate
+
+: :   \ colon --
+   \ ?exec
+   \ !csp
+   \ current @ context
+   create
+   last cfa dp !
+\   [ ' dolit , ' colon 2 + , ] , 
+   [ LITERAL_ADDR @ , COLON_ADDR @ , ] \ fill code field to colon+2
+   ,
+   ]
+   ;;
 
 cr ." End: " here h4. ." , " here dicttop @ - dup h4. ." (" . ." ) bytes." cr 
 \ start nrForth system
