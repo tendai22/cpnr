@@ -316,6 +316,14 @@
   rot rot  \ c addr n
   0 do _p++ loop drop drop ;
 
+: cmove ( from to count --- )
+   1 - \ from to count-1
+   0 do \ from to
+      over i + c@ \ from to c
+      over i + c!
+   loop drop drop
+   ;
+
 \ ========================================
 \ double length integer
 \
@@ -785,7 +793,16 @@
    ; immediate
 
 : c" \ ( --- c-addr )... string constant with counted string
-   [compile] ["]
+   state @ if
+      [compile] ["]
+   else
+      ( 0x41 emit )
+      [char] " word \ c-addr at dp
+      ( dup 10 cdump cr )
+      \ save it to 128 byte ahead area
+      dup dup 128 + over c@ 1+ ( 0x42 .ps ) cmove
+      128 +
+   then
    ; immediate
 
 : s" \ ( --- count addr )... string constant for `type`
@@ -1206,14 +1223,6 @@ last 1+ 0x28 swap c!
       loop 
       14 and 0= not if cr then ;
 
-: cmove ( from to count --- )
-   1 - \ from to count-1
-   0 do \ from to
-      over i + c@ \ from to c
-      over i + c!
-   loop drop drop
-   ;
-
 \ : baka ' + , 1 , ; 
 \ : baka [char] x ;
 \ : baka [compile] [ ;
@@ -1240,11 +1249,9 @@ last 1+ 0x28 swap c!
    \ !csp
    \ current @ context
    create
-   last cfa dp !
-\   [ ' dolit , ' colon 2 + , ] , 
-   [ LITERAL_ADDR @ , COLON_ADDR @ , ] \ fill code field to colon+2
-   ,
-   ]
+   last cfa dp !  \ fill link field
+   COLON_ADDR @ , \ fill code field
+   ]  \ start compile mode
    ;;
 
 cr ." End: " here h4. ." , " here dicttop @ - dup h4. ." (" . ." ) bytes." cr 
