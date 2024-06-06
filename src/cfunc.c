@@ -479,6 +479,32 @@ void do_emit(context_t *cx, word_t w)
     fputc((w&0xff), stdout);
 }
 
+//
+// compile process
+//
+static void compile_it(context_t *cx, word_t w, int flag)
+{
+    char *p;
+    if (STAR(DEBUG_ADDR)) {
+        if (flag) {
+            if (w == STAR(COLON_ADDR))
+                p = "\005COLON"; 
+            else if (w == STAR(SEMI_ADDR))
+                p = "\004SEMI";
+            else if (w == STAR(LITERAL_ADDR))
+                p = "\005dolit";
+            else {
+                p = &mem[entry_head(cx, w)];
+            }
+            fprintf(stderr, "C:%04x %04x (%.*s)\n", STAR(DP_ADDR), w, (*p)&0x1f, p+1);
+        } else {
+            fprintf(stderr, "C:%04x %04x (%d)\n", STAR(DP_ADDR), w, w);
+        }
+    }
+    STAR(STAR(DP_ADDR)) = w;
+    STAR(DP_ADDR) += CELLS;
+}
+
 // do_create ( -- ) ... no stack operation
 // パラメータ・フィールドのメモリを確保することなく、
 // <name>の辞書エントリが作成される。その後、<name>が実行されると、
@@ -501,10 +527,12 @@ void do_create(context_t *cx)
     // check its name
     prev_link = STAR(LAST_ADDR);
     link_pos = link_addr(STAR(DP_ADDR));
-    //fprintf(stderr, "create: head = %04x, link_pos - %04x\n", STAR(DP_ADDR), link_pos);
+    if (STAR(DEBUG_ADDR)) {
+        p = &mem[STAR(DP_ADDR)];
+        fprintf(stderr, "C:%04x (%.*s) create\nC:%04x %04x (link)\n", STAR(DP_ADDR), ((*p)&0x1f), p+1, link_pos, prev_link);
+    }
     // put link pointer
     STAR(link_pos) = prev_link;
-    //fprintf(stderr, "prev_link: %04x to %04x\n", prev_link, link_pos);
     // uvar last update
     STAR(LAST_ADDR) = STAR(DP_ADDR);
     // user h update
@@ -517,10 +545,9 @@ void do_colondef(context_t *cx)
     do_create(cx);
     // put COLON xt to cfa
     //fprintf(stderr, "colondef: begin LAST = %04x, HERE = %04x\n", STAR(LAST_ADDR), STAR(DP_ADDR));
-    STAR(STAR(DP_ADDR)) = STAR(COLON_ADDR);
+    compile_it(cx, STAR(COLON_ADDR), 1);
         // code address should specify "body of machine code"
         // so, xt is not sufficient, one more dereferencing is needed
-    STAR(DP_ADDR) += CELLS;      // allot'ed
     // change to compile mode
     STAR(STATE_ADDR) = 1;
     //fprintf(stderr, "colondef: end   HERE = %04x\n", STAR(DP_ADDR));
@@ -532,10 +559,7 @@ void do_semidef(context_t *cx)
     word_t here_addr = STAR(DP_ADDR);
     //fprintf(stderr, "semidef: begin HERE = %04x\n", STAR(DP_ADDR));
     // put EXIT(SEMI) in on-going dictionary entry
-    STAR(here_addr) = STAR(SEMI_ADDR);  // put SEMI xt
-    if (STAR(DEBUG_ADDR))
-        fprintf(stderr, "C:%04x %04x(STAR(SEMI_ADDR)))\n", here_addr, STAR(SEMI_ADDR));
-    STAR(DP_ADDR) += CELLS;
+    compile_it(cx, STAR(SEMI_ADDR), 1);
     //do_push(cx, STAR(LAST_ADDR));
     //dump_entry(cx);
     // change compile mode
@@ -546,24 +570,17 @@ void do_semidef(context_t *cx)
 // do_compile_token
 void do_compile_token(context_t *cx)
 {
-    if (STAR(DEBUG_ADDR)) {
-        word_t xt = tos(cx);
-        word_t entry = entry_head(cx, xt);
-        char *p = &mem[entry];
-        fprintf(stderr, "C:%04x %04x (%.*s)\n", STAR(DP_ADDR), xt, (*p)&0x1f, p+1);
-    }
-    STAR(STAR(DP_ADDR)) = do_pop(cx);
-    STAR(DP_ADDR) += CELLS;
+    word_t w = do_pop(cx);
+    compile_it(cx, w, 1);
 }
 
 void do_compile_number(context_t *cx)
 {
     // compile LITERAL and number
     if (STAR(DEBUG_ADDR))
-        fprintf(stderr, "compile_number:\n");
-    do_push(cx, STAR(LITERAL_ADDR));
-    do_compile_token(cx);
-    do_compile_token(cx);    // compile the number on the stack
+        fprintf(stderr, "compile_number: %04x(%d)\n", tos(cx), tos(cx));
+    compile_it(cx, STAR(LITERAL_ADDR), 1);
+    compile_it(cx, do_pop(cx), 0);  // compile the number on the stack
 }
 
 void do_compile(context_t *cx)
@@ -572,11 +589,7 @@ void do_compile(context_t *cx)
     mem_t *p;
     w= STAR(cx->ip);
     cx->ip += CELLS;
-    STAR(STAR(DP_ADDR)) = w;
-    p = &mem[entry_head(cx, w)];
-    if (STAR(DEBUG_ADDR))
-        fprintf(stderr, "C:%04X %04X (%.*s)\n", STAR(DP_ADDR), w, (*p)&0x1f, (p+1));
-    STAR(DP_ADDR) += CELLS;
+    compile_it(cx, w, 1);
 }
 
 //
