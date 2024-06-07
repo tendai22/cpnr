@@ -1252,7 +1252,7 @@ last 1+ 0x28 swap c!
    last cfa dp !  \ fill link field
    COLON_ADDR @ , \ fill code field
    ]  \ start compile mode
-   ;;
+   ;
 
 cr ." End: " here h4. ." , " here dicttop @ - dup h4. ." (" . ." ) bytes." cr 
 \ start nrForth system
