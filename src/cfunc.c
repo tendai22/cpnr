@@ -7,6 +7,7 @@
 #include <string.h>
 #include "machine.h"
 #include "user.h"
+#include "key_in.h"
 
 //
 // primitive functions
@@ -189,6 +190,7 @@ int do_getline(context_t *cx, char *buf, int size)
 {
     // now in-stream buffer emnty, refill it
     //fprintf(stderr, "do_getline: buf = %04x size = %d\n", (word_t)(buf - (char *)&mem[0]), size);
+    changemode(0);
     memset(buf, ' ', size-1);
     buf[size-1] = '\0';
     if (outer_flag) {
@@ -204,9 +206,11 @@ int do_getline(context_t *cx, char *buf, int size)
         // input from keyboard
         if (fgets (buf, size, stdin) == 0) {
             fprintf(stderr, "eof\n");
+            changemode(1);
             return EOF;
         }
     }
+    changemode(1);
     return 0;
 }
 
@@ -391,10 +395,10 @@ void do_compare(context_t *cx)
 // (c-addr -- 0     (not found)
 //            xt 1  (find, normak)
 //            xt -1 (find, immediate))
-void do_find(context_t *cx)
+void do_find(context_t *cx, word_t start)
 {
     mem_t *p;
-    word_t link = STAR(LAST_ADDR);
+    word_t link = start;
     word_t addr1 = do_pop(cx);
     word_t xt;
     int n3 = mem[addr1], n2, n1;
@@ -477,6 +481,7 @@ void do_prompt(context_t *cx)
 void do_emit(context_t *cx, word_t w)
 {
     fputc((w&0xff), stdout);
+    fflush(stdout);
 }
 
 //
@@ -485,7 +490,7 @@ void do_emit(context_t *cx, word_t w)
 static void compile_it(context_t *cx, word_t w, int flag)
 {
     char *p;
-    if (STAR(DEBUG_ADDR)) {
+    if (STAR(DEBUG_ADDR)&4) {
         if (flag) {
             if (w == STAR(COLON_ADDR))
                 p = "\005COLON"; 
@@ -721,7 +726,7 @@ int do_quote(context_t *cx)
     do_push(cx, ' ');       // push BL
     do_word(cx);            // ( delim --- c-addr )
     p = &mem[tos(cx)];
-    do_find(cx);            // ( c-addr --- 0 | xt flag )
+    do_find(cx, STAR(LAST_ADDR));            // ( c-addr --- 0 | xt flag )
     if (do_pop(cx) == 0) {
         fprintf(stderr, "do_quote: %.*s: not found¥n", *p, p+1);
         return -1;

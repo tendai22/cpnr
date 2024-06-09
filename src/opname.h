@@ -58,4 +58,6 @@ void init_optable(void)
         optable[54] = "m_cold";
         optable[55] = "m_dictdump";
         optable[56] = "m_quote";
+        optable[57] = "m_key";
+        optable[58] = "m_kbhit";
 }

@@ -2539,3 +2539,114 @@ XファイルからForthコマンド列を生成する`X2f.sh`(awkスクリプ�
 
 である。この3つでターゲット版辞書が作成できるはず。
 
+ターゲットコンパイルは、ターゲット辞書ロードして、`: aho 1 + ;`がターゲット辞書のワードのみ参照してできるところまできた。
+
+* cross8.bin の生成。テキストインタプリタはC言語版を使用するバイナリを作る。
+
+```
+$ ./cpnr dict.X user.f base.f 
+dict.X: read_xfile
+dicttop: 8000, last: 82de, h: 82f0
+init_mem: user copy: dest = f000, src = 8000, size = 50
+name2xt: cold: no entry
+start text interpreter
+open: user.f
+open: base.f
+
+End: A0A4, 20A4(8356 ) bytes.
+dicttop dicttop @ END_ADDR dicttop - cmove
+[] [] ok
+dicttop @ here last dictdump
+m_dictdump: begin: 8000, end: a0a4, last: a088
+[] [] ok
+```
+
+で、バイナリを作る。forth.bin を cross8.bin と改名しておく。
+
+```
+dicttop dicttop @ END_ADDR dicttop - cmove
+dicttop @ here last dictdump
+```
+
+だけでfファイル作ってもいいかもしれない。
+
+* ターゲット辞書のロード
+
+`.org 0x1000`, `.user_org 0xe000` で辞書バイナリをビルドする。
+target.X から X2f.sh を使い、Forth版ターゲット辞書に変換する。
+
+```
+0x1000 0x1000 !
+0x12ee 0x1002 !
+0x12dc 0x1004 !
+...
+```
+
+としておくと、`./cpnr cross8.bin target.f xx.f`で辞書バイナリがロードできる。
+
+辞書をロードした後、
+
+```
+variable dA
+DICTTOP_ADDR 0x41 .ps - dA !
+\ set cross
+LAST_ADDR @ CROSS_ADDR !
+CROSS_ADDR dup h4. space @ h4. cr
+\ copy addrs
+DP_ADDR dup dA @ + 0x42 .ps @ swap !
+LAST_ADDR dup dA @ + @ swap !
+COLON_ADDR dup dA @ + @ swap !
+SEMI_ADDR dup dA @ + @ swap !
+LITERAL_ADDR dup dA @ + @ swap !
+DICTTOP_ADDR 48 dump
+```
+
+で、ホスト版ユーザ変数 DP_ADDR, LAST_ADDR, COLON_ADDR, SEMI_ADDR, LITERAL_ADDRをターゲットを指すように書き換える。
+
+```
+$ ./cpnr cross8.bin target.f xx.f
+cross8.bin: dicttop = 8000, dp = a0a4, last = a088
+init_mem: user copy: dest = f000, src = 8000, size = 50
+name2xt: cold: no entry
+start text interpreter
+open: target.f
+open: xx.f
+A[1000 F000 ]
+F02A A0A4
+B[F006 1006 ]
+F000 8000 A0A4 A088 12EE 12DC 0000 0000 F100
+F010 F200 F100 0000 0000 000A 8056 1032 1036
+F020 1090 0000 0015 0001 0000 A0A4 0000 0010
+F030 0010 0000 0000 0000 0000 0000 0000 0000
+F040 0000 0000 0000 0000 0000 0000 0000 0000
+F050 0000 0000 0000 0000 0000 0000 0000 0000
+```
+
+これで`: aho 1 + ;`がコンパイルできる。
+
+```
+: aho 1 + ;
+[] [] ok
+last dd
+dump_entry: entry = 12EE, tail = 1300
+12ee .head "aho"
+12f4 12dc  [link]
+12f6 1032  [code]
+12f8 1090 (dolit)
+12fa 0001 (1)
+12fc 11c6 (+)
+12fe 1036 (semi)
+[] [] ok
+```
+
+スレッドコード内のエントリがすべて 1XXX になっている。良い感じだ。
+
+## key/key_in: 1文字入力プリミティブ
+
+そろそろ行入力を準備しよう。
+
+* 今までのを置いておいて、テキスト版行入力`EXPECT`を作る。
+* プリミティブ`KEY`が必要。キー入力の1文字入力。
+
+
+

@@ -6,6 +6,7 @@
 #include <string.h>
 #include "machine.h"
 #include "user.h"
+#include "key_in.h"
 
 //
 // forth interpreter initializer
@@ -278,7 +279,7 @@ static int name2xt(context_t *cx, char *name)
     p[n] = ' ';
     do_push(cx, cstr_addr);
     //fprintf(stderr, "find: [%.*s]\n", mem[cstr_addr], p);
-    do_find(cx);
+    do_find(cx, STAR(LAST_ADDR));
     if (do_pop(cx) == 0) {
         fprintf(stderr, "name2xt: %s: no entry\n", name);
         return -1;
@@ -345,11 +346,15 @@ int main (int ac, char **av)
         fprintf(stderr, "start cold at %04x\n", cold_addr);
         do_push(cx, cold_addr);
         // STAR(DEBUG_ADDR) = 1;
+        changemode(1);
         do_execute(cx);
+        changemode(0);
     } else {
         fprintf(stderr, "start text interpreter\n");
         STAR(DEBUG_ADDR) = 0;
+        changemode(1);
         do_mainloop(cx);
+        changemode(0);
     }
     return 0;
 }

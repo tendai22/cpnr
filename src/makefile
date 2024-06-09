@@ -29,7 +29,7 @@ user.f user.h user.s: user.def makeuser.sh
 	sh makeuser.sh -h user.def > user.h
 	sh makeuser.sh -s user.def > user.s
 
-COBJS=main.o machine.o monitor.o cfunc.o opcode.o
+COBJS=main.o machine.o monitor.o cfunc.o opcode.o key_linux.o
 CFLAGS+=-g
 CFLAGS+=-Wno-pointer-sign 
 

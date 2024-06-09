@@ -114,5 +114,9 @@ BEGIN {
     ropcode[55 + opcode_base] = "m_dictdump"
     opcode["m_quote"] = 56 + opcode_base
     ropcode[56 + opcode_base] = "m_quote"
+    opcode["m_key"] = 57 + opcode_base
+    ropcode[57 + opcode_base] = "m_key"
+    opcode["m_kbhit"] = 58 + opcode_base
+    ropcode[58 + opcode_base] = "m_kbhit"
 }
 

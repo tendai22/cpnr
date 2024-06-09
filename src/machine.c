@@ -57,11 +57,29 @@ int do_machine(context_t *cx)
 
 void do_execute (context_t *cx)
 {
+    word_t w;
+    int flag = 1;
+    char *p;
     // start inter interpreter
-    cx->wa = do_pop(cx);
+    cx->wa = w = do_pop(cx);
     // code of m_run(cx);
     cx->ca = STAR(cx->wa);
-    //printf(stderr, "execute: wa = %04x, ca = %04x\n", cx->wa, cx->ca);
+    if (STAR(DEBUG_ADDR)&4) {
+        if (flag) {
+            if (w == STAR(COLON_ADDR))
+                p = "\005COLON"; 
+            else if (w == STAR(SEMI_ADDR))
+                p = "\004SEMI";
+            else if (w == STAR(LITERAL_ADDR))
+                p = "\005dolit";
+            else {
+                p = &mem[entry_head(cx, w)];
+            }
+            fprintf(stderr, "X:%04x (%.*s)\n", w, (*p)&0x1f, p+1);
+        } else {
+            fprintf(stderr, "X:%04x (%d)\n", w, w);
+        }
+    }
     cx->wa += CELLS;
     cx->pc = cx->ca;
     cx->ip = HALT_ADDR;     // ipはxtの置き場を指すようにする。
@@ -116,8 +134,9 @@ void print_crlf(context_t *cx)
 
 int do_mainloop(context_t *cx)
 {
-    word_t flag;
+    word_t flag, caddr, cross;
     int count, result;
+    char *p;
     while (1) {
         // do_catch
         //do_catch(cx);
@@ -144,19 +163,46 @@ int do_mainloop(context_t *cx)
                 print_s0(cx);
                 continue;
             }
+            caddr = tos(cx);    // save c-addr for re-find
+            p = &mem[caddr];
             //print_cstr(cx, "H", STAR(DP_ADDR));
             //print_stack(cx); print_crlf(cx);
-            do_find(cx);
+            cross = STAR(CROSS_ADDR);
+            do_find(cx, STAR(LAST_ADDR));
+            if (tos(cx) == 0) {
+                //fprintf(stderr, "cross find: \"%.*s\"\n", *p&0x1f, p+1);
+                tos(cx) = caddr;
+                do_find(cx, cross);
+            }
             //if (do_pop(cx))
             //    do_pop(cx); // clear the result of do_find
             //continue;
             //print_emit(cx, 'A'); 
             //print_stack(cx);print_crlf(cx);
             if ((flag = do_pop(cx)) != 0) {
-                if (STAR(STATE_ADDR) && (flag & 0x8000) == 0)
+                if (STAR(STATE_ADDR) && (flag & 0x8000) == 0) {
+                    // re scan target dict
+                    tos(cx) = caddr;
+                    do_find(cx, STAR(LAST_ADDR));
+                    if ((flag = do_pop(cx)) == 0) {
+                        fprintf(stderr, "do_mainloop: line %d: \"%.*s\" not found unexlectedly in compiling\n", lnum, *p&0x1f, p+1);
+                        return -1;
+                    }
                     do_compile_token(cx);
-                else
+                } else {
+                    if (STAR(CROSS_ADDR)) {    // if executing, re scan on host dictionary
+                        // search host dictionary and execute it
+                        tos(cx) = caddr;
+                        do_find(cx, STAR(CROSS_ADDR));
+                        if ((flag = do_pop(cx)) == 0) {
+                            // unexpected not-fund in host dictionary
+                            fprintf(stderr, "do_mainloop: line %d: \"%.*s\" not found in host dictionary\n", lnum, *p&0x1f, p+1);
+                            return -1;
+                        }
+                        //fprintf(stderr,"immediate: exec \"%.*s\"\n", *p&0x1f, p+1);
+                    }
                     do_execute(cx);
+                }
             } else {
                 do_push(cx, STAR(DP_ADDR));
                 do_number(cx);  // (addr -- n r)

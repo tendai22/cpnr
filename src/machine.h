@@ -102,7 +102,7 @@ extern int do_accept(context_t *cx);
 extern int do_getline(context_t *cx, char *buf, int size);
 extern void do_getch(context_t *cx);
 extern void do_word(context_t *cx);
-extern void do_find(context_t *cx);
+extern void do_find(context_t *cx, word_t start);
 extern void do_number(context_t *cx);
 extern void do_prompt(context_t *cx);
 extern int gets_outer(mem_t *buf, int len);

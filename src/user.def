@@ -33,6 +33,7 @@ last_addr:
     .user IN        0
     .user STRICT    1
     .user CSP       0
+    .user CROSS     0
     .user COLD
     .user #field_addr   10
     .user #base_addr    0

@@ -71,6 +71,8 @@ opcode /mod slashmod
 // i/o primitives
 //
 opcode emit
+opcode key
+opcode kbhit
 //
 // compilers/outer interpreter
 //

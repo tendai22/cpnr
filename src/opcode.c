@@ -5,6 +5,7 @@
 
 #include <stdio.h>
 #include "machine.h"
+#include "key_in.h"
 #include "user.h"
 
 int machine_code(context_t *cx, word_t code)
@@ -55,7 +56,7 @@ undefined:
         break;
     case 3: // m_next1
         cx->wa = STAR(cx->ip);
-        if (STAR(DEBUG_ADDR))
+        if (STAR(DEBUG_ADDR)&1)
             print_next(cx, cx->wa);
         cx->ip += CELLS;
         cx->pc += CELLS;
@@ -113,15 +114,15 @@ do_run_label:
     case 12: // m_cdepo
         w = do_pop(cx);
         mem[w] = do_pop(cx);
-        if (STAR(DEBUG_ADDR))
-            fprintf(stderr, "mem[%04x] = %04x\n", w, mem[w]);
+        if (STAR(DEBUG_ADDR)&1)
+            fprintf(stderr, "c:%04x %02x\n", w, mem[w]);
         cx->pc += CELLS;
         break;
     case 13: // m_depo
         w = do_pop(cx);
         STAR(w) = do_pop(cx);
-        if (STAR(DEBUG_ADDR))
-            fprintf(stderr, "mem[%04x] = %04x\n", w, STAR(w));
+        if (STAR(DEBUG_ADDR)&1)
+            fprintf(stderr, "w:%04x %04x\n", w, STAR(w));
         cx->pc += CELLS;
         break;
     case 14: // m_cfetch
@@ -384,6 +385,14 @@ do_run_label:
     case 56: // m_quote
         do_quote(cx);
         //fprintf(stderr, "do_quote: pc = %04x\n", cx->pc);
+        cx->pc += CELLS;
+        break;
+    case 57: // m_key
+        do_push(cx, key_in());
+        cx->pc += CELLS;
+        break;
+    case 58: // m_kbhit
+        do_push(cx, kbhit());
         cx->pc += CELLS;
         break;
     default:
