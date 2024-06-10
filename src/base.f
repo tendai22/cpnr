@@ -1304,5 +1304,3 @@ cr ." End: " here h4. ." , " here dicttop @ - dup h4. ." (" . ." ) bytes." cr
 \ dump dictionary
 \ ' cold cells + dicttop 4 cells * + ( 0x5a .ps ) !
 \ dictdump
-
-: aho s0 80 getline s0 10 cdump ;

@@ -19,10 +19,12 @@
 : IN_ADDR          0xe024 ;
 : STRICT_ADDR      0xe026 ;
 : CSP_ADDR         0xe028 ;
-: COLD_ADDR        0xe02a ;
-: #field_addr      0xe02c ;
-: #base_addr       0xe02e ;
-: END_ADDR         0xe030 ;
+: CROSS_ADDR       0xe02a ;
+: COLD_ADDR        0xe02c ;
+: #field_addr      0xe02e ;
+: #base_addr       0xe030 ;
+: OUTER_ADDR       0xe032 ;
+: END_ADDR         0xe034 ;
  DICTTOP_ADDR 256 +   S0_ADDR          !
  DICTTOP_ADDR 512 +   R0_ADDR          !
  DICTTOP_ADDR 256 +   TIB_ADDR         !

@@ -2672,6 +2672,71 @@ dump_entry: entry = 12EE, tail = 1300
 
 デバッグできたと思っていたが違った。かなり変わったがなんとか動くようになった。
 
+## クロスコンパイル
+
+なんとか base.f のコンパイルを通すところまできた。
+
+DP_ADDR, LAST_ADDR に tdict.X のヘッダから DP_ADDR, LAST_ADDR をセットして CROSS_ADDR に旧 LAST_ADDRをセットすると、C言語版テキストインタプリタは tuser.f base.f をコンパイルできる。
+
+ただし、ターゲット辞書のヘッダ(ユーザ変数初期値)はセットできていない。
+
+```
+kuma@LizNoir:~/cpnr/src$ ./cpnr cross8.bin tdict.f start_cross.f tuser.f base.f
+cross8.bin: dicttop = 8000, dp = a1de, last = a1c2
+init_mem: user copy: dest = f000, src = 8000, size = 52
+name2xt: cold: no entry
+start text interpreter
+open: tdict.f
+open: start_cross.f
+F[1000 ]
+@[1000 1000 F000 ]
+A[1000 2000 A1E6 ]
+2000
+1[1000 A1E8 F02A ]
+2[1000 F006 F006 2000 ]
+3[1000 F006 1006 ]
+4[1000 F006 1310 ]
+B[1000 1310 F006 ]
+C[1000 12FE F008 ]
+D[]
+
+open: tuser.f
+open: base.f
+
+End: 31DE, B1DE(-20002 ) bytes.
+last dd
+dump_entry: entry = 31C2, tail = 31DE
+31c2 .head ":"
+31c6 31b0  [link]
+31c8 8036  [code]
+31ca 2390 (create)
+31cc 1672 (last)
+31ce 171c (cfa)
+31d0 15fa (dp)
+31d2 10e0 (!)
+31d4 1450 (COLON_ADDR)
+31d6 10f8 (@)
+31d8 16a0 (,)
+31da 16b2 (])
+31dc 803a (semi)
+[] [] ok
+0xf000 32 dump
+F000 8000 A1DE A1C2 31DE 31C2 0000 0000 F100
+F010 F200 F100 0000 0000 000A 1058 8036 803A
+F020 8094 0000 000F 0001 0000 A1E8 0000 0010
+F030 0010 0000 0000 0000 0000 0000 0000 0000
+[] [] ok
+0x1000 32 dump
+1000 1000 1310 12FE 1310 12FE 0000 0000 0000
+1010 0000 0000 0000 0000 000A 0000 1036 103A
+1020 1094 0000 0000 0001 0000 0000 0000 000A
+1030 0000 0000 0000 7002 8004 103C 7006 7003
+[] [] ok
+```
+
+0x1000 の初期値を適切に設定すれば先に進める気がする。
+
+
 
 
 

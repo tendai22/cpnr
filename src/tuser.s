@@ -25,7 +25,9 @@ last_addr:
     .dw   0        ; IN_ADDR
     .dw   1        ; STRICT_ADDR
     .dw   0        ; CSP_ADDR
+    .dw   0        ; CROSS_ADDR
     .dw   0    ; COLD_ADDR
     .dw   10        ; #field_addr
     .dw   0        ; #base_addr
+    .dw   0        ; OUTER_ADDR
     .dw   0    ; END_ADDR

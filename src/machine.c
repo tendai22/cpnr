@@ -48,7 +48,7 @@ int do_machine(context_t *cx)
         if ((result = machine_code(cx, code)) != 0) {
             if (result < 0) {
                 fprintf(stderr, "trap: result = %d, lnum = %d\n", result, lnum);
-                longjmp(cx->env, -result);
+                //longjmp(cx->env, -result);
             }
             return result;
         }
