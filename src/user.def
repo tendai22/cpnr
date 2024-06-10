@@ -37,4 +37,5 @@ last_addr:
     .user COLD
     .user #field_addr   10
     .user #base_addr    0
+    .user OUTER     0
     .user END

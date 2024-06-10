@@ -848,8 +848,53 @@ variable 'abort
 : abort
    'abort @ dup if ( 0x45 .ps ) execute else ." abort not defined yet" trap then ;
 
+\
+\ getline ( n addr --- t if valid input/f if eof)
+\     read one line of source code and put it on addr, 
+\     n is max size limit.
+\     if OUTER_ADDR vector is specified, it is used
+: getline \ n addr ---
+   swap  \ addr n 
+   OUTER_ADDR @ dup if
+      \ if vector OUTER is defined, execute and exit
+      \ if result of OUTER vector pushed zero,
+      \ clear OUTER_ADDR vector
+      execute not if 0 OUTER_ADDR ! then 
+      exit 
+   then drop
+   over +
+   over
+   ( 0x41 .ps )
+   do 
+      key
+      dup 4 = if r> r> drop drop drop drop 0 exit then
+      dup 8 = over 0x7f = or
+      if
+         drop     \ drop the char
+         dup i =  \ top of line?
+         dup if 7 emit then
+         r> 2 - + >r
+         8 emit 32 emit 8
+         0 i 1+ c!   \ ASCII nul for guard
+      else
+         dup 0x0d = over 0x0a = or
+         if
+            drop 
+            0       \ as echo-back char 
+            0        \ as end-of-buffer char
+         else dup    \ echo-back eob ... same char
+         then
+         dup i c!
+         0= if cr leave then
+      then
+      dup if emit else drop then
+   loop
+   drop
+   -1
+   ;
+
 : accept \ ( --- ) read a line to put it to s0
-   127 s0 1+ getline
+   127 s0 1+ getline ( 0x47 .ps s0 20 cdump cr )
    not if 0 s0 c! trap then
    \ now got a line on s0
    s0 dup 1+ strlen +   \ &s0[strlen]
@@ -1134,7 +1179,7 @@ variable warning
 \ last dd
 
 : prompt 
-   outer state @ or 0= if
+   OUTER_ADDR @ state @ or 0= if
       .stack ."  OK "
    then
    ;
@@ -1259,3 +1304,5 @@ cr ." End: " here h4. ." , " here dicttop @ - dup h4. ." (" . ." ) bytes." cr
 \ dump dictionary
 \ ' cold cells + dicttop 4 cells * + ( 0x5a .ps ) !
 \ dictdump
+
+: aho s0 80 getline s0 10 cdump ;

@@ -5,4 +5,5 @@ src/forth*.bin
 src/upost.f
 *.list
 *.X
+*.pdf
 cpnr
