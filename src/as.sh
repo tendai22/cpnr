@@ -161,6 +161,7 @@ do  case "$f" in
         gsub(/,$/,"",$2)
         gsub(/,$/,"",$3)
         label[$2] = $3
+        print ".equ " $2 "=" $3 > "/dev/tty"
         next
     }
     $1 ~ /^\.end *$/{

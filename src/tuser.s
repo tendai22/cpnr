@@ -9,7 +9,7 @@ last_addr:
     .dw   entry_head        ; DICTENTRY_ADDR
     .dw   entry_end        ; DP_ADDR
     .dw   entry_head        ; LAST_ADDR
-    .dw   0    ; UP_ADDR
+    .dw   0xe000        ; UP_ADDR
     .dw   0    ; USIZE_ADDR
     .dw   0    ; S0_ADDR
     .dw   0    ; R0_ADDR

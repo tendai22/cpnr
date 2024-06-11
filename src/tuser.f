@@ -1,3 +1,4 @@
+: ORG_ADDR 0x1000 ;
 : DICTTOP_ADDR     0xe000 ;
 : DICTEND_ADDR     0xe002 ;
 : DICTENTRY_ADDR   0xe004 ;
@@ -25,8 +26,9 @@
 : #base_addr       0xe030 ;
 : OUTER_ADDR       0xe032 ;
 : END_ADDR         0xe034 ;
- DICTTOP_ADDR 256 +   S0_ADDR          !
- DICTTOP_ADDR 512 +   R0_ADDR          !
- DICTTOP_ADDR 256 +   TIB_ADDR         !
+: _conv_ ORG_ADDR swap DICTTOP_ADDR - + over ;
+ S0_ADDR _conv_ 256 +           !
+ ORG_ADDR R0_ADDR DICTTOP_ADDR - + 512 R0_ADDR          !
+ ORG_ADDR TIB_ADDR DICTTOP_ADDR - + 256 TIB_ADDR         !
  ' halt     HALT_ADDR        !
 

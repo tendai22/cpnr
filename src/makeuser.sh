@@ -17,6 +17,8 @@ case "$flag" in
     ;;
 '-f')
     awk '
+    BEGIN { body = ": _conv_ ORG_ADDR swap DICTTOP_ADDR - + over 0x41 .ps !"  }
+    $1 == ".org" { print ": ORG_ADDR " $2 " ;" }
     $1 == ".user_org" { addr = strtonum($2) }
     $1 == ".user" {
         name = $2
@@ -24,7 +26,7 @@ case "$flag" in
             name = $2 "_ADDR"
         init_code = ""
         if ($3 == "//")
-            init_code = $4 " " $5 " " $6 " " $7 " " $8
+            init_code = $4 " " $5 " " $6 " " $7 " " $8 " " $9
         printf(": %-16s 0x%04x ;\n", name, addr);
         if (init_code != "")
             body = body " " sprintf("%-10s %-16s !\n", init_code, name);
