@@ -17,7 +17,7 @@ last_addr:
     .user DICTENTRY entry_head
     .user DP        entry_end
     .user LAST      entry_head
-    .user UP        // DICTTOP_ADDR UP_ADDR DICTTOP_ADDR - +
+    .user UP        // DICTTOP_ADDR  
     .user USIZE 
     .user S0        // DICTTOP_ADDR 256 +
     .user R0        // DICTTOP_ADDR 512 +

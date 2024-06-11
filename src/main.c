@@ -319,6 +319,8 @@ static int init_mem(context_t *cx)
     return 0;
 }
 
+const char *output_file = NULL;
+
 int main (int ac, char **av)
 {
     // outer interpreter
@@ -327,6 +329,11 @@ int main (int ac, char **av)
     word_t cold_addr;
     context_t _ctx, *cx;
 
+    if (ac > 2 && strcmp(av[1], "-o") == 0) {
+        output_file = av[2];
+        av += 2;
+        ac -= 2;
+    }
     // init source file args
     // initialize ctx
     cx = &_ctx;

@@ -379,7 +379,8 @@ do_run_label:
         w = do_pop(cx);
         fprintf(stderr, "m_dictdump: begin: %04x, end: %04x, last: %04x\n", w, w2, w3);
         // save it
-        do_savefile("forth.bin", w, w2, w3);
+        p = (char *)(output_file ? output_file : "forth.bin");
+        do_savefile(p, w, w2, w3);
         cx->pc += CELLS; 
         break;
     case 56: // m_quote

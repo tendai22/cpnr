@@ -1,5 +1,10 @@
 src/*.o
-src/*.s
+src/*_dict.[sfX]
+src/dict.s
+src/primary.s
+src/*_primary.s
+src/*_user.[fs]
+src/user.s
 src/user.[hf]
 src/forth*.bin
 src/upost.f

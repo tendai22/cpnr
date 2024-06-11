@@ -1,5 +1,6 @@
-: init_dump dicttop @ dicttop END_ADDR dicttop - cmove ;
-: cold init_dump abort ;
-' cold COLD_ADDR !
+\
+\ dictdump.f ... store user area to top of dict
+\   and dictdump to "forth.bin"
+\
 dicttop dicttop @ END_ADDR dicttop - cmove
 dicttop @ here last dictdump

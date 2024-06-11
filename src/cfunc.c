@@ -177,6 +177,7 @@ void do_savefile(const char *path, word_t start, word_t end, word_t last)
         fprintf(stderr,"savefile: user variable write error\n");
         goto terminate;
     }
+    fprintf(stderr, "savefile: %s, %ld bytes\n", path, n);
 terminate: 
     fclose(fp);
 }

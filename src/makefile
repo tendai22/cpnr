@@ -1,7 +1,25 @@
 #
-#
+# TARGET dict build
 #
 .PREFIXES: .dict .list .f .X .s
+
+TARGET=t
+
+$(TARGET).bin: cpnr $(TARGET)_dict.f start_cross.f $(TARGET)_user.f base.f cold.f dictdump.f
+	./cpnr -o $@ cross8.bin $(TARGET)_dict.f start_cross.f $(TARGET)_user.f 
+#	./cpnr -o $@ cross8.bin $(TARGET)_dict.f $(TARGET)_user.f base.f cold.f dictdump.f
+$(TARGET)_dict.f: $(TARGET)_dict.X
+	sh X2f.sh $< > $@
+$(TARGET)_user.f: $(TARGET)_user.def
+	sh makeuser.sh -f $< > $@
+$(TARGET)_dict.X: $(TARGET)_dict.list
+	sh dump.sh $< > $@
+$(TARGET)_dict.list: $(TARGET)_dict.s
+	sh as.sh $< > $@
+$(TARGET)_dict.s: $(TARGET)_user.s $(TARGET)_inner.s $(TARGET)_primary.s
+	cat $(TARGET)_user.s $(TARGET)_inner.s $(TARGET)_primary.s > $@
+$(TARGET)_user.s: $(TARGET)_user.def
+	sh makeuser.sh -s $< > $@
 
 NAME=cpnr
 
@@ -21,23 +39,29 @@ dict.s: user.s inner.s primary.s
 opcode.inc: opcode.c machine.h makeopcode.sh
 	sh makeopcode.sh machine.h opcode.c > $@
 
-opname.h: opcode.inc gen_opname.sh
-	sh gen_opname.sh opcode.inc > $@
-
-user.f user.h user.s: user.def makeuser.sh
+user.f user.s: user.def makeuser.sh
 	sh makeuser.sh -f user.def > user.f
-	sh makeuser.sh -h user.def > user.h
 	sh makeuser.sh -s user.def > user.s
 
+#
+# cpnr ... C language program
+#
 COBJS=main.o machine.o monitor.o cfunc.o opcode.o key_linux.o
 CFLAGS+=-g
 CFLAGS+=-Wno-pointer-sign 
 
-main.o machine.o monitor.o cfunc.o: machine.h user.h
+cfunc.o machine.o main.o monitor.o opcode.o: machine.h user.h
+cfunc.o key_linux.o main.o opcode.o: key_in.h
 monitor.o: opname.h
+
+opname.h: opcode.inc gen_opname.sh
+	sh gen_opname.sh opcode.inc > $@
 
 cpnr: $(COBJS)
 	cc $(CFLAGS) -o cpnr $(COBJS)
+
+user.h: user.def makeuser.sh
+	sh makeuser.sh -h user.def > user.h
 
 .f.X:
 	$(F2X) -o $*.X $*.f

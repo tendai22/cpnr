@@ -17,7 +17,7 @@ case "$flag" in
     ;;
 '-f')
     awk '
-    BEGIN { body = ": _conv_ ORG_ADDR swap DICTTOP_ADDR - + over 0x41 .ps !"  }
+    BEGIN { body = ": _conv_ ORG_ADDR swap DICTTOP_ADDR - +  ;"  }
     $1 == ".org" { print ": ORG_ADDR " $2 " ;" }
     $1 == ".user_org" { addr = strtonum($2) }
     $1 == ".user" {
