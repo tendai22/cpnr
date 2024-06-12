@@ -396,6 +396,9 @@ do_run_label:
         do_push(cx, kbhit());
         cx->pc += CELLS;
         break;
+    case 59: // m_bye
+        do_abort(cx, -1, "bye");
+        break;
     default:
         goto undefined;
     }

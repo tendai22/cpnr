@@ -106,3 +106,5 @@ opcode d_dolit
 // misc
 //
 opcode dictdump
+opcode bye
+

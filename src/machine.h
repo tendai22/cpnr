@@ -110,7 +110,7 @@ extern int gets_outer(mem_t *buf, int len);
 extern int getch(context_t *cx);
 
 extern void do_catch(context_t *cx);
-extern void do_abort(context_t *cx, const char *message);
+extern void do_abort(context_t *cx, int errno, const char *message);
 extern int lnum;
 extern int outer_flag;
 extern void do_lnum(context_t *cx);

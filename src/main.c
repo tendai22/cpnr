@@ -50,6 +50,7 @@ void reset_outer(void)
         fclose(fp);
         fp = 0;
     }
+    fprintf(stderr, "reset_outer:\n");
     filenames = 0;
 }
 
@@ -325,7 +326,7 @@ int main (int ac, char **av)
 {
     // outer interpreter
     char buf[80];
-    int n;
+    int n, result;
     word_t cold_addr;
     context_t _ctx, *cx;
 
@@ -354,7 +355,15 @@ int main (int ac, char **av)
         do_push(cx, cold_addr);
         // STAR(DEBUG_ADDR) = 1;
         changemode(1);
-        do_execute(cx);
+        if ((result = setjmp(cx->env)) != 0) {
+            if (result == -1) { // bye command, exit forth interpreter
+                changemode(0);
+                return 0;
+            }
+            fprintf(stderr, "longjmp: %d\n", result);
+        } else {
+            do_execute(cx);
+        }
         changemode(0);
     } else {
         fprintf(stderr, "start text interpreter\n");
