@@ -6,7 +6,7 @@ case "$flag" in
 '-h')
     awk '
     $1 == ".user_org" { addr = strtonum($2) }
-    $1 == ".user"  {
+    $1 == ".user" || $1 == ".const" {
         if ($2 ~ /^[A-Z][A-Z0-9]*$/) {
             name = $2 "_ADDR"
             printf("#define %-16s 0x%04x\n", name, addr);
@@ -17,7 +17,6 @@ case "$flag" in
     ;;
 '-f')
     awk '
-    BEGIN { body = ": _conv_ ORG_ADDR swap DICTTOP_ADDR - +  ;"  }
     $1 == ".org" { print ": ORG_ADDR " $2 " ;" }
     $1 == ".user_org" { addr = strtonum($2) }
     $1 == ".user" {
@@ -30,6 +29,18 @@ case "$flag" in
         printf(": %-16s 0x%04x ;\n", name, addr);
         if (init_code != "")
             body = body " " sprintf("%-10s %-16s !\n", init_code, name);
+        addr += 2;
+    }
+    $1 == ".const" {
+        name = $2
+        if ($2 ~ /^[A-Z][A-Z0-9]*$/) {
+            name = $2 "_ADDR"
+            cname = $2 "_CONST"
+        }
+        printf(": %-16s 0x%04x ;\n", name, addr);
+        code = $3 " " $4 " " $5 " " $6 " " $7 " " $8 " " $9
+        if (code != "")
+            printf(": %-10s %-16s ;\n", cname, code);
         addr += 2;
     }
     END {
@@ -59,11 +70,13 @@ case "$flag" in
         addr = strtonum($2)
         next
     }
-    $1 == ".user" {
+    $1 == ".user" || $1 == ".const" {
         name = $2
         if ($2 ~ /^[A-Z][A-Z0-9]*$/)
             name = $2 "_ADDR"
-        expr = $3 " " $4 " " $5 " " $6 " " $7
+        expr = "0"
+        if ($1 == ".user")
+            expr = $3 " " $4 " " $5 " " $6 " " $7
         if (expr ~ /^ *$/)
             expr = "0"
         printf("    .dw   %s    ; %s\n", expr, name);

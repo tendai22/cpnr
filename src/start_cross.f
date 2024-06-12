@@ -1,6 +1,7 @@
 0x1000
 0x46 .ps 
 variable dA
+variable dU
 dup DICTTOP_ADDR 0x40 .ps - dA 0x41 .ps !
 dA @ h4. cr
 : cross CROSS_ADDR @ ;
@@ -11,6 +12,8 @@ LAST_ADDR dup dA @ + @ swap 0x43 .ps ! \ ( cross org )
 COLON_ADDR dup dA @ + @ swap 0x43 .ps ! \ ( cross org )
 SEMI_ADDR dup dA @ + @ swap 0x43 .ps ! \ ( cross org )
 LITERAL_ADDR dup dA @ + @ swap 0x43 .ps ! \ ( cross org )
+\
+\ S0_ADDR 
 \ S0_ADDR dup dA @ + @ swap 0x43 .ps ! \ ( cross org )
 \ R0_ADDR dup dA @ + @ swap 0x43 .ps ! \ ( cross org )
 \ TIB_ADDR dup dA @ + @ swap 0x43 .ps ! \ ( cross org )
