@@ -25,8 +25,9 @@
 \ 0 csp !
 : !csp sp@ csp ! ;
 
-\ cells
-: cells 2 ;
+\ cell
+: cell 2 ;
+: cells 2 * ;
 
 : s0 S0_ADDR @ ;
 : dp DP_ADDR ;
@@ -48,23 +49,23 @@
 : allot dp @ + dp ! ;
 : last LAST_ADDR @ ;
 : immediate last c@ 0x80 or last c! ;
-: , ( comma ) here ! cells allot ;
+: , ( comma ) here ! cell allot ;
 \ [ is immediate, but ] is not immediate
 : ] ( -- ) 1 state ! ;
 : [ ( -- ) 0 state ! ; immediate
-: compile r> dup cells + >r @ , ;
+: compile r> dup cell + >r @ , ;
 
 \ lfa, link_addr ( addr -- link-addr )
 : lfa
    dup c@      \ addr c
    31 and      \ addr n (= c&0x1f)
    dup 1 and   \ addr n (n&1)
-   cells + +   \ addr (n +(n&1)+2)
+   cell + +   \ addr (n +(n&1)+2)
    + ;
 
 \ code_addr ( addr -- code-addr )
-: cfa lfa cells + ;
-: pfa cfa cells + ;
+: cfa lfa cell + ;
+: pfa cfa cell + ;
 
 \ word ... vector definition
 
@@ -73,9 +74,9 @@
 \ does>
 \
 : (does)
-   last lfa cells +  \ code_addr
+   last lfa cell +  \ code_addr
    rsp @            \ get semi addr
-   cells +                 \ get colon addr
+   cell +                 \ get colon addr
    swap !            \ STAR(code_addr) = colon_addr
    ;
 
@@ -84,7 +85,7 @@
    compile (does)
    SEMI_ADDR @ ,
    0x7005 ,       \ m_startdoes
-   COLON_ADDR @ cells + ,  \ colon bincode
+   COLON_ADDR @ cell + ,  \ colon bincode
    ; immediate
 
 
@@ -127,10 +128,10 @@
 \
 
 \ jump operand mark/resolve
-: >mark here cells allot ;
+: >mark here cell allot ;
 : >resolve here swap ! ;
 : <mark here ;
-: <resolve here ! cells allot ;
+: <resolve here ! cell allot ;
 
 \ ======================================
 \ if-else-then
@@ -173,13 +174,13 @@
 \ リターンスタック要素操作用
 
 : r1@
-   2 cells * rsp + @ ;
+   2 cells rsp + @ ;
 : r2@   \ index in a word execution
-   3 cells * rsp + @ ;
+   3 cells rsp + @ ;
 : r3@   \ index in a word execution
-   4 cells * rsp + @ ;
+   4 cells rsp + @ ;
 : r1!   \ store a word in index
-   2 cells * rsp + ! ;
+   2 cells rsp + ! ;
 \ : +rsp \ add a word to rsp, defined as opcode
 
 \ limit, index をリターンスタックに移動させる、
@@ -194,7 +195,7 @@
    >r >r >r ;   \ --> limit index ret-address
 : (post-loop) \ restore return stack
    r>
-   2 cells * +rsp 
+   2 cells +rsp 
    >r ;
 
 : do
@@ -223,7 +224,7 @@
 
 : loop  \ limit -- limit if loop remains | none if loop exits)
     compile dolit
-    1 here ! cells allot   \ compile 1 as delta)
+    1 here ! cell allot   \ compile 1 as delta)
                         \ limit limit iaddr index 1 
     compile (loop)      \ limit -1|0)
     compile ?branch
@@ -242,7 +243,7 @@
    r2@ r1! ;
 
 : unloop
-   cells 2 1 + * +rsp ;
+   2 1 + cells +rsp ;
    \ 2 for limit, index
    \ 1 for return address of unloop itself
 
@@ -296,7 +297,7 @@
    swap drop ;
 : pick ( +n -- x )
    \ place a copy of the nth stack entry, 0th is tos
-   sp@ swap 1+ cells * + @ ;
+   sp@ swap 1+ cells + @ ;
 
 
 : min 2dup - msb and not if swap then drop ;
@@ -501,9 +502,9 @@
 : .stack 
    0x5b emit
    sp@ s0 != if
-      sp@ s0 cells - do
+      sp@ s0 cell - do
          i @ h4. space 
-      0 cells - +loop
+      0 cell - +loop
    then 
    0x5d emit
    ;
@@ -596,14 +597,14 @@
    32 word drop
    last here lfa !   \ STAR(link_pos) = last 
    here LAST_ADDR !  \ advance last
-   here cfa dup cells + !  \ cfa = cfa + 2 (for )
+   here cfa dup cell + !  \ cfa = cfa + 2 (for )
    here pfa dp ! \ h points pfa
    ;
 
 \ constant
 : constant create , does> @ ;
 \ variable
-: variable create cells allot does> ; 
+: variable create cell allot does> ; 
 
 
 
@@ -631,7 +632,7 @@
 
 \ for test command
 : aligned \ ( addr -- addr2 )
-   cells + 1- cells / cells *
+   cell + 1- cell / cells
    ;
 
 : align 
@@ -695,7 +696,7 @@
       dup c@ 0x80 and if 1 else -1 then
       \ xt
       swap
-      lfa cells +
+      lfa cell +
       swap
    then
 ;
@@ -1301,5 +1302,5 @@ last 1+ 0x28 swap c!
 cr ." End: " here h4. ." , " here dicttop @ - dup h4. ." (" . ." ) bytes." cr 
 \ start nrForth system
 \ dump dictionary
-\ ' cold cells + dicttop 4 cells * + ( 0x5a .ps ) !
+\ ' cold cell + dicttop 4 cells + ( 0x5a .ps ) !
 \ dictdump
