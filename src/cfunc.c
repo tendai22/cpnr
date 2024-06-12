@@ -27,7 +27,7 @@ word_t do_pop(context_t *cx)
     cx->sp += CELLS;
     if (STAR(STRICT_ADDR) && cx->sp > DSTACK_END) {
         fprintf(stderr, "stack underflow at pc:%04X ip:%04X\n", cx->pc, cx->ip);
-        do_abort(cx, "abort at pop\n");
+        do_abort(cx, 2, "abort at pop\n");
     }
     return value;
 }
@@ -45,7 +45,7 @@ word_t do_popr(context_t *cx)
     cx->rs += CELLS;
     if (STAR(STRICT_ADDR) && cx->rs > RSTACK_END) {
         fprintf(stderr, "rstack underflow at pc:%04X ip:%04X\n", cx->pc, cx->ip);
-        do_abort(cx, "abort at popr\n");
+        do_abort(cx, 2, "abort at popr\n");
     }
     return value;
 }
@@ -729,7 +729,7 @@ int do_quote(context_t *cx)
     p = &mem[tos(cx)];
     do_find(cx, STAR(LAST_ADDR));            // ( c-addr --- 0 | xt flag )
     if (do_pop(cx) == 0) {
-        fprintf(stderr, "do_quote: %.*s: not found¥n", *p, p+1);
+        fprintf(stderr, "do_quote: %.*s: not found\n", *p, p+1);
         return -1;
     }
     // now xt on stack
