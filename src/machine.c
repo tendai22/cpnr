@@ -108,16 +108,15 @@ void do_catch(context_t *cx)
 // If the flag is true, types out the last word interpreted, followed by the
 // text. Also clears the user's stacks and returns control to the terminal. If
 //false, takes no action.
-void do_abort(context_t *cx, const char *mes)
+void do_abort(context_t *cx, int errno, const char *mes)
 {
-    char *p;
-    int count;
-    if (tos(cx)) {
-        p = &mem[STAR(DP_ADDR)];      // entry top, word name
-        count = *p & 0x1f;
-        fprintf(stderr, ">>> %d: %.*s %s\n", (int)lnum, count, p+1, mes);
+    const mem_t *p = &mem[STAR(DP_ADDR)];
+    if (errno >= 0) {
+        fprintf(stderr, ">>> %d: %d %.*s %s\n", (int)lnum, errno, (*p)&0x1f, p+1, mes);
+    } else if (errno == -1) { // bye
+        fprintf(stderr, "bye\n");
     }
-    longjmp(cx->env, tos(cx));
+    longjmp(cx->env, errno);
     //fprintf(stderr, "after longjmp\n");
 }
 
@@ -141,11 +140,14 @@ int do_mainloop(context_t *cx)
         // do_catch
         //do_catch(cx);
         if ((result = setjmp(cx->env)) != 0) {
+            fprintf(stderr, "abort result = %d\n", result);
+            if (result < 0)
+                return -1;
             // reset input stream
             reset_instream(cx);
-            cx->sp = DSTACK_END;
-            cx->rs = RSTACK_END;
         }
+        cx->sp = DSTACK_END;
+        cx->rs = RSTACK_END;
         count = 0;
         do_prompt(cx);
         if (do_accept(cx) == EOF)
@@ -207,8 +209,7 @@ int do_mainloop(context_t *cx)
                 do_push(cx, STAR(DP_ADDR));
                 do_number(cx);  // (addr -- n r)
                 if (do_pop(cx) != 0) {
-                    do_push(cx, 1);
-                    do_abort(cx, "not found");
+                    do_abort(cx, 1, "not found");
                     //fprintf(stderr, "b count = %d\n", count++);
                     //break;
                 }
