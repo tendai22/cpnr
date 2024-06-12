@@ -5,7 +5,7 @@
 
 TARGET=t
 
-$(TARGET).bin: cpnr $(TARGET)_dict.f start_cross.f $(TARGET)_user.f base.f cold.f dictdump.f
+$(TARGET).bin: cpnr cross8.bin $(TARGET)_dict.f start_cross.f $(TARGET)_user.f base.f cold.f dictdump.f
 	./cpnr -o $@ cross8.bin $(TARGET)_dict.f start_cross.f $(TARGET)_user.f 
 #	./cpnr -o $@ cross8.bin $(TARGET)_dict.f $(TARGET)_user.f base.f cold.f dictdump.f
 $(TARGET)_dict.f: $(TARGET)_dict.X
@@ -20,6 +20,9 @@ $(TARGET)_dict.s: $(TARGET)_user.s $(TARGET)_inner.s $(TARGET)_primary.s
 	cat $(TARGET)_user.s $(TARGET)_inner.s $(TARGET)_primary.s > $@
 $(TARGET)_user.s: $(TARGET)_user.def
 	sh makeuser.sh -s $< > $@
+
+cross8.bin: cpnr dict.X user.f base.f dictdump.f
+	./cpnr -o $@ dict.X user.f base.f dictdump.f
 
 NAME=cpnr
 

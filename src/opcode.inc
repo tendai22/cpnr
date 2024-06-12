@@ -118,5 +118,7 @@ BEGIN {
     ropcode[57 + opcode_base] = "m_key"
     opcode["m_kbhit"] = 58 + opcode_base
     ropcode[58 + opcode_base] = "m_kbhit"
+    opcode["m_bye"] = 59 + opcode_base
+    ropcode[59 + opcode_base] = "m_bye"
 }
 

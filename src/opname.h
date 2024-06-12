@@ -60,4 +60,5 @@ void init_optable(void)
         optable[56] = "m_quote";
         optable[57] = "m_key";
         optable[58] = "m_kbhit";
+        optable[59] = "m_bye";
 }
