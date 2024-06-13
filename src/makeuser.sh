@@ -1,47 +1,84 @@
 #! /bin/sh
 flag="$1"
 shift
-cat "$@" |
+# source code, add ORG/USER_ORG lines here
+( case "$flag" in
+  '-f')
+    echo "    .const ORG      // $1"
+    echo "    .const USER_ORG // $2"
+    shift
+    shift
+    ;;
+  '-s'|'-h')
+    echo "        .org      $1"
+    echo "        .user_org $2"
+    shift
+    shift
+    ;;
+  esac
+  cat "$@" )|
 case "$flag" in
 '-h')
     awk '
-    $1 == ".user_org" { addr = strtonum($2) }
-    $1 == ".user" || $1 == ".const" {
+    $1 == ".org" {
+        haddr = strtonum($2)
+        printf("#define %-16s 0x%04x\n", "ORG_ADDR", haddr)
+    }
+    $1 == ".user_org" {
+        addr = strtonum($2)
+        printf("#define %-16s 0x%04x\n", "USER_ORG_ADDR", addr)
+    }
+    $1 == ".user" {
         if ($2 ~ /^[A-Z][A-Z0-9]*$/) {
             name = $2 "_ADDR"
             printf("#define %-16s 0x%04x\n", name, addr);
         }
         addr += 2;
+        next
+    }
+    $1 == ".head" {
+        if ($2 ~ /^[A-Z][A-Z0-9]*$/) {
+            name = $2 "_ADDR"
+            printf("#define %-16s 0x%04x\n", name, haddr);
+        }
+        haddr += 2;
+        next
     }
     '
     ;;
 '-f')
     awk '
-    $1 == ".org" { print ": ORG_ADDR " $2 " ;" }
-    $1 == ".user_org" { addr = strtonum($2) }
+    $1 == ".const" && $2 == "ORG" { haddr = strtonum($4) }
+    $1 == ".const" && $2 == "USER_ORG" { addr = strtonum($4) }
     $1 == ".user" {
         name = $2
         if ($2 ~ /^[A-Z][A-Z0-9]*$/)
             name = $2 "_ADDR"
-        init_code = ""
-        if ($3 == "//")
-            init_code = $4 " " $5 " " $6 " " $7 " " $8 " " $9
         printf(": %-16s 0x%04x ;\n", name, addr);
-        if (init_code != "")
-            body = body " " sprintf("%-10s %-16s !\n", init_code, name);
+        if ($3 == "//") {
+            code = $4 " " $5 " " $6 " " $7 " " $8 " " $9
+            if ($3 != "//")
+                code = $3 " " code
+            printf("%-16s %s swap !\n", name, code)
+        }
         addr += 2;
     }
-    $1 == ".const" {
+    $1 == ".head" || $1 == ".const" {
         name = $2
-        if ($2 ~ /^[A-Z][A-Z0-9]*$/) {
+        if ($2 ~ /^[A-Z][A-Z_0-9]*$/) {
             name = $2 "_ADDR"
             cname = $2 "_CONST"
         }
-        printf(": %-16s 0x%04x ;\n", name, addr);
-        code = $3 " " $4 " " $5 " " $6 " " $7 " " $8 " " $9
-        if (code != "")
-            printf(": %-10s %-16s ;\n", cname, code);
-        addr += 2;
+        if ($1 == ".head") {
+            printf(": %-16s 0x%04x ;\n", name, haddr);
+            haddr += 2;
+        }
+        if ($1 == ".const") {
+            code = $4 " " $5 " " $6 " " $7 " " $8 " " $9
+            if ($3 != "//")
+                code = $3 " " code
+           printf(": %-16s %s ;\n", cname, code);
+        }
     }
     END {
         if (body != "")
@@ -64,30 +101,31 @@ case "$flag" in
     awk '
     $1 == ".org" { 
         print   # print it
+        haddr = strtonum($2)
         next
     }
     $1 == ".user_org" {
         addr = strtonum($2)
         next
     }
-    $1 == ".user" || $1 == ".const" {
+    $1 == ".head" {
         name = $2
         if ($2 ~ /^[A-Z][A-Z0-9]*$/)
             name = $2 "_ADDR"
         expr = "0"
-        if ($1 == ".user")
-            expr = $3 " " $4 " " $5 " " $6 " " $7
+        if ($3 != "")
+            expr = $3
         if (expr ~ /^ *$/)
             expr = "0"
-        printf("    .dw   %s    ; %s\n", expr, name);
-        addr += 2;
+        printf("    .dw   %-12s ; %04x %s\n", expr, haddr, name);
+        haddr += 2;
         next
     }
-    $1 != "" { print }
+    $1 != ".user" && $1 != ".const" { print }
     '
     ;;
 *)
-    echo "usage $0 [-h|-f|-s] user.def" >&2
+    echo "usage $0 [-h|-f|-s] org u-org user.def" >&2
     exit 2
     ;;
 esac
