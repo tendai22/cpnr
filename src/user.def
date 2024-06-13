@@ -1,41 +1,31 @@
-// #define USER_PAGE     0xf000
-// #define DSTACK_END    (USER_PAGE+256)
-// #define TIB_START     DSTACK_END
-// #define RSTACK_END    (TIB_START+256)
-// #define USER_START    (RSTACK_END)
-// #define USER_END      (RSTACK_END+256)
-
-    .org 0x8000         //
-    .user_org 0xf000 
 dict:
-    .user DICTTOP   dict
+    .head DICTTOP   dict
     .global here_addr
 here_addr:
-    .user DICTEND   entry_end
+    .head DICTEND   entry_end
     .global last_addr
 last_addr:
-    .user DICTENTRY entry_head
-    .user DP        entry_end
-    .user LAST      entry_head
-    .user UP        // DICTTOP_ADDR  
-    .user USIZE 
-    .user S0        // DICTTOP_ADDR 256 +
-    .user R0        // DICTTOP_ADDR 512 +
-    .user TIB       // DICTTOP_ADDR 256 +
-    .user STATE     0
-    .user DEBUG     0
-    .user BASE      10
-    .user HALT      // ' halt
-    .user COLON     COLON
-    .user SEMI      SEMI
-    .user LITERAL   do_dolit
-    .user PAD       0
-    .user IN        0
-    .user STRICT    1
-    .user CSP       0
-    .user CROSS     0
-    .user COLD
-    .user #field_addr   10
-    .user #base_addr    0
-    .user OUTER     0
+    .head DICTENTRY entry_head
+    .user DP        /// DICTEND_ADDR @
+    .user LAST      /// DICTENTRY_ADDR @
+    .const UP       // USER_ORG_CONST  
+    .const S0       // USER_ORG_CONST 256 +
+    .const R0       // USER_ORG_CONST 512 +
+    .const TIB      // USER_ORG_CONST 256 +
+    .user STATE     // 0
+    .user DEBUG     // 0
+    .user BASE      // 10
+    .head HALT      // ' halt
+    .head COLON     COLON
+    .head SEMI      SEMI
+    .head LITERAL   do_dolit
+    .user PAD       // 0
+    .user IN
+    .user STRICT    // 1
+    .user CSP       // 0
+    .user CROSS     // 0
+    .head COLD      // 0
+    .user #field_addr   // 10
+    .user #base_addr    // 0
+    .user OUTER     // 0
     .user END

@@ -297,11 +297,13 @@ static int init_mem(context_t *cx)
     mem_t *src, *dest;
     int size, flag = 0;
     // DICTTOP has already been set, no need to care here
+#if 0
     src = &mem[STAR(DICTTOP_ADDR)];
     dest = &mem[DICTTOP_ADDR];
     size = END_ADDR - DICTTOP_ADDR;
     memcpy(dest, src, size);
     fprintf(stderr, "init_mem: user copy: dest = %04x, src = %04x, size = %d\n", (unsigned int)(dest - mem), (unsigned int)(src - mem), size);
+#endif
     // halt addr is needed for 'execute'
     flag |= name2xt(cx, "halt");
     STAR(HALT_ADDR) = do_pop(cx);

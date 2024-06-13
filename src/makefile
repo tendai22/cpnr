@@ -3,7 +3,11 @@
 #
 .PREFIXES: .dict .list .f .X .s
 
-TARGET=t
+TARGET=nr1
+TARGET_ORG=0x1000
+TARGET_USER=0xe000
+HOST_ORG=0x8000
+HOST_USER=0xf000
 
 $(TARGET).bin: cpnr cross8.bin $(TARGET)_dict.f start_cross.f $(TARGET)_user.f base.f cold.f dictdump.f
 	./cpnr -o $@ cross8.bin $(TARGET)_dict.f start_cross.f $(TARGET)_user.f 
@@ -19,16 +23,19 @@ $(TARGET)_dict.list: $(TARGET)_dict.s
 $(TARGET)_dict.s: $(TARGET)_user.s $(TARGET)_inner.s $(TARGET)_primary.s
 	cat $(TARGET)_user.s $(TARGET)_inner.s $(TARGET)_primary.s > $@
 $(TARGET)_user.s: $(TARGET)_user.def
-	sh makeuser.sh -s $< > $@
+	sh makeuser.sh -s $(TARGET_ORG) $(TARGET_USER) $< > $@
 
 cross8.bin: cpnr dict.X user.f base.f dictdump.f
-	./cpnr -o $@ dict.X user.f base.f dictdump.f
+#	./cpnr -o $@ dict.X user.f base.f dictdump.f
+	./cpnr -o $@ dict.X user.f base.f
 
 NAME=cpnr
 
 ALL=dict.X
 
 all: cpnr dict.X user.f inner.s
+
+INTERFILES=dict.X user.f user.s user.h opcode.inc dict.s primary.s dict.list
 
 dict.X: dict.list
 	sh dump.sh $< > $@
@@ -43,8 +50,8 @@ opcode.inc: opcode.c machine.h makeopcode.sh
 	sh makeopcode.sh machine.h opcode.c > $@
 
 user.f user.s: user.def makeuser.sh
-	sh makeuser.sh -f user.def > user.f
-	sh makeuser.sh -s user.def > user.s
+	sh makeuser.sh -f $(HOST_ORG) $(HOST_USER) user.def > user.f
+	sh makeuser.sh -s $(HOST_ORG) $(HOST_USER) user.def > user.s
 
 #
 # cpnr ... C language program
@@ -64,7 +71,7 @@ cpnr: $(COBJS)
 	cc $(CFLAGS) -o cpnr $(COBJS)
 
 user.h: user.def makeuser.sh
-	sh makeuser.sh -h user.def > user.h
+	sh makeuser.sh -h $(HOST_ORG) $(HOST_USER) user.def > user.h
 
 .f.X:
 	$(F2X) -o $*.X $*.f
@@ -73,4 +80,4 @@ f2x: f2x.c
 	cc -o f2x f2x.c
 
 clean:
-	$(RM) $(COBJS) $(LISTS)
+	$(RM) $(COBJS) $(LISTS) $(INTERFILES)
