@@ -194,6 +194,7 @@ int do_mainloop(context_t *cx)
                 } else {
                     if (STAR(CROSS_ADDR)) {    // if executing, re scan on host dictionary
                         // search host dictionary and execute it
+                        //fprintf(stderr, "cross: find \"%.*s\"\n", mem[caddr]&0x1f, &mem[caddr+1]);
                         tos(cx) = caddr;
                         do_find(cx, STAR(CROSS_ADDR));
                         if ((flag = do_pop(cx)) == 0) {

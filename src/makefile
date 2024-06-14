@@ -9,10 +9,9 @@ TARGET_USER=0xe000
 HOST_ORG=0x8000
 HOST_USER=0xf000
 
-$(TARGET).bin: cpnr cross8.bin $(TARGET)_dict.f start_cross.f $(TARGET)_user.f base.f cold.f dictdump.f
-	./cpnr -o $@ cross8.bin $(TARGET)_dict.f start_cross.f $(TARGET)_user.f 
-#	./cpnr -o $@ cross8.bin $(TARGET)_dict.f $(TARGET)_user.f base.f cold.f dictdump.f
-$(TARGET)_user.f: user.f
+$(TARGET).bin: cpnr cross8.bin $(TARGET)_dict.f $(TARGET)_org.f start_cross.f $(TARGET)_user.f base.f cold.f dictdump.f
+	./cpnr -o $@ cross8.bin $(TARGET)_dict.f $(TARGET)_org.f start_cross.f $(TARGET)_user.f base.f dictdump.f
+$(TARGET)_user.f: user.def
 	sh makeuser.sh -f $(TARGET_ORG) $(TARGET_USER) $< > $@
 $(TARGET)_dict.f: $(TARGET)_dict.X
 	sh X2f.sh $< > $@
@@ -24,6 +23,8 @@ $(TARGET)_dict.s: $(TARGET)_user.s $(TARGET)_inner.s $(TARGET)_primary.s
 	cat $(TARGET)_user.s $(TARGET)_inner.s $(TARGET)_primary.s > $@
 $(TARGET)_user.s: user.def
 	sh makeuser.sh -s $(TARGET_ORG) $(TARGET_USER) $< > $@
+$(TARGET)_org.f: makefile
+	echo $(TARGET_ORG) $(TARGET_USER) > $(TARGET)_org.f
 
 cross8.bin: cpnr dict.X user.f base.f dictdump.f
 	./cpnr -o $@ dict.X user.f base.f dictdump.f

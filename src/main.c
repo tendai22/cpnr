@@ -8,6 +8,11 @@
 #include "user.h"
 #include "key_in.h"
 
+word_t org_addr;
+word_t user_org_addr;
+
+static int plain_flag = 0;
+
 //
 // forth interpreter initializer
 //
@@ -202,9 +207,12 @@ static int read_xfile(FILE *fp)
             }
         }
     }
+    // init org_addr
+    org_addr = min;
     // init user vars
     offset = min - STAR(min);   // usually zero
     fprintf(stderr, "read_xfile: offset = %04x\n", offset);
+#if 0
     //STAR(DICTTOP_ADDR) = STAR(min);
     STAR(DP_HEAD) = STAR(min + 2);
     STAR(LAST_HEAD) = STAR(min + 4);
@@ -216,12 +224,13 @@ static int read_xfile(FILE *fp)
         fprintf(stderr, "S0: %04x, R0: %04x, TIB: %04x\n", S0_HEAD + offset, R0_HEAD + offset, TIB_HEAD + offset);
     }
     src = &mem[DP_HEAD + offset];
-    dest = &mem[USER_ORG_ADDR];
+    dest = &mem[STAR(UP_ADDR)];
     n = (END_ADDR - DP_ADDR);
     fprintf(stderr, "user copy: dest: %04lx, src: %04lx, n: %d\n", dest - &mem[0], src - &mem[0], n);
     memcpy(dest, src, n);
+#endif
     fprintf(stderr, "dicttop: %04x, last: %04x, h: %04x\n", STAR(DICTTOP_HEAD), STAR(LAST_ADDR), STAR(DP_ADDR));
-    return 0;
+    return min;
 }
 
 static int init_dict(context_t *cx, const char *filename)
@@ -229,7 +238,7 @@ static int init_dict(context_t *cx, const char *filename)
     char *p;
     FILE *fp;
     int c, n, i, type, result;
-    word_t addr = 0, *wp;
+    word_t addr = 0, org, *wp;
     word_t header[3];
 
     if (filename == 0) {
@@ -265,14 +274,17 @@ static int init_dict(context_t *cx, const char *filename)
             fclose(fp);
             return -1;
         }
-#endif
         fclose(fp);
-        return 0;
+        //
+        org = header[0];
+        user_org_addr = STAR(org_addr + UP_HEAD - DICTTOP_HEAD);
+        fprintf(stderr, "init_dict: org_addr = %04x, user_org_addr = %04x\n", org_addr, user_org_addr);
+        return org;
     } else if (type == 2) {
         fprintf(stderr, "%s: read_xfile\n", filename);
-        read_xfile(fp);
+        org = read_xfile(fp);
         fclose(fp);
-        return 0;
+        return org;
     } else {
         return -1;
     }
@@ -305,18 +317,50 @@ static int name2xt(context_t *cx, char *name)
 
 // initialize mem[] array, mainly user variables
 
-static int init_mem(context_t *cx)
+static int init_mem(context_t *cx, word_t org)
 {
+    word_t user;
     mem_t *src, *dest;
     int size, flag = 0;
+    // org is not specified, 
+    fprintf(stderr, "init_mem: org: %04x\n", org);
+    // user check
+    org_addr = org;
+    // DP, LAST
+    if (plain_flag == 0 && STAR(DP_HEAD) == 0)
+        STAR(DP_HEAD) = STAR(DICTEND_HEAD);
+    if (plain_flag == 0 && STAR(LAST_HEAD) == 0)
+        STAR(LAST_HEAD) = STAR(DICTENTRY_HEAD);
+    fprintf(stderr, "init_mem: dp: %04x, last: %04x\n", STAR(DP_HEAD), STAR(LAST_HEAD));
+    // set S0, R0, TIB
+    if (plain_flag == 0 && STAR(UP_HEAD) == 0)
+        STAR(UP_HEAD) = 0xf000;
+    user = STAR(UP_HEAD);
+    fprintf(stderr, "init_mem: user: %04x\n", user);
+    user_org_addr = user;
+    if (plain_flag == 0 && STAR(S0_HEAD) == 0)
+        STAR(S0_HEAD) = user + 256;
+    if (plain_flag == 0 && STAR(R0_HEAD) == 0)
+        STAR(R0_HEAD) = user + 512;
+    if (plain_flag == 0 && STAR(TIB_HEAD) == 0)
+        STAR(TIB_HEAD) = user + 256;
+    //user = 0xf000;
+    fprintf(stderr, "init_mem: up: %04x, s0: %04x, r0: %04x, tib: %04x\n", STAR(UP_HEAD), STAR(S0_HEAD), STAR(R0_HEAD), STAR(TIB_HEAD));
+    // init user area
+    src = &mem[DP_HEAD];
+    dest = &mem[DP_ADDR];
+    size = END_ADDR - DP_ADDR;
+    memcpy(dest, src, size);
+    fprintf(stderr, "init_mem: user copy: dest = %04x, src = %04x, size = %d\n", (unsigned int)(dest - mem), (unsigned int)(src - mem), size);
+
     // DICTTOP has already been set, no need to care here
 
     // halt addr is needed for 'execute'
-    if (STAR(HALT_HEAD) == 0) {
+    if (plain_flag == 0 && STAR(HALT_HEAD) == 0) {
         flag |= name2xt(cx, "halt");
         STAR(HALT_HEAD) = do_pop(cx);
-        fprintf(stderr, "init_mem: halt: %04x\n", STAR(HALT_HEAD));
     }
+    fprintf(stderr, "init_mem: halt: %04x\n", STAR(HALT_HEAD));
     // cold vector, startup point if it is defined.
     //STAR(COLD_HEAD) = 0;
     //if (name2xt(cx, "cold") == 0)
@@ -329,11 +373,6 @@ static int init_mem(context_t *cx)
         fprintf(stderr, "init_mem: initial DEBUG_ADDR = %d\n", STAR(DEBUG_ADDR));
     }
     // copy userhead to user area
-    src = &mem[DP_HEAD];
-    dest = &mem[DP_ADDR];
-    size = END_ADDR - DP_ADDR;
-    memcpy(dest, src, size);
-    fprintf(stderr, "init_mem: user copy: dest = %04x, src = %04x, size = %d\n", (unsigned int)(dest - mem), (unsigned int)(src - mem), size);
     //fprintf(stderr, "init_mem: halt xt = %04X, semi xt = %04X\n", STAR(HALT_ADDR), STAR(SEMI_ADDR));
     return 0;
 }
@@ -345,7 +384,7 @@ int main (int ac, char **av)
     // outer interpreter
     char buf[80];
     int n, result;
-    word_t cold_addr;
+    word_t cold_addr, org;
     context_t _ctx, *cx;
 
     if (ac > 2 && strcmp(av[1], "-o") == 0) {
@@ -353,17 +392,22 @@ int main (int ac, char **av)
         av += 2;
         ac -= 2;
     }
+    if (ac > 1 && strcmp(av[1], "--plain") == 0) {
+        plain_flag = 1;
+        av += 1;
+        ac -= 1;
+    }
     // init source file args
     // initialize ctx
     cx = &_ctx;
     initialize_ctx(cx);
-    if (init_dict(cx, av[1]) != 0) {
+    if ((org = init_dict(cx, av[1])) < 0) {
         fprintf(stderr, "exit init_dict error\n");
         return 1;
     }
     init_outer_buf(ac - 2, av + 2);
     init_optable();
-    if (init_mem(cx) < 0) {
+    if (init_mem(cx, org) < 0) {
         fprintf(stderr, "exit init_mem error\n");
         return 1;
     }
