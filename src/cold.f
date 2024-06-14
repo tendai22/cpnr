@@ -1,6 +1,7 @@
 \
 \ cold.f ... cold start routines
 \
-: init_dump dicttop @ dicttop END_ADDR dicttop - cmove ;
+\ cmove ( from to count --- )
+: init_dump DP_HEAD dup @ END_ADDR DP_ADDR - ( 0x41 .ps ) cmove ;
 : cold init_dump abort ;
-' cold COLD_ADDR !
+' cold COLD_HEAD !

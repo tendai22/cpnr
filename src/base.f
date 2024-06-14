@@ -29,9 +29,9 @@
 : cell 2 ;
 : cells 2 * ;
 
-: s0 S0_ADDR @ ;
+: s0 S0_HEAD @ ;
 : dp DP_ADDR ;
-: dicttop DICTTOP_ADDR ;
+: dicttop DICTTOP_HEAD ;
 
 \ ===========================================
 \ 1st stage definitions
@@ -83,9 +83,9 @@
 \ does>
 : does>
    compile (does)
-   SEMI_ADDR @ ,
+   SEMI_HEAD @ ,
    0x7005 ,       \ m_startdoes
-   COLON_ADDR @ cell + ,  \ colon bincode
+   COLON_HEAD @ cell + ,  \ colon bincode
    ; immediate
 
 
@@ -468,7 +468,7 @@
 : spaces 1 do bl emit loop ;
 
 \ exit
-: exit SEMI_ADDR @ , ; immediate
+: exit SEMI_HEAD @ , ; immediate
 
 \ outer interpreter
 
@@ -1239,7 +1239,7 @@ variable warning
    sp!
    decimal
    cr
-   ." narrowForth v0.9dev" cr
+   ." narrowForth v0.91dev" cr
    \ forth 
    \ definitions 
    quit ;
@@ -1284,7 +1284,7 @@ last 1+ 0x28 swap c!
 
 : ;   \ semicolon
    \ ?csp
-   SEMI_ADDR @ ,
+   SEMI_HEAD @ ,
    \ smudge
    [compile] [
    ;; immediate
@@ -1295,7 +1295,7 @@ last 1+ 0x28 swap c!
    \ current @ context
    create
    last cfa dp !  \ fill link field
-   COLON_ADDR @ , \ fill code field
+   COLON_HEAD @ , \ fill code field
    ]  \ start compile mode
    ;
 

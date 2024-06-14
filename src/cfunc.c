@@ -78,7 +78,7 @@ void reset_instream(context_t *cx)
 {
     //fprintf(stderr, "reset_instream:\n");
     reset_outer();
-    mem[STAR(S0_ADDR)] = 0;       // length zero
+    mem[STAR(S0_HEAD)] = 0;       // length zero
 }
 
 //
@@ -89,7 +89,7 @@ static int uc = -1;
 int getch(context_t *cx)
 {
     int c, n, i;
-    mem_t *p = &mem[STAR(S0_ADDR)];
+    mem_t *p = &mem[STAR(S0_HEAD)];
     if ((c = uc) >= 0) {
         uc = -1;
         return c;
@@ -167,7 +167,9 @@ void do_savefile(const char *path, word_t start, word_t end, word_t last)
     } else if (fwrite(p1+6, 1, len-6, fp) != len-6) {
         fprintf(stderr,"savefile: write error\n");
         goto terminate;
-    } else if (fwrite(header, sizeof(word_t), 3, fp) != 3) {
+    }
+#if 0 
+    else if (fwrite(header, sizeof(word_t), 3, fp) != 3) {
         fprintf(stderr,"savefile: 2nd write header error\n");
         goto terminate;
     }
@@ -177,6 +179,8 @@ void do_savefile(const char *path, word_t start, word_t end, word_t last)
         fprintf(stderr,"savefile: user variable write error\n");
         goto terminate;
     }
+#endif
+    n = p2 - p1;
     fprintf(stderr, "savefile: %s, %ld bytes\n", path, n);
 terminate: 
     fclose(fp);
@@ -222,7 +226,7 @@ int do_accept(context_t *cx)
 {
     static int linecount = 0;
     int n;
-    char *buf = &mem[STAR(S0_ADDR)] + 1;
+    char *buf = &mem[STAR(S0_HEAD)] + 1;
 
     if (cx->p && cx->rest > 0) {
         return 0;
@@ -237,7 +241,7 @@ int do_accept(context_t *cx)
         buf[i] = '\0';
     }
     n = strlen(buf);
-    mem[STAR(S0_ADDR)] = n;         // buf length
+    mem[STAR(S0_HEAD)] = n;         // buf length
     if (STAR(DEBUG_ADDR))
         fprintf(stderr, "%d [%s]\n", linecount++, buf);
     STAR(IN_ADDR) = 1;  // initial index
@@ -493,11 +497,11 @@ static void compile_it(context_t *cx, word_t w, int flag)
     char *p;
     if (STAR(DEBUG_ADDR)&4) {
         if (flag) {
-            if (w == STAR(COLON_ADDR))
+            if (w == STAR(COLON_HEAD))
                 p = "\005COLON"; 
-            else if (w == STAR(SEMI_ADDR))
+            else if (w == STAR(SEMI_HEAD))
                 p = "\004SEMI";
-            else if (w == STAR(LITERAL_ADDR))
+            else if (w == STAR(LITERAL_HEAD))
                 p = "\005dolit";
             else {
                 p = &mem[entry_head(cx, w)];
@@ -551,7 +555,7 @@ void do_colondef(context_t *cx)
     do_create(cx);
     // put COLON xt to cfa
     //fprintf(stderr, "colondef: begin LAST = %04x, HERE = %04x\n", STAR(LAST_ADDR), STAR(DP_ADDR));
-    compile_it(cx, STAR(COLON_ADDR), 1);
+    compile_it(cx, STAR(COLON_HEAD), 1);
         // code address should specify "body of machine code"
         // so, xt is not sufficient, one more dereferencing is needed
     // change to compile mode
@@ -565,7 +569,7 @@ void do_semidef(context_t *cx)
     word_t here_addr = STAR(DP_ADDR);
     //fprintf(stderr, "semidef: begin HERE = %04x\n", STAR(DP_ADDR));
     // put EXIT(SEMI) in on-going dictionary entry
-    compile_it(cx, STAR(SEMI_ADDR), 1);
+    compile_it(cx, STAR(SEMI_HEAD), 1);
     //do_push(cx, STAR(LAST_ADDR));
     //dump_entry(cx);
     // change compile mode
@@ -585,7 +589,7 @@ void do_compile_number(context_t *cx)
     // compile LITERAL and number
     if (STAR(DEBUG_ADDR))
         fprintf(stderr, "compile_number: %04x(%d)\n", tos(cx), tos(cx));
-    compile_it(cx, STAR(LITERAL_ADDR), 1);
+    compile_it(cx, STAR(LITERAL_HEAD), 1);
     compile_it(cx, do_pop(cx), 0);  // compile the number on the stack
 }
 
@@ -658,11 +662,11 @@ void dump_entry(context_t *cx)
     while (ip < tail) {
         w = STAR(ip);
         //fprintf(stderr, "xt = %04x\n", w);
-        if (w == STAR(COLON_ADDR) ) {
+        if (w == STAR(COLON_HEAD) ) {
             fprintf(stderr, "%04x %04x (colon)\n", ip, w);
-        } else if (w == STAR(SEMI_ADDR) ) {
+        } else if (w == STAR(SEMI_HEAD) ) {
             fprintf(stderr, "%04x %04x (semi)\n", ip, w);
-        } else if (w == STAR(LITERAL_ADDR) ) {
+        } else if (w == STAR(LITERAL_HEAD) ) {
             fprintf(stderr, "%04x %04x (dolit)\n", ip, w);
             ip += CELLS;
             w = STAR(ip);

@@ -160,7 +160,8 @@ static int read_xfile(FILE *fp)
 {
     int c;
     int i, n, value, min = 0xffff, max = 0;
-    word_t addr;
+    mem_t *src, *dest;
+    word_t addr, offset;
 
     while ((c = fgetc(fp)) != EOF) {
         if (c == ' ' || c == '\r' || c == '\n')
@@ -202,10 +203,24 @@ static int read_xfile(FILE *fp)
         }
     }
     // init user vars
-    STAR(DICTTOP_ADDR) = STAR(min);
-    STAR(DP_ADDR) = STAR(min + 2);
-    STAR(LAST_ADDR) = STAR(min + 4);
-    fprintf(stderr, "dicttop: %04x, last: %04x, h: %04x\n", STAR(DICTTOP_ADDR), STAR(LAST_ADDR), STAR(DP_ADDR));
+    offset = min - STAR(min);   // usually zero
+    fprintf(stderr, "read_xfile: offset = %04x\n", offset);
+    //STAR(DICTTOP_ADDR) = STAR(min);
+    STAR(DP_HEAD) = STAR(min + 2);
+    STAR(LAST_HEAD) = STAR(min + 4);
+    // patch S0, R0, TIB
+    if (STAR(S0_HEAD + offset) == 0) {
+        STAR(S0_HEAD + offset) = DSTACK_END;
+        STAR(R0_HEAD + offset) = RSTACK_END;
+        STAR(TIB_HEAD + offset) = DSTACK_END;
+        fprintf(stderr, "S0: %04x, R0: %04x, TIB: %04x\n", S0_HEAD + offset, R0_HEAD + offset, TIB_HEAD + offset);
+    }
+    src = &mem[DP_HEAD + offset];
+    dest = &mem[USER_ORG_ADDR];
+    n = (END_ADDR - DP_ADDR);
+    fprintf(stderr, "user copy: dest: %04lx, src: %04lx, n: %d\n", dest - &mem[0], src - &mem[0], n);
+    memcpy(dest, src, n);
+    fprintf(stderr, "dicttop: %04x, last: %04x, h: %04x\n", STAR(DICTTOP_HEAD), STAR(LAST_ADDR), STAR(DP_ADDR));
     return 0;
 }
 
@@ -250,9 +265,7 @@ static int init_dict(context_t *cx, const char *filename)
             fclose(fp);
             return -1;
         }
-        STAR(DICTTOP_ADDR) = header[0];
-        STAR(DICTEND_ADDR) = header[1];
-        STAR(DICTENTRY_ADDR) = header[2];
+#endif
         fclose(fp);
         return 0;
     } else if (type == 2) {
@@ -297,20 +310,17 @@ static int init_mem(context_t *cx)
     mem_t *src, *dest;
     int size, flag = 0;
     // DICTTOP has already been set, no need to care here
-#if 0
-    src = &mem[STAR(DICTTOP_ADDR)];
-    dest = &mem[DICTTOP_ADDR];
-    size = END_ADDR - DICTTOP_ADDR;
-    memcpy(dest, src, size);
-    fprintf(stderr, "init_mem: user copy: dest = %04x, src = %04x, size = %d\n", (unsigned int)(dest - mem), (unsigned int)(src - mem), size);
-#endif
+
     // halt addr is needed for 'execute'
-    flag |= name2xt(cx, "halt");
-    STAR(HALT_ADDR) = do_pop(cx);
+    if (STAR(HALT_HEAD) == 0) {
+        flag |= name2xt(cx, "halt");
+        STAR(HALT_HEAD) = do_pop(cx);
+        fprintf(stderr, "init_mem: halt: %04x\n", STAR(HALT_HEAD));
+    }
     // cold vector, startup point if it is defined.
-    STAR(COLD_ADDR) = 0;
-    if (name2xt(cx, "cold") == 0)
-        STAR(COLD_ADDR) = do_pop(cx);
+    //STAR(COLD_HEAD) = 0;
+    //if (name2xt(cx, "cold") == 0)
+    //    STAR(COLD_HEAD) = do_pop(cx);
     if (flag) {
         return -1;
     }
@@ -318,6 +328,12 @@ static int init_mem(context_t *cx)
     if (STAR(DEBUG_ADDR)) {
         fprintf(stderr, "init_mem: initial DEBUG_ADDR = %d\n", STAR(DEBUG_ADDR));
     }
+    // copy userhead to user area
+    src = &mem[DP_HEAD];
+    dest = &mem[DP_ADDR];
+    size = END_ADDR - DP_ADDR;
+    memcpy(dest, src, size);
+    fprintf(stderr, "init_mem: user copy: dest = %04x, src = %04x, size = %d\n", (unsigned int)(dest - mem), (unsigned int)(src - mem), size);
     //fprintf(stderr, "init_mem: halt xt = %04X, semi xt = %04X\n", STAR(HALT_ADDR), STAR(SEMI_ADDR));
     return 0;
 }
@@ -351,7 +367,7 @@ int main (int ac, char **av)
         fprintf(stderr, "exit init_mem error\n");
         return 1;
     }
-    cold_addr = STAR(COLD_ADDR);
+    cold_addr = STAR(COLD_HEAD);
     if (cold_addr) {
         fprintf(stderr, "start cold at %04x\n", cold_addr);
         do_push(cx, cold_addr);
@@ -369,7 +385,7 @@ int main (int ac, char **av)
         changemode(0);
     } else {
         fprintf(stderr, "start text interpreter\n");
-        STAR(DEBUG_ADDR) = 0;
+        //STAR(DEBUG_ADDR) = 1;
         changemode(1);
         do_mainloop(cx);
         changemode(0);

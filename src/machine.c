@@ -66,11 +66,11 @@ void do_execute (context_t *cx)
     cx->ca = STAR(cx->wa);
     if (STAR(DEBUG_ADDR)&4) {
         if (flag) {
-            if (w == STAR(COLON_ADDR))
+            if (w == STAR(COLON_HEAD))
                 p = "\005COLON"; 
-            else if (w == STAR(SEMI_ADDR))
+            else if (w == STAR(SEMI_HEAD))
                 p = "\004SEMI";
-            else if (w == STAR(LITERAL_ADDR))
+            else if (w == STAR(LITERAL_HEAD))
                 p = "\005dolit";
             else {
                 p = &mem[entry_head(cx, w)];
@@ -82,7 +82,7 @@ void do_execute (context_t *cx)
     }
     cx->wa += CELLS;
     cx->pc = cx->ca;
-    cx->ip = HALT_ADDR;     // ipはxtの置き場を指すようにする。
+    cx->ip = HALT_HEAD;     // ipはxtの置き場を指すようにする。
                             // それはHALT_ADDRだ。
     // do infinite loop
     do_machine(cx);

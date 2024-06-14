@@ -154,8 +154,8 @@ void print_s0(context_t *cx)
 {
     if (STAR(DEBUG_ADDR) == 0)
         return;
-    char *p = &mem[STAR(S0_ADDR)];
-    fprintf(stderr, "S0:%04X: [%.64s]\n", STAR(S0_ADDR), p);
+    char *p = &mem[STAR(S0_HEAD)];
+    fprintf(stderr, "S0:%04X: [%.64s]\n", STAR(S0_HEAD), p);
 }
 
 void print_cstr(context_t *cx, char *title, word_t addr)
