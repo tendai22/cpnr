@@ -136,9 +136,10 @@
 \ ======================================
 \ if-else-then
 \ 
-: if compile ?branch >mark ; immediate
+\ : if compile ?branch >mark ; immediate
+: if [compile] ?branch >mark ; immediate
 : then >resolve ; immediate
-: else compile branch >mark swap >resolve ; immediate
+: else [compile] branch cell allot >mark swap >resolve ; immediate
 
 \ ======================================
 \ operators

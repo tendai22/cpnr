@@ -3,10 +3,10 @@
 \   and dictdump to "forth.bin"
 \
 \ revert RAM user vars to dicttop
-DP_ADDR @ DP_HEAD !
-DP_ADDR @ DICTEND_HEAD dA @ + !
-LAST_ADDR @ LAST_HEAD !
-LAST_ADDR @ DICTENTRY_HEAD dA @ + !
+DP_ADDR @ DP_HEAD dA @ + 0x61 .ps !
+DP_ADDR @ DICTEND_HEAD dA @ + 0x62 .ps !
+LAST_ADDR @ LAST_HEAD dA @ + 0x63 .ps !
+LAST_ADDR @ DICTENTRY_HEAD dA @ + 0x64 .ps !
 0x1000 24 dump
 dicttop @ here last dictdump
 bye

@@ -204,7 +204,9 @@ int do_mainloop(context_t *cx)
                         }
                         //fprintf(stderr,"immediate: exec \"%.*s\"\n", *p&0x1f, p+1);
                     }
+                    //STAR(DEBUG_ADDR) = 1;
                     do_execute(cx);
+                    //STAR(DEBUG_ADDR) = 0;
                 }
             } else {
                 do_push(cx, STAR(DP_ADDR));

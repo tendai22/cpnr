@@ -185,6 +185,23 @@ void print_dstack(context_t *cx)
 }
 #endif
 
+void dump_hex(context_t *cx, word_t addr, word_t n)
+{
+    int eol_flag = 0;
+    for (word_t i = 0; i < n; i += 2) {
+        eol_flag = 0;
+        if (i == 0 || ((addr + i) % 16) == 0)
+            fprintf(stderr, "%04x: ", addr + i);
+        fprintf(stderr, "%04x ", STAR(addr + i));
+        if ((addr + i) % 16 >= 14) {
+            fprintf(stderr, "\n");
+            eol_flag = 1;
+        }
+    }
+    if (eol_flag == 0)
+        fprintf(stderr, "\n");
+}
+
 // debugger
 
 void do_debugger(context_t *cx)

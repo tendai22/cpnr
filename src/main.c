@@ -430,6 +430,8 @@ int main (int ac, char **av)
     } else {
         fprintf(stderr, "start text interpreter\n");
         //STAR(DEBUG_ADDR) = 1;
+        dump_hex(cx, org_addr, 54);
+        dump_hex(cx, STAR(UP_HEAD), 30);
         changemode(1);
         do_mainloop(cx);
         changemode(0);

@@ -399,6 +399,10 @@ do_run_label:
     case 59: // m_bye
         do_abort(cx, -1, "bye");
         break;
+    case 60: // m_ccompile
+        do_ccompile(cx);
+        cx->pc += CELLS;
+        break;
     default:
         goto undefined;
     }

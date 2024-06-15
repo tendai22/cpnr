@@ -739,3 +739,16 @@ int do_quote(context_t *cx)
     // now xt on stack
     return 0;
 }
+
+void do_ccompile(context_t *cx)
+{
+    do_push(cx, ' ');
+    do_word(cx);
+    do_find(cx, STAR(LAST_ADDR));
+    if (do_pop(cx) == 0) {
+        // not find
+        do_abort(cx, 2, "not found in [compile]");
+    }
+    fprintf(stderr, "[compile] %04x\n", tos(cx));
+    do_compile_token(cx);
+}

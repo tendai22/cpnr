@@ -127,10 +127,12 @@ extern void do_semidef(context_t *cx);
 extern void do_create(context_t *cx);
 extern void do_compile_token(context_t *cx);
 extern void do_compile_number(context_t *cx);
+extern void do_ccompile(context_t *cx);
 //extern void do_compile(context_t *cx);
 //extern void do_constant(context_t *cx);
 extern void do_emit(context_t *cx, word_t w);
 extern void dump_entry(context_t *cx);
+extern void dump_hex(context_t *cx, word_t addr, word_t n);
 extern word_t code_addr(word_t entry);
 
 #define tos(cx) STAR(cx->sp)

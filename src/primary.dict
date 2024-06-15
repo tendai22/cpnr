@@ -107,4 +107,5 @@ opcode d_dolit
 //
 opcode dictdump
 opcode bye
+opcode [compile] ccompile immediate
 

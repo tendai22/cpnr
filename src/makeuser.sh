@@ -35,6 +35,9 @@ $1 == ".head" || $1 == ".user" || $1 == ".const" {
         name = $2 "_ADDR"
         cname = $2 "_CONST"
         hname = $2 "_HEAD"
+    } else {
+        name = $2
+        cname = hname = ""
     }
 }
 $1 == ".head" || $1 == ".const" || $1 == ".user" {
@@ -52,12 +55,14 @@ $1 == ".head" || $1 == ".const" || $1 == ".user" {
         printf("    .dw   %-12s ; %04x %s\n", expr, haddr, iname);
     }
     if (mode == "-f") {
-        printf(": %-16s 0x%04x ;\n", hname, haddr);
+        if (hname != "")
+            printf(": %-16s 0x%04x ;\n", hname, haddr);
         if ($3 == "//") {
             code = $4 " " $5 " " $6 " " $7 " " $8 " " $9
             if ($3 != "//")
                 code = $3 " " code
-            printf("%-16s %s swap !\n", hname, code);
+            if (hname != "")
+                printf("%-16s %s swap !\n", hname, code);
         }
         if ($1 == ".user") {
             printf(": %-16s 0x%04x ; \\ xx\n", name, addr);
