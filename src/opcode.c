@@ -403,6 +403,11 @@ do_run_label:
         do_ccompile(cx);
         cx->pc += CELLS;
         break;
+    case 61: // m_dump
+        n = do_pop(cx);
+        dump_hex(cx, do_pop(cx), n);
+        cx->pc += CELLS;
+        break;
     default:
         goto undefined;
     }

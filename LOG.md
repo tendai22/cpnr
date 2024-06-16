@@ -3020,4 +3020,23 @@ start_compile.f終了時のユーザ変数のDP, LASTがA328, A30Cなのはお�
 [compile]をプリミティブにして`: if [compile] ?branch mark> ;`してみたが、だめだった。
 辞書ヘッダにbranch, ?branch(と他compile引数になっているプリミティブ)を引いていれておくしか思いつかない。
 
+## 空港でバッグ
+
+if のコードがおかしい。というか、書いた通りにコンパイルしているので、書いたやつが悪い。
+
+`[compile] ?branch`と書くと、定義中の辞書に`?branch`をおく。
+
+欲しいコードは、コンパイル中にifに出会うとそこに`?branch`をおく、なので、`' ?branch ,`と書くべきだろう。
+
+dump_entry: entry = 8A54, tail = 8A62
+8a54 .head "if"[80]
+8a58 8a3c  [link]
+8a5a 8038  [code]
+8a5c 80b8 (?branch)
+8a5e 8a0c (>mark)
+8a60 803c (semi)
+
+`' ?branch ,`と書いてみた。`1 not found`とでた。`?branch`ではなく`if`の次の1を読んでいる。
+
+`'`がimmediateになっていないのか？
 
