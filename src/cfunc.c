@@ -608,8 +608,23 @@ void do_compile(context_t *cx)
 
 word_t entry_head(context_t *cx, word_t addr)
 {
-    word_t entry = STAR(LAST_ADDR), link;
+    word_t entry, link;
     mem_t *p;
+    if (STAR(DICTTOP_HEAD) <= addr && addr <= STAR(LAST_ADDR)) {
+        entry = STAR(LAST_ADDR);
+        while (addr < entry) {
+            link = link_addr(entry);
+            if ((entry = STAR(link)) == 0)
+                break;
+            //fprintf(stderr, "[%d %.*s]", ((*p)&0x1f),((*p)&0x1f),(p+1));
+        }
+        if (entry)
+            return entry;
+    }
+    entry = STAR(CROSS_ADDR);
+    if (entry == 0)
+        return 0;
+    // search CROSS dictionary
     while (addr < entry) {
         link = link_addr(entry);
         if ((entry = STAR(link)) == 0)
@@ -638,7 +653,7 @@ word_t entry_tail(context_t *cx, word_t addr)
 void dump_entry(context_t *cx)
 {
     // dump entry
-    word_t entry, link, tail, ip, w;
+    word_t entry, link, tail, ip, w, w2;
     const mem_t *p;
     int n;
 
@@ -658,6 +673,25 @@ void dump_entry(context_t *cx)
     fprintf(stderr, "%04x %04x  [link]\n", ip, STAR(ip));
     ip += CELLS;
     fprintf(stderr, "%04x %04x  [code]\n", ip, STAR(ip));
+    if (STAR(ip) == ip + CELLS) {
+        // machine code entry
+        ip += CELLS;
+        while (ip < tail) {
+            w2 = w = STAR(ip);
+            if (w2 & 0x8000) {
+                // m_jmp
+                if ((w2 & 0x4000) == 0)
+                    w2 &= 0x7fff;
+                w2 += ip + CELLS;
+                fprintf(stderr, "%04x %04x (m_jmp %04x)\n", ip, w, w2);
+                ip += CELLS;
+                continue;
+            }
+            fprintf(stderr, "%04x %04x (%s)\n", ip, w, opcode_name(w));
+            ip += CELLS;
+        }
+        return;
+    }
     ip += CELLS;
     while (ip < tail) {
         w = STAR(ip);
@@ -679,6 +713,7 @@ void dump_entry(context_t *cx)
                 (n == 7 && strncmp(p+1, "compile", n) == 0) ||
                 (n == 6 && strncmp(p+1, "branch", n) == 0) ||
                 (n == 7 && strncmp(p+1, "?branch", n) == 0)) {
+                fprintf(stderr, "%04x %04x (%.*s)\n", ip, w, n, p+1);
                 ip += CELLS;
                 w = STAR(ip);
                 fprintf(stderr, "%04x %04x (%d)\n", ip, w, w);
