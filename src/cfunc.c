@@ -475,7 +475,7 @@ void do_prompt(context_t *cx)
     if (outer_flag || STAR(STATE_ADDR))
         return;     
     // print only if getline wait for keyboard input
-    print_stack(cx);
+    print_stack(cx, 1);
     if (STAR(STATE_ADDR))
         fprintf(stderr, " compile mode\n");
     else

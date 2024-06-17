@@ -29,18 +29,21 @@ $1 == ".user_org" {
         printf(": %-16s 0x%04x ;\n", "USER_ORG_CONST", addr)
     next
 }
-$1 == ".head" || $1 == ".user" || $1 == ".const" {
+$1 == ".head" || $1 == ".user" || $1 == ".const" || $1 == ".huser" {
     name = $2
     if ($2 ~ /^[A-Z][A-Z_0-9]*$/) {
         name = $2 "_ADDR"
         cname = $2 "_CONST"
         hname = $2 "_HEAD"
+    } else if ($1 == ".head") {
+        hname = $2
+        cname = name = ""
     } else {
         name = $2
         cname = hname = ""
     }
 }
-$1 == ".head" || $1 == ".const" || $1 == ".user" {
+$1 == ".head" || $1 == ".const" || $1 == ".user" || $1 == ".huser" {
     if (mode == "-h" && name ~ /^[A-Z][A-Z0-9_]*$/) {
         printf("#define %-16s (%s + 0x%04x)\n", hname, "org_addr", haddr - horg);
         if ($1 == ".user")
@@ -52,7 +55,7 @@ $1 == ".head" || $1 == ".const" || $1 == ".user" {
             expr = $3
         if (expr ~ /^ *$/)
             expr = "0"
-        printf("    .dw   %-12s ; %04x %s\n", expr, haddr, iname);
+        printf("    .dw   %-12s ; xx %04x %s\n", expr, haddr, (hname != "") ? hname : name);
     }
     if (mode == "-f") {
         if (hname != "")
@@ -73,8 +76,11 @@ $1 == ".head" || $1 == ".const" || $1 == ".user" {
                 printf("%-16s %s swap !\n", name, code)
             }
         }
+        if ($1 == ".huser") {
+            printf(": %-16s 0x%04x ;\n", name, addr) > "huser.f"
+        }
     }
-    if ($1 == ".user") {
+    if ($1 == ".user" || $1 == ".huser") {
         addr += 2
         haddr += 2
     }

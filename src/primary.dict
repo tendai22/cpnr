@@ -109,4 +109,5 @@ opcode dictdump
 opcode bye
 opcode [compile] ccompile immediate
 opcode dump
+opcode .ps dotps
 

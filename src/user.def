@@ -10,6 +10,14 @@ last_addr:
     .head COLON     COLON
     .head SEMI      SEMI
     .head LITERAL   do_dolit
+    .head vBDQOUTE  0
+    .head vBRANCH   0
+    .head vDOLIT    0
+    .head vPDO      0
+    .head vPLOOP    0
+    .head vPPOSTLOOP   0
+    .head vQBRANCH  0
+    .head vSDOLIT   0
     .head COLD      // 0
     .const UP       // USER_ORG_CONST  
     .const S0       // USER_ORG_CONST 256 +

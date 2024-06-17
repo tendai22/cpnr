@@ -408,6 +408,13 @@ do_run_label:
         dump_hex(cx, do_pop(cx), n);
         cx->pc += CELLS;
         break;
+    case 62: // m_dotps
+        w = do_pop(cx);
+        do_emit(cx, w);
+        print_stack(cx, 0);
+        print_crlf(cx);
+        cx->pc += CELLS;
+        break;
     default:
         goto undefined;
     }

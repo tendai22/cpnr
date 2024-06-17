@@ -133,13 +133,24 @@
 : <mark here ;
 : <resolve here ! cell allot ;
 
+dA dA @ 0x43 .ps drop drop
+' branch vBRANCH dA @ + 0x44 .ps !
+' ?branch vQBRANCH dA @ + 0x45 .ps !
 \ ======================================
 \ if-else-then
 \ 
 \ : if compile ?branch >mark ; immediate
-: if [compile] ?branch >mark ; immediate
+\ : if compile [ QBRANCH_HEAD @ , ] >mark ; immediate
+\ : then >resolve ; immediate
+\ : else compile [ BRANCH_HEAD @ , ] >mark swap >resolve ; immediate
+: if vQBRANCH @ , >mark ; immediate
+last dd
 : then >resolve ; immediate
-: else [compile] branch cell allot >mark swap >resolve ; immediate
+: else vBRANCH @ , >mark swap >resolve ; immediate
+last dd
+: aaa if 100 else 10 then ;
+last dd
+
 
 \ ======================================
 \ operators
@@ -199,8 +210,10 @@
    2 cells +rsp 
    >r ;
 
+' (do) vPDO dA @ + !
 : do
-   compile (do)
+   \ compile (do)
+   vPDO @ ,
    <mark ; immediate
 
 : i ( R: index limit ret-addr)
@@ -223,21 +236,33 @@
     \ falling down to ?branch
     ;
 
+' dolit vDOLIT dA @ + !
+' (loop) vPLOOP dA @ + !
+' (post-loop) vPPOSTLOOP dA @ + !
+
+
 : loop  \ limit -- limit if loop remains | none if loop exits)
-    compile dolit
+    \ compile dolit
+    vDOLIT @ ,
     1 here ! cell allot   \ compile 1 as delta)
                         \ limit limit iaddr index 1 
-    compile (loop)      \ limit -1|0)
-    compile ?branch
+    \ compile (loop)      \ limit -1|0)
+    vPLOOP @ ,
+    \ compile ?branch
+    vQBRANCH @ ,
     <resolve
-    compile (post-loop)
+    \ compile (post-loop)
+    vPPOSTLOOP @ ,
     ; immediate
 
 : +loop  \ 
-    compile (loop)      \ limit -1|0)
-    compile ?branch
+    \ compile (loop)      \ limit -1|0)
+    vPLOOP @ ,
+    \ compile ?branch
+    vQBRANCH @ ,
     <resolve
-    compile (post-loop)
+    \ compile (post-loop)
+    vPPOSTLOOP @ ,
     ; immediate
 
 : leave
@@ -253,19 +278,20 @@
 \
 : begin <mark ; immediate
 : until \ ( flag -- )
-   compile ?branch <resolve 
+   ( compile ?branch ) vQBRANCH @ , <resolve 
    ; immediate
 : again \ ( -- )
-   compile branch <resolve 
+   ( compile branch ) vBRANCH @ , <resolve 
    ; immediate
 
 \
 \ begin ... f while ... repeat
 \
 : while ( f -- )
-   compile ?branch >mark ; immediate
+   ( compile ?branch ) vQBRANCH @ , >mark ; immediate
 : repeat ( -- )
-   compile branch
+   ( compile branch )
+   vBRANCH @ ,
    swap <resolve 
    >resolve ; immediate
 
@@ -560,6 +586,7 @@
 \
 : h++ here c@ 1+ here c! ;
 : hptr here dup c@ + 1+ ;
+
 : word ( delim -- addr|0 )
    0              \ ( -- delim flag ) ... flag show if it has started to store chars
    0 here c!      \ clear here[0]
@@ -720,7 +747,8 @@
    not if trap then 
    ( 0x58 .ps )
    state @ if 
-      compile dolit
+      \ compile dolit
+      vDOLIT @ ,
       , 
    then ( last 16 dump ) 
    ; immediate
@@ -728,7 +756,8 @@
 \ : baka ' getline ; last dd
 
 : [char]
-    compile dolit 
+    \ compile dolit
+    vDOLIT @ , 
     bl word 1+ c@ , 
     ; immediate
 
@@ -772,13 +801,19 @@
    bl word -find drop ,
    ; immediate
 
+' s_dolit vSDOLIT dA @ + !
+
 : ["] \ ( --- c-addr )
     \ leave the address of a counted-string, on where 'here'
-   compile s_dolit
+   \ compile s_dolit
+   vSDOLIT @ ,
    [char] " word ( dup 16 dump )
    c@ 1+ allot  ( here h4. 0x41 .ps )
    align ( here h4. cr )
    ; immediate
+
+' ["] vBDQOUTE dA @ + !
+
 
 \ : count \ ( c-addr --- count addr+1 )
 \    dup 1+ swap c@ ;
