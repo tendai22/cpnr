@@ -7,6 +7,11 @@ src/*_user.[fs]
 src/user.s
 src/user.[hf]
 src/forth*.bin
+src/cross8.bin
+src/nr1.bin
+src/*_org.f
+src/opcode.inc
+src/opname.h
 src/upost.f
 *.list
 *.X
