@@ -79,15 +79,16 @@
    cell +                 \ get colon addr
    swap !            \ STAR(code_addr) = colon_addr
    ;
+' (does) vPDOES 0x4f .ps !
 
 \ does>
 : does>
-   compile (does)
+   vPDOES @ ,
    SEMI_HEAD @ ,
    0x7005 ,       \ m_startdoes
    COLON_HEAD @ cell + ,  \ colon bincode
    ; immediate
-
+last dd
 
 \ test constant
 \ 100 constant foo
@@ -134,8 +135,8 @@
 : <resolve here ! cell allot ;
 
 dA dA @ 0x43 .ps drop drop
-' branch vBRANCH dA @ + 0x44 .ps !
-' ?branch vQBRANCH dA @ + 0x45 .ps !
+' branch vBRANCH 0x44 .ps !
+' ?branch vQBRANCH 0x45 .ps !
 \ ======================================
 \ if-else-then
 \ 
@@ -144,12 +145,12 @@ dA dA @ 0x43 .ps drop drop
 \ : then >resolve ; immediate
 \ : else compile [ BRANCH_HEAD @ , ] >mark swap >resolve ; immediate
 : if vQBRANCH @ , >mark ; immediate
-last dd
+\ last dd
 : then >resolve ; immediate
 : else vBRANCH @ , >mark swap >resolve ; immediate
-last dd
+\ last dd
 : aaa if 100 else 10 then ;
-last dd
+\ last dd
 
 
 \ ======================================
@@ -210,7 +211,7 @@ last dd
    2 cells +rsp 
    >r ;
 
-' (do) vPDO dA @ + !
+' (do) vPDO !
 : do
    \ compile (do)
    vPDO @ ,
@@ -236,9 +237,9 @@ last dd
     \ falling down to ?branch
     ;
 
-' dolit vDOLIT dA @ + !
-' (loop) vPLOOP dA @ + !
-' (post-loop) vPPOSTLOOP dA @ + !
+' dolit vDOLIT !
+' (loop) vPLOOP !
+' (post-loop) vPPOSTLOOP !
 
 
 : loop  \ limit -- limit if loop remains | none if loop exits)
@@ -801,7 +802,7 @@ last dd
    bl word -find drop ,
    ; immediate
 
-' s_dolit vSDOLIT dA @ + !
+' s_dolit vSDOLIT !
 
 : ["] \ ( --- c-addr )
     \ leave the address of a counted-string, on where 'here'
@@ -812,7 +813,7 @@ last dd
    align ( here h4. cr )
    ; immediate
 
-' ["] vBDQOUTE dA @ + !
+' ["] vBDQOUTE !
 
 
 \ : count \ ( c-addr --- count addr+1 )
@@ -880,6 +881,7 @@ variable 'error
 \ vector abort
 \
 variable 'abort
+last dd
 0 'abort !
 : abort
    'abort @ dup if ( 0x45 .ps ) execute else ." abort not defined yet" trap then ;

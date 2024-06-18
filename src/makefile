@@ -9,8 +9,8 @@ TARGET_USER=0xe000
 HOST_ORG=0x8000
 HOST_USER=0xf000
 
-$(TARGET).bin: cpnr cross8.bin $(TARGET)_dict.f $(TARGET)_org.f start_cross.f $(TARGET)_user.f base.f cold.f dictdump.f
-	./cpnr -o $@ cross8.bin $(TARGET)_dict.f $(TARGET)_org.f start_cross.f $(TARGET)_user.f base.f cold.f dictdump.f
+$(TARGET).bin: cpnr cross8.bin $(TARGET)_dict.f $(TARGET)_org.f start_cross.f $(TARGET)_user.f base.f cold.f end_cross.f dictdump.f
+	./cpnr -o $@ cross8.bin $(TARGET)_dict.f $(TARGET)_org.f start_cross.f $(TARGET)_user.f base.f cold.f end_cross.f dictdump.f
 $(TARGET)_user.f: user.def makeuser.sh
 	sh makeuser.sh -f $(TARGET_ORG) $(TARGET_USER) $< > $@
 $(TARGET)_dict.f: $(TARGET)_dict.X

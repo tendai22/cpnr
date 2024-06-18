@@ -18,7 +18,9 @@ last_addr:
     .head vPPOSTLOOP   0
     .head vQBRANCH  0
     .head vSDOLIT   0
+    .head vPDOES    0
     .head COLD      // 0
+    .head EHEAD
     .const UP       // USER_ORG_CONST  
     .const S0       // USER_ORG_CONST 256 +
     .const R0       // USER_ORG_CONST 512 +
