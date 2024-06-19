@@ -10,6 +10,8 @@ last_addr:
     .head COLON     COLON
     .head SEMI      SEMI
     .head LITERAL   do_dolit
+    .head DODOES    DODOES
+    .head m_call    // 0x7040
     .head vBDQOUTE  0
     .head vBRANCH   0
     .head vDOLIT    0

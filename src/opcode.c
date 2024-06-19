@@ -415,6 +415,18 @@ do_run_label:
         print_crlf(cx);
         cx->pc += CELLS;
         break;
+    case 63: // m_exch
+        // EX (SP),WA
+        w = tos(cx);
+        tos(cx) = cx->wa;
+        cx->wa = w;
+        cx->pc += CELLS;
+        break;
+    case 64: // m_call
+        w = STAR(cx->pc + CELLS);   // operand (call address)
+        do_push(cx, cx->pc + 2 * CELLS);    // save return address
+        cx->pc = w;
+        break;
     default:
         goto undefined;
     }

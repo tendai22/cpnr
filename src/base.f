@@ -85,8 +85,8 @@
 : does>
    vPDOES @ ,
    SEMI_HEAD @ ,
-   0x7005 ,       \ m_startdoes
-   COLON_HEAD @ cell + ,  \ colon bincode
+   m_call @ ,
+   DODOES_HEAD @ ,
    ; immediate
 last dd
 
