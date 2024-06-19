@@ -3153,3 +3153,26 @@ base.fを起動してのホスト動作で動作することは確認した。�
 
 variable, constantがまだ駄目だ。`does>`で生成されるコードに8XXX番台のxtが混じっていた。次はこれのデバッグとなる。'abort ベクタがvariableだが、それが動かない。
 
+`does>`も(does)をベクタ化した(vPDOES)。これで variableは動作するようになったが、constantはだめだ。variableと同じ動作になる。
+
+あと、`cold`も動作していない。
+
+## constantデバッグ(6/19)
+
+修正後のコードは以下のようになる。修正前は、`COLON_HEAD @ cell + ,`だった。
+
+```
+: does>
+   vPDOES @ ,
+   SEMI_HEAD @ ,
+   0x7005 ,       \ m_startdoes
+   COLON_HEAD @ ,  \ colon bincode
+      \ now COLON_HEAD holds not xt but routine itself,
+      \ so no need to add two to it.
+   ; immediate
+```
+
+COLON_HEAD導入前には、COLON_HEADはワードcolonのxtを指していた。バイナリコードはその2つ先なので、`cell +`があったのだ。
+
+今はCOLON_HEADはdocolルーチンを直接指すアドレスを格納しているので、+2は不要なのだ。
+

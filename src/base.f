@@ -86,7 +86,9 @@
    vPDOES @ ,
    SEMI_HEAD @ ,
    0x7005 ,       \ m_startdoes
-   COLON_HEAD @ cell + ,  \ colon bincode
+   COLON_HEAD @ ,  \ colon bincode
+      \ now COLON_HEAD holds not xt but routine itself,
+      \ so no need to add two to it.
    ; immediate
 last dd
 
@@ -100,20 +102,6 @@ last dd
 
 : hex 16 BASE_ADDR ! ;
 : decimal 10 BASE_ADDR ! ;
-
-\ constants
-: STACK_END 0xff00 ; 
-: DSTACK_END STACK_END ; 
-: RSTACK_END DSTACK_END 0x100 - ; 
-
-\ memory map
-: ROMSTART 0x1000 ;
-: ROMSIZE 0x2000 ;
-: RAMSTART 0x4000 ;
-: RAMSIZE 0x4000 ;
-
-\ : DICT_START 0x1000 ;
-: USER_START 0x4000 ;
 
 \ uservar address
 
