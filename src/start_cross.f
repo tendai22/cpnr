@@ -18,6 +18,7 @@ DICTENTRY_HEAD dA @ + ( dictentry_addr ) @ LAST_ADDR 0x33 .ps !
 COLON_HEAD   dA @ + @ COLON_HEAD 0x44 .ps !
 SEMI_HEAD    dA @ + @ SEMI_HEAD 0x45 .ps !
 LITERAL_HEAD dA @ + @ LITERAL_HEAD 0x46 .ps !
+DODOES_HEAD  dA @ + @ DODOES_HEAD 0x4f .ps !
 \ t_HALT_HEAD -> h_HALT_HEAD
 ' halt                HALT_HEAD 0x47 .ps !
 \ t_DICTTOP_HEAD -> h_DICTTOP_HEAD

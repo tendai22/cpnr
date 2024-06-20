@@ -9,3 +9,6 @@ NEXT:
     m_next1
 RUN:    
     m_run
+DODOES:
+    m_exch
+    m_jmp   COLON

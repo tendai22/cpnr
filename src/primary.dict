@@ -20,6 +20,8 @@ opcode halt
 opcode execute
 opcode trap
 opcode ' quote
+opcode exch
+opcode call
 
 //
 // primitives .. thread instructions

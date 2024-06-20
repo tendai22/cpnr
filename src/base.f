@@ -85,10 +85,8 @@
 : does>
    vPDOES @ ,
    SEMI_HEAD @ ,
-   0x7005 ,       \ m_startdoes
-   COLON_HEAD @ ,  \ colon bincode
-      \ now COLON_HEAD holds not xt but routine itself,
-      \ so no need to add two to it.
+   m_call @ ,
+   DODOES_HEAD @ ,
    ; immediate
 last dd
 
@@ -855,6 +853,11 @@ dA dA @ 0x43 .ps drop drop
 \ : baka ." aho" ;
 \ : baka2 s" aho" ;
 \ : baka3 c" aho" ;
+
+\ vector execute
+variable 'execute
+' execute 'execute !
+: exec 'execute execute ;
 
 \
 \ vector ?error

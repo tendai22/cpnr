@@ -9,6 +9,8 @@ TARGET_USER=0xe000
 HOST_ORG=0x8000
 HOST_USER=0xf000
 
+TARGET_INTERFILES=$(TARGET).bin $(TARGET)_user.f $(TARGET)_user.s $(TARGET)_org.f \
+	$(TARGET)_dict.f $(TARGET)_dict.X $(TARGET)_dict.list $(TARGET)_dict.s
 $(TARGET).bin: cpnr cross8.bin $(TARGET)_dict.f $(TARGET)_org.f start_cross.f $(TARGET)_user.f base.f cold.f end_cross.f dictdump.f
 	./cpnr -o $@ cross8.bin $(TARGET)_dict.f $(TARGET)_org.f start_cross.f $(TARGET)_user.f base.f cold.f end_cross.f dictdump.f
 $(TARGET)_user.f: user.def makeuser.sh
@@ -80,4 +82,4 @@ f2x: f2x.c
 	cc -o f2x f2x.c
 
 clean:
-	$(RM) $(COBJS) $(LISTS) $(INTERFILES)
+	$(RM) $(COBJS) $(LISTS) $(INTERFILES) $(TARGET_INTERFILES)
