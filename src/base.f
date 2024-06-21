@@ -1,7 +1,5 @@
 \ base.f ... cpnr secondary base word definition
 
-\ minimum user variables
-\ are moved to user.f
 : space 32 emit ;
 
 \ debug
@@ -68,31 +66,6 @@
 : pfa cfa cell + ;
 
 \ word ... vector definition
-
-
-\
-\ does>
-\
-: (does)
-   last lfa cell +  \ code_addr
-   rsp @            \ get semi addr
-   cell +                 \ get colon addr
-   swap !            \ STAR(code_addr) = colon_addr
-   ;
-' (does) vPDOES 0x4f .ps !
-
-\ does>
-: does>
-   vPDOES @ ,
-   SEMI_HEAD @ ,
-   m_call @ ,
-   DODOES_HEAD @ ,
-   ; immediate
-last dd
-
-\ test constant
-\ 100 constant foo
-\ foo .
 
 \
 \ end of 1st stage definition
@@ -510,18 +483,6 @@ dA dA @ 0x43 .ps drop drop
 
 \ 1 outer_flag !
 
-\ ======================================
-\ .stack ... debug word
-\
-: .stack 
-   0x5b emit
-   sp@ s0 != if
-      sp@ s0 cell - do
-         i @ h4. space 
-      0 cell - +loop
-   then 
-   0x5d emit
-   ;
 
 \ input buffer, s0, 128bytes
 \ top(*s0) holds the current index
@@ -553,8 +514,6 @@ dA dA @ 0x43 .ps drop drop
 \
 \ words for debugging
 \
-: .ps ( char -- ) \ dump stack with char
-   emit .stack cr ;
 : .hd             \ dump here buffer
    here 10 cdump cr ;
 : .cs \ ( c-addr --- ) dump counted string
@@ -616,10 +575,47 @@ dA dA @ 0x43 .ps drop drop
    here pfa dp ! \ h points pfa
    ;
 
-\ constant
-: constant create , does> @ ;
-\ variable
-: variable create cell allot does> ; 
+\ ======================================
+\ .stack ... debug word
+\
+: .stack 
+   0x5b emit
+   sp@ s0 != if
+      sp@ s0 cell - do
+         i @ h4. space 
+      0 cell - +loop
+   then 
+   0x5d emit
+   ;
+
+: .ps ( char -- ) \ dump stack with char
+   emit .stack cr ;
+
+
+\
+\ does>
+\
+: (does)
+  last 0x59 .ps lfa cell +  \ code_addr
+  rsp @            \ get semi addr
+  cell +                 \ get colon addr
+  swap 0x5a .ps !            \ STAR(code_addr) = colon_addr
+  ;
+\ : (does)
+\    DODOES_HEAD @
+\    last lfa cell + 
+\    0x5a .ps ! ;
+' (does) vPDOES 0x4f .ps !
+
+\ does>
+: does>
+   vPDOES @ ,
+   SEMI_HEAD @ ,
+   m_call @ ,
+   DODOES_HEAD @ ,
+   ; immediate
+last dd
+
 
 
 
@@ -808,13 +804,13 @@ dA dA @ 0x43 .ps drop drop
 : ." \ ( --- ) ... print the string
    state @ if
       [compile] ["]
-      ' count ,
+      ' count 0x57 .ps ,
       ' type ,
    else
       [char] " word count type
    then
    ; immediate
-
+last dd
 : c" \ ( --- c-addr )... string constant with counted string
    state @ if
       [compile] ["]
@@ -855,27 +851,24 @@ dA dA @ 0x43 .ps drop drop
 \ : baka3 c" aho" ;
 
 \ vector execute
-variable 'execute
-' execute 'execute !
-: exec 'execute execute ;
+' execute vexecute !
+: exec vexecute execute ;
+' exec vexecute !
 
 \
 \ vector ?error
 \
-variable 'error
-0 'error !
+0 verror !
 : ?error
-   'error @ dup if ( 0x45 .ps ) execute else ." ?error not defined yet" trap then ;
+   verror @ dup if ( 0x45 .ps ) execute else ." ?error not defined yet" trap then ;
 
 
 \
 \ vector abort
 \
-variable 'abort
-last dd
-0 'abort !
+0 vabort !
 : abort
-   'abort @ dup if ( 0x45 .ps ) execute else ." abort not defined yet" trap then ;
+   vabort @ dup if ( 0x45 .ps ) execute else ." abort not defined yet" trap then ;
 
 \
 \ getline ( n addr --- t if valid input/f if eof)
@@ -999,10 +992,7 @@ last dd
    swap drop 
 ;
 
-variable dpl
 0 dpl !
-\ variable #base
-\ 10 #base !
 
 : digit \ ( c base --- n2 flag )
    swap     ( base c )
@@ -1081,11 +1071,7 @@ variable dpl
 \ =======================================
 \ error handling
 \
-variable warning
 0 warning !
-
-\ variable 'abort   \ abort vector
-\ ' trap 'abort 0x41 .ps !
 
 : -dup dup if dup then ;
 
@@ -1257,12 +1243,12 @@ variable warning
 : (?error) \ ( flag n --- ) ... error abort/rewind text interpreter
    swap if (error) else drop then ;
 
-' (?error) 'error !
+' (?error) verror !
 1 warning !
 
 \
-\ abort ... this word actially invokes a vector 'abort
-\ (abort) ... actial body word for 'abort
+\ abort ... this word actially invokes a vector vabort
+\ (abort) ... actial body word for vabort
 \
 : (abort)
    sp!
@@ -1273,7 +1259,7 @@ variable warning
    \ definitions 
    quit ;
 
-' (abort) 'abort !
+' (abort) vabort !
 
 \
 \ comments
@@ -1327,6 +1313,16 @@ last 1+ 0x28 swap c!
    COLON_HEAD @ , \ fill code field
    ]  \ start compile mode
    ;
+
+\
+\ variable, constant
+\
+\ Do not use in cross-compile forth source code
+
+\ constant
+: constant create , does> @ ;
+\ variable
+: variable create cell allot does> ; 
 
 cr ." End: " here h4. ." , " here dicttop @ - dup h4. ." (" . ." ) bytes." cr 
 \ start nrForth system

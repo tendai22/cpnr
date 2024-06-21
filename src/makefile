@@ -12,7 +12,7 @@ HOST_USER=0xf000
 TARGET_INTERFILES=$(TARGET).bin $(TARGET)_user.f $(TARGET)_user.s $(TARGET)_org.f \
 	$(TARGET)_dict.f $(TARGET)_dict.X $(TARGET)_dict.list $(TARGET)_dict.s
 $(TARGET).bin: cpnr cross8.bin $(TARGET)_dict.f $(TARGET)_org.f start_cross.f $(TARGET)_user.f base.f cold.f end_cross.f dictdump.f
-	./cpnr -o $@ cross8.bin $(TARGET)_dict.f $(TARGET)_org.f start_cross.f $(TARGET)_user.f base.f cold.f end_cross.f dictdump.f
+	./cpnr -o $@ cross8.bin $(TARGET)_dict.f $(TARGET)_org.f start_cross.f $(TARGET)_user.f base.f cold2.f end_cross.f dictdump.f
 $(TARGET)_user.f: user.def makeuser.sh
 	sh makeuser.sh -f $(TARGET_ORG) $(TARGET_USER) $< > $@
 $(TARGET)_dict.f: $(TARGET)_dict.X
