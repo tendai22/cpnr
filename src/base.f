@@ -1260,7 +1260,7 @@ dA dA @ ( 0x43 .ps ) drop drop
    quit ;
 
 ' (abort) vabort !
-vabort @ h4. cr
+( vabort @ h4. cr )
 \
 \ comments
 \

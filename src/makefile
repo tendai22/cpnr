@@ -3,32 +3,10 @@
 #
 .PREFIXES: .dict .list .f .X .s
 
-TARGET=nr1
-TARGET_ORG=0x1000
-TARGET_USER=0xe000
 HOST_ORG=0x8000
 HOST_USER=0xf000
 
-TARGET_INTERFILES=$(TARGET).bin $(TARGET)_user.f $(TARGET)_user.s $(TARGET)_org.f \
-	$(TARGET)_dict.f $(TARGET)_dict.X $(TARGET)_dict.list $(TARGET)_dict.s
-$(TARGET).bin: cpnr cross8.bin $(TARGET)_dict.f $(TARGET)_org.f start_cross.f $(TARGET)_user.f base.f cold.f end_cross.f dictdump.f
-	./cpnr -o $@ cross8.bin $(TARGET)_dict.f $(TARGET)_org.f start_cross.f $(TARGET)_user.f base.f cold2.f end_cross.f dictdump.f
-$(TARGET)_user.f: user.def makeuser.sh
-	sh makeuser.sh -f $(TARGET_ORG) $(TARGET_USER) $< > $@
-$(TARGET)_dict.f: $(TARGET)_dict.X
-	sh X2f.sh $< > $@
-$(TARGET)_dict.X: $(TARGET)_dict.list
-	sh dump.sh $< > $@
-$(TARGET)_dict.list: $(TARGET)_dict.s
-	sh as.sh $< > $@
-$(TARGET)_dict.s: $(TARGET)_user.s $(TARGET)_inner.s $(TARGET)_primary.s
-	cat $(TARGET)_user.s $(TARGET)_inner.s $(TARGET)_primary.s > $@
-$(TARGET)_user.s: user.def makeuser.sh
-	sh makeuser.sh -s $(TARGET_ORG) $(TARGET_USER) $< > $@
-$(TARGET)_org.f: makefile
-	echo $(TARGET_ORG) $(TARGET_USER) > $(TARGET)_org.f
-
-cross8.bin: cpnr dict.X user.f base.f dictdump.f
+self8.bin: cpnr dict.X user.f base.f dictdump.f
 	./cpnr -o $@ dict.X user.f base.f cold.f dictdump.f
 
 NAME=cpnr

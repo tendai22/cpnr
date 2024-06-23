@@ -378,7 +378,7 @@ static int init_mem(context_t *cx, word_t org)
     mem_t *src, *dest;
     int size, flag = 0;
     // org is not specified, 
-    fprintf(stderr, "init_mem: org: %04x\n", org);
+    //fprintf(stderr, "init_mem: org: %04x\n", org);
     // user check
     org_addr = org;
     // DP, LAST
@@ -386,12 +386,12 @@ static int init_mem(context_t *cx, word_t org)
         STAR(DP_HEAD) = STAR(DICTEND_HEAD);
     if (plain_flag == 0 && STAR(LAST_HEAD) == 0)
         STAR(LAST_HEAD) = STAR(DICTENTRY_HEAD);
-    fprintf(stderr, "init_mem: dp: %04x, last: %04x\n", STAR(DP_HEAD), STAR(LAST_HEAD));
+    fprintf(stderr, "init_mem: org: %04x, dp: %04x, last: %04x\n", org_addr, STAR(DP_HEAD), STAR(LAST_HEAD));
     // set S0, R0, TIB
     if (plain_flag == 0 && STAR(UP_HEAD) == 0)
         STAR(UP_HEAD) = 0xf000;
     user = STAR(UP_HEAD);
-    fprintf(stderr, "init_mem: user: %04x\n", user);
+    //fprintf(stderr, "init_mem: user: %04x\n", user);
     user_org_addr = user;
     if (plain_flag == 0 && STAR(S0_HEAD) == 0)
         STAR(S0_HEAD) = user + 256;
@@ -406,7 +406,7 @@ static int init_mem(context_t *cx, word_t org)
     dest = &mem[DP_ADDR];
     size = END_ADDR - DP_ADDR;
     memcpy(dest, src, size);
-    fprintf(stderr, "init_mem: user copy: dest = %04x, src = %04x, size = %d\n", (unsigned int)(dest - mem), (unsigned int)(src - mem), size);
+    //fprintf(stderr, "init_mem: user copy: dest = %04x, src = %04x, size = %d\n", (unsigned int)(dest - mem), (unsigned int)(src - mem), size);
 
     // DICTTOP has already been set, no need to care here
 
@@ -415,7 +415,7 @@ static int init_mem(context_t *cx, word_t org)
         flag |= name2xt(cx, "halt");
         STAR(HALT_HEAD) = do_pop(cx);
     }
-    fprintf(stderr, "init_mem: halt: %04x\n", STAR(HALT_HEAD));
+    //fprintf(stderr, "init_mem: halt: %04x\n", STAR(HALT_HEAD));
     // cold vector, startup point if it is defined.
     //STAR(COLD_HEAD) = 0;
     //if (name2xt(cx, "cold") == 0)
