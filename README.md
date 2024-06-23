@@ -12,7 +12,7 @@ Forth処理系、内部インタプリタと最低限の定義を実行するス
 
 ソースコードライセンスはBSD-3clauseとします。
 
-## 詳細
+## お試し方法
 
 * [設計情報、「ワードリスト」](DESIGN.md)
 * ソースコードは `src`の下にあります。
@@ -43,6 +43,78 @@ DESCRIPTION
     More detail description, available words are specified 
     in SPECS.md'
 ```
+
+## ビルド例
+
+```
+kuma@LizNoir:~/temp/cpnr/src$ make
+sh makeuser.sh -h 0x8000 0xf000 user.def > user.h
+cc -g -Wno-pointer-sign    -c -o main.o main.c
+cc -g -Wno-pointer-sign    -c -o machine.o machine.c
+sh makeopcode.sh machine.h opcode.c > opcode.inc
+sh gen_opname.sh opcode.inc > opname.h
+cc -g -Wno-pointer-sign    -c -o monitor.o monitor.c
+cc -g -Wno-pointer-sign    -c -o cfunc.o cfunc.c
+cc -g -Wno-pointer-sign    -c -o opcode.o opcode.c
+cc -g -Wno-pointer-sign    -c -o key_linux.o key_linux.c
+cc -g -Wno-pointer-sign  -o cpnr main.o machine.o monitor.o cfunc.o opcode.o key_linux.o
+sh makeuser.sh -f 0x8000 0xf000 user.def > user.f
+sh makeuser.sh -s 0x8000 0xf000 user.def > user.s
+sh makedict.sh primary.dict > primary.s
+cat user.s inner.s primary.s > dict.s
+sh as.sh dict.s > dict.list
+.equ entry_head=entry_057
+.equ entry_head=entry_057
+sh dump.sh dict.list > dict.X
+./cpnr -o self8.bin dict.X user.f base.f cold.f dictdump.f
+dict.X: read_xfile
+read_xfile: offset = 0000
+init_org: org_addr = 8000, user_org_addr = 0000
+init_mem: org: 8000, dp: 8394, last: 8386
+init_mem: up: f000, s0: f100, r0: f200, tib: f100
+start text interpreter
+open: user.f
+open: base.f
+
+End: A460, 2460(9312 ) bytes.
+open: cold.f
+open: dictdump.f
+m_dictdump: begin: 8000, end: a48e, last: a47e
+savefile: self8.bin, 9358 bytes
+bye
+abort result = -1
+kuma@LizNoir:~/temp/cpnr/src$
+```
+
+## 処理系起動
+
+```
+kuma@LizNoir:~/temp/cpnr/src$ ./cpnr self8.bin
+self8.bin: dicttop = 8000, dp = a48e, last = a47e
+init_org: org_addr = 8000, user_org_addr = f000
+init_mem: org: 8000, dp: a48e, last: a47e
+init_mem: up: f000, s0: f100, r0: f200, tib: f100
+start cold at a486
+
+narrowForth v0.91dev
+[] OK
+```
+
+これでForthワードの入力と実行、コロン定義が利用できます。
+
+```
+[] OK 1 2 3
+[0001 0002 0003 ] OK +
+[0001 0005 ] OK +
+[0006 ] OK .
+6 [] OK : aho if 1000 else 10 then ;
+[] OK 1 aho
+[03E8 ] OK .
+1000 [] OK 0 aho
+[000A ] OK .
+10 [] OK
+```
+
 
 * [ワード仕様](SPECS.md)
 
