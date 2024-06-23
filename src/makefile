@@ -29,7 +29,7 @@ $(TARGET)_org.f: makefile
 	echo $(TARGET_ORG) $(TARGET_USER) > $(TARGET)_org.f
 
 cross8.bin: cpnr dict.X user.f base.f dictdump.f
-	./cpnr -o $@ dict.X user.f base.f dictdump.f
+	./cpnr -o $@ dict.X user.f base.f cold.f dictdump.f
 
 NAME=cpnr
 

@@ -80,7 +80,7 @@ opcode kbhit
 //
 opcode : colondef
 opcode ; semidef immediate
-opcode ;; semidef immediate
+opcode ;; semi2def immediate
 
 // dd ... dumpentry ( addr -- )
 opcode dd

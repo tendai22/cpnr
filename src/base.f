@@ -93,9 +93,9 @@
 : <mark here ;
 : <resolve here ! cell allot ;
 
-dA dA @ 0x43 .ps drop drop
-' branch vBRANCH 0x44 .ps !
-' ?branch vQBRANCH 0x45 .ps !
+dA dA @ ( 0x43 .ps ) drop drop
+' branch vBRANCH ( 0x44 .ps ) !
+' ?branch vQBRANCH ( 0x45 .ps ) !
 \ ======================================
 \ if-else-then
 \ 
@@ -596,16 +596,16 @@ dA dA @ 0x43 .ps drop drop
 \ does>
 \
 : (does)
-  last 0x59 .ps lfa cell +  \ code_addr
+  last ( 0x59 .ps ) lfa cell +  \ code_addr
   rsp @            \ get semi addr
   cell +                 \ get colon addr
-  swap 0x5a .ps !            \ STAR(code_addr) = colon_addr
+  swap ( 0x5a .ps ) !            \ STAR(code_addr) = colon_addr
   ;
 \ : (does)
 \    DODOES_HEAD @
 \    last lfa cell + 
 \    0x5a .ps ! ;
-' (does) vPDOES 0x4f .ps !
+' (does) vPDOES ( 0x4f .ps ) !
 
 \ does>
 : does>
@@ -614,7 +614,7 @@ dA dA @ 0x43 .ps drop drop
    m_call @ ,
    DODOES_HEAD @ ,
    ; immediate
-last dd
+\ last dd
 
 
 
@@ -804,13 +804,13 @@ last dd
 : ." \ ( --- ) ... print the string
    state @ if
       [compile] ["]
-      ' count 0x57 .ps ,
+      ' count ( 0x57 .ps ) ,
       ' type ,
    else
       [char] " word count type
    then
    ; immediate
-last dd
+\ last dd
 : c" \ ( --- c-addr )... string constant with counted string
    state @ if
       [compile] ["]
@@ -1260,7 +1260,7 @@ last dd
    quit ;
 
 ' (abort) vabort !
-
+vabort @ h4. cr
 \
 \ comments
 \

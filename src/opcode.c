@@ -263,26 +263,27 @@ do_run_label:
         cx->pc += CELLS;
         break;
     case 38: // m_semidef
+    case 39: // m_semi2def
         do_semidef(cx);
         cx->pc += CELLS;
         break;
-    case 39: // m_dd
+    case 40: // m_dd
         dump_entry(cx);
         cx->pc += CELLS;
         break;
-    case 40: // m_add_rsp
+    case 41: // m_add_rsp
         cx->rs += do_pop(cx);
         cx->pc += CELLS;
         break;
-    case 41: // m_sp_at
+    case 42: // m_sp_at
         do_push(cx, cx->sp);
         cx->pc += CELLS;
         break;
-    case 42: // m_lnum
+    case 43: // m_lnum
         do_lnum(cx);
         cx->pc += CELLS;
         break;
-    case 43: // m_getline
+    case 44: // m_getline
         // ( n addr -- -1 (ready)|0 (eof) )
         w = do_pop(cx);
         n = do_pop(cx);
@@ -291,25 +292,25 @@ do_run_label:
         do_push(cx, result);
         cx->pc += CELLS;
         break;
-    case 44: // m_outer
+    case 45: // m_outer
         do_push(cx, outer_flag);
         cx->pc += CELLS;
         break;
-    case 45:   // m_dadd
+    case 46:   // m_dadd
         // D+, double add
         ud1 = do_dpop(cx);
         ud2 = do_dpop(cx);
         do_dpush(cx, ud1 + ud2);
         cx->pc += CELLS;
         break;
-    case 46:  // m_madd
+    case 47:  // m_madd
         // ( d n --- d(=d+n) )
         w = do_pop(cx);
         ud1 = do_dpop(cx) + w;
         do_dpush(cx, ud1);
         cx->pc += CELLS;
         break;
-    case 47:  // m_mmuldiv
+    case 48:  // m_mmuldiv
         // ( d1 n2 n3 --- t-result )
         w2 = do_pop(cx);
         w = do_pop(cx);
@@ -319,36 +320,36 @@ do_run_label:
         do_dpush(cx, ud1);
         cx->pc += CELLS;
         break;
-    case 48:   // m_dlt
+    case 49:   // m_dlt
         // ( d1 d2 --- d(-1 if d1<d2, 0 if d1>=d2) )
         ud2 = do_dpop(cx);
         ud1 = do_dpop(cx);
         do_push(cx, (ud1 < ud2) ? (word_t)(-1) : 0);
         cx->pc += CELLS;
         break;
-    case 49: // m_umul
+    case 50: // m_umul
         d1 = do_pop(cx);
         d1 *= (uint32_t)do_pop(cx);
         do_push(cx, d1&0xffff);
         do_push(cx, (d1>>16)&0xffff);
         cx->pc += CELLS;
         break;
-    case 50: // m_rsp_reset
+    case 51: // m_rsp_reset
         cx->rs = RSTACK_END;
         cx->pc += CELLS;
         break;
-    case 51: // m_sp_reset
+    case 52: // m_sp_reset
         cx->sp = DSTACK_END;
         cx->pc += CELLS;
         break;
-    case 52: // m_s_dolit
+    case 53: // m_s_dolit
         do_push(cx, cx->ip);
         n = mem[cx->ip];        // c-string length
         n = (n + 1 + CELLS - 1) / CELLS * CELLS;
         cx->ip += n;
         cx->pc += CELLS;
         break;
-    case 53: // m_d_dolit
+    case 54: // m_d_dolit
         w = STAR(cx->ip);
         cx->ip += CELLS;
         do_push(cx, w);
@@ -357,21 +358,6 @@ do_run_label:
         do_push(cx, w);
         cx->pc += CELLS;
         break;
-#if 0
-    case 54: // m_cold
-        // machine dependent cold start routine
-        // C vertual CPU, no actions needed
-        fprintf(stderr, "m_cold: so far no actions\n");
-        // init_dict, init_mem has done, so 
-        if ((w = STAR(ABORT_ADDR)) != 0) {
-            fprintf(stderr, "m_cold: start abort at %04x\n", w);
-            do_push(cx, w);
-            do_execute(cx);
-            // not return
-        }
-        cx->pc += CELLS;
-        break;
-#endif
     case 55: // m_dictdump
         // ( begin end last --- )
         w3 = do_pop(cx);

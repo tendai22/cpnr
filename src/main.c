@@ -157,8 +157,70 @@ static int filetype(const char *name)
             return 1;
         else if (strcmp(p, "X") == 0)
             return 2;
+        else if (strcmp(p, "hex") == 0)
+            return 3;
     }
     return 0;
+}
+
+static int read_hexfile(FILE *fp)
+{
+    int c, bcount, addr, rtype, b, seg = 0, eof_flag = 0;
+    word_t min, max;
+    min = 0xffff;
+    max = 0;
+    do {
+        // skip until start code
+        while ((c = fgetc(fp)) != EOF && c != ':')
+            ;       // skip until start code
+        if (c == EOF)
+            break;
+        // byte count
+        bcount = to_hex(fgetc(fp));
+        bcount *= 16;
+        bcount += to_hex(fgetc(fp));
+        // address field
+        addr = 0;
+        for (int i = 0; i < 4; ++i) {
+            addr = addr * 16 + to_hex(fgetc(fp));
+        }
+        // record type
+        rtype = to_hex(fgetc(fp));
+        rtype *= 16;
+        rtype += to_hex(fgetc(fp));
+        // data, bcount times
+        switch(rtype) {
+        case 0: // data
+            fprintf(stderr, "%04x: (%d) ", addr, bcount);
+            if (addr < min) {
+                min = addr;
+                fprintf(stderr, "min = %04x\n", min);
+            }
+            while (bcount-- > 0) {
+                b = to_hex(fgetc(fp));
+                b *= 16;
+                b += to_hex(fgetc(fp));
+                mem[addr++] = b;
+                fprintf(stderr, "%02x ", b);
+            }
+            fprintf(stderr, "\n");
+            if (max < addr)
+                max = addr;
+            break;
+        case 1: // end-of-file
+            fprintf(stderr, "eof\n");
+            eof_flag = 1;
+            break;
+        default:
+            fprintf(stderr, "read_hexfile: unknown record type %02x, ignore\n", rtype);
+            break;
+        }
+        // follow to next 'colon search'
+    }  while (eof_flag == 0 && feof(fp) == 0 && ferror(fp) == 0);
+    if (ferror(fp) != 0) {
+        fprintf(stderr, "read_hextfile: ferror\n");
+    }
+    return ferror(fp) ? -1 : min;
 }
 
 static int read_xfile(FILE *fp)
@@ -212,28 +274,18 @@ static int read_xfile(FILE *fp)
     // init user vars
     offset = min - STAR(min);   // usually zero
     fprintf(stderr, "read_xfile: offset = %04x\n", offset);
-#if 0
-    //STAR(DICTTOP_ADDR) = STAR(min);
-    STAR(DP_HEAD) = STAR(min + 2);
-    STAR(LAST_HEAD) = STAR(min + 4);
-    // patch S0, R0, TIB
-    if (STAR(S0_HEAD + offset) == 0) {
-        STAR(S0_HEAD + offset) = DSTACK_END;
-        STAR(R0_HEAD + offset) = RSTACK_END;
-        STAR(TIB_HEAD + offset) = DSTACK_END;
-        fprintf(stderr, "S0: %04x, R0: %04x, TIB: %04x\n", S0_HEAD + offset, R0_HEAD + offset, TIB_HEAD + offset);
-    }
-    src = &mem[DP_HEAD + offset];
-    dest = &mem[STAR(UP_ADDR)];
-    n = (END_ADDR - DP_ADDR);
-    fprintf(stderr, "user copy: dest: %04lx, src: %04lx, n: %d\n", dest - &mem[0], src - &mem[0], n);
-    memcpy(dest, src, n);
-#endif
-    fprintf(stderr, "dicttop: %04x, last: %04x, h: %04x\n", STAR(DICTTOP_HEAD), STAR(LAST_ADDR), STAR(DP_ADDR));
     return min;
 }
 
-static int init_dict(context_t *cx, const char *filename)
+static void init_org(context_t *cx, word_t top)
+{
+
+    org_addr = STAR(top);
+    user_org_addr = STAR(org_addr + UP_HEAD - DICTTOP_HEAD);
+    fprintf(stderr, "init_org: org_addr = %04x, user_org_addr = %04x\n", org_addr, user_org_addr);
+}
+
+static int read_dict(context_t *cx, const char *filename)
 {
     char *p;
     FILE *fp;
@@ -275,14 +327,17 @@ static int init_dict(context_t *cx, const char *filename)
             return -1;
         }
         fclose(fp);
-        //
         org = header[0];
-        user_org_addr = STAR(org_addr + UP_HEAD - DICTTOP_HEAD);
-        fprintf(stderr, "init_dict: org_addr = %04x, user_org_addr = %04x\n", org_addr, user_org_addr);
+        //
         return org;
     } else if (type == 2) {
         fprintf(stderr, "%s: read_xfile\n", filename);
         org = read_xfile(fp);
+        fclose(fp);
+        return org;
+    } else if (type == 3) {
+        fprintf(stderr, "%s: read_hexfile\n", filename);
+        org = read_hexfile(fp);
         fclose(fp);
         return org;
     } else {
@@ -378,6 +433,7 @@ static int init_mem(context_t *cx, word_t org)
 }
 
 const char *output_file = NULL;
+int disdump_flag = 0;
 
 int main (int ac, char **av)
 {
@@ -387,6 +443,12 @@ int main (int ac, char **av)
     word_t cold_addr, org;
     context_t _ctx, *cx;
 
+    if (ac > 2 && strcmp(av[1], "-d") == 0) {
+        // disdump dict.X
+        disdump_flag = 1;
+        av += 2;
+        ac -= 2;
+    }
     if (ac > 2 && strcmp(av[1], "-o") == 0) {
         output_file = av[2];
         av += 2;
@@ -401,10 +463,11 @@ int main (int ac, char **av)
     // initialize ctx
     cx = &_ctx;
     initialize_ctx(cx);
-    if ((org = init_dict(cx, av[1])) < 0) {
-        fprintf(stderr, "exit init_dict error\n");
+    if ((org = read_dict(cx, av[1])) < 0) {
+        fprintf(stderr, "exit read_dict error\n");
         return 1;
     }
+    init_org(cx, org);
     init_outer_buf(ac - 2, av + 2);
     init_optable();
     if (init_mem(cx, org) < 0) {
@@ -430,8 +493,8 @@ int main (int ac, char **av)
     } else {
         fprintf(stderr, "start text interpreter\n");
         //STAR(DEBUG_ADDR) = 1;
-        dump_hex(cx, org_addr, 54);
-        dump_hex(cx, STAR(UP_HEAD), 30);
+        // dump_hex(cx, org_addr, 54);
+        // dump_hex(cx, STAR(UP_HEAD), 30);
         changemode(1);
         do_mainloop(cx);
         changemode(0);

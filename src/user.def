@@ -15,6 +15,7 @@ last_addr:
     .head vBDQOUTE  0
     .head vBRANCH   0
     .head vDOLIT    0
+    .head vSLIT     do_s_dolit
     .head vPDO      0
     .head vPLOOP    0
     .head vPPOSTLOOP   0
