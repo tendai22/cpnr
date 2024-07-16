@@ -186,7 +186,7 @@ dA dA @ ( 0x43 .ps ) drop drop
       r1@ +        \ new index
       dup r1!  \ save new index, new index remains
       r2@         \ index limit
-      >       \ (limit -1) if i+d > limit, (limit 0) if i+d <= limit 
+      >=       \ (limit -1) if i+d >= limit, (limit 0) if i+d < limit 
    else
       r1@ +        \ new index
       dup r1!  \ save new index, new index remains
@@ -258,14 +258,14 @@ dA dA @ ( 0x43 .ps ) drop drop
 \ test words
 \ : test1 3 begin dup . cr 1 - dup not until drop ;
 \ : test2 3 begin dup while dup . cr 1 - repeat drop ;
-\ : aho 3 1 do i . cr loop ;
+\ : aho 4 1 do i . cr loop ;
 \ 2 nested loop
 \ : baka
-\    3 1 do i . space
-\            3 1 do i . j . space loop cr
+\    4 1 do i . space
+\            4 1 do i . j . space loop cr
 \        loop ;
 \ unloop test
-\ : aho 5 1 do i . cr i 3 = if unloop exit then loop ;
+\ : aho 6 1 do i . cr i 3 = if unloop exit then loop ;
 
 \ ==== end of primary defintions
 
@@ -300,11 +300,10 @@ dA dA @ ( 0x43 .ps ) drop drop
 
 \ fill 
 : fill ( addr n c -- )
-  rot rot  \ c addr n
+  rot rot 1+  \ c addr n
   0 do _p++ loop drop drop ;
 
 : cmove ( from to count --- )
-   1 - \ from to count-1
    0 do \ from to
       over i + c@ \ from to c
       over i + c!
@@ -415,7 +414,7 @@ dA dA @ ( 0x43 .ps ) drop drop
    #np c! #i-- ;
 
 : type ( addr u -- ) \ print a string
-   swap 1- swap 1 do dup i + c@ emit loop drop ;
+   ( swap 1- swap ) 0 do dup i + c@ emit loop drop ;
 
 : sign ( n xx xx - n xx xx ) \ print '-' if n is minus
    2 pick msb and if 45 #np c! #i-- then ;
@@ -440,6 +439,7 @@ dA dA @ ( 0x43 .ps ) drop drop
    swap dup h4. space
    swap
    256 min
+   1+  \ limit + 1
    1             \ addr n 1
    do            \ addr
       dup c@ h2. space
@@ -452,7 +452,7 @@ dA dA @ ( 0x43 .ps ) drop drop
 \ : space bl emit ;
 
 \ spaces ( n -- ) .. n spaces
-: spaces 1 do bl emit loop ;
+: spaces 0 do bl emit loop ;
 
 \ exit
 : exit SEMI_HEAD @ , ; immediate
@@ -519,7 +519,7 @@ dA dA @ ( 0x43 .ps ) drop drop
 : .cs \ ( c-addr --- ) dump counted string
    dup h4. space 
    dup c@ dup .   \ c-addr n
-   over +         \ c-addr c-addr+n
+   over + 1+        \ c-addr c-addr+n
    swap 1+        \ c-addr+n c-addr+1
    0x22 emit      \ print "
    do i c@ emit loop
@@ -539,6 +539,7 @@ dA dA @ ( 0x43 .ps ) drop drop
    s0 dup dup c@ 1+ + swap ( 0x30 .ps ) \  limit-index
    >in @ +        \ start-index
    over over <= if drop drop drop drop 0 ( 0x42 .ps ) exit then
+   swap 1+ swap
    ( 0x41 .ps )
    do dup 0 = if  \ skip it
          i c@ 2 pick ( 0x42 .ps ) != if 1+ then  \ flag++
@@ -624,7 +625,7 @@ dA dA @ ( 0x43 .ps ) drop drop
 : compare ( c-addr1 u1 c-addr2 u2 -- n )
    \ 3 pick 2 dump 1 pick 2 dump cr
    0     \ dummy for first drop
-   3 pick 2 pick min 1 -    \ max index (len - 1)
+   3 pick 2 pick min     \ max index (len)
    0 do     \ c-addr1 u1 c-addr2 u2
       drop
       3 pick i + c@  \ c-addr1 u1 c-addr2 u2 i c1
@@ -658,6 +659,7 @@ dA dA @ ( 0x43 .ps ) drop drop
 \ print name
 : entry_name ( entry -- )
    c@ 0x1f and \ length
+   1+ \ length + 1
    1 do dup i + c@ emit loop space ;
 
 \ test
@@ -887,6 +889,7 @@ dA dA @ ( 0x43 .ps ) drop drop
    over +
    over
    ( 0x41 .ps )
+   swap 1+ swap
    do 
       key
       dup 4 = if r> r> drop drop drop drop 0 exit then
@@ -921,7 +924,7 @@ dA dA @ ( 0x43 .ps ) drop drop
    \ now got a line on s0
    s0 dup 1+ strlen +   \ &s0[strlen]
    \ eliminate trailing cr/lf
-   s0 1+ swap do 
+   s0 2 + swap do 
       i c@
       dup 13 = if 0 i c! else
       dup 10 = if 0 i c! else 
@@ -1270,8 +1273,8 @@ last 1+ 0x5c swap c!
 last 1+ 0x28 swap c!
 
 : dump \ ( addr n -- ) \ simple dump
-   1 -  \ n--
-   127 min
+   \ 1 -  \ n--
+   128 min
    0             \ addr n 1
    do            \ addr
       i 0= 1 pick 14 and 0= ( 0x42 .ps ) or if dup h4. space then
