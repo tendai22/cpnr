@@ -101,6 +101,7 @@ opcode sp! sp_reset
 opcode d+ dadd
 opcode m+ madd
 opcode m*/ mmuldiv
+opcode um*/ ummuldiv
 opcode d< dlt
 opcode u* umul
 //opcode d_dolit
