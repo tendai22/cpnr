@@ -74,7 +74,7 @@ opcode /mod slashmod
 //
 opcode emit
 opcode key
-opcode kbhit
+//opcode kbhit
 //
 // compilers/outer interpreter
 //
@@ -103,7 +103,7 @@ opcode m+ madd
 opcode m*/ mmuldiv
 opcode d< dlt
 opcode u* umul
-opcode d_dolit
+//opcode d_dolit
 //
 // misc
 //
