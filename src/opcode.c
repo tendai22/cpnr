@@ -217,23 +217,23 @@ do_run_label:
         cx->pc += CELLS;
         break;
     case 30: // m_div
-        w = do_pop(cx);
-        STAR(cx->sp) = tos(cx) / w;
+        v1 = do_pop(cx);
+        STAR(cx->sp) = (int16_t)tos(cx) / v1;
         cx->pc += CELLS;
         break;
     case 31: // m_mul
-        w = do_pop(cx);
-        STAR(cx->sp) = tos(cx) * w;
+        v1 = do_pop(cx);
+        STAR(cx->sp) = (int16_t)tos(cx) * v1;
         cx->pc += CELLS;
         break;
     case 32: // m_sub
-        w = do_pop(cx);
-        STAR(cx->sp) = tos(cx) - w;
+        v1 = do_pop(cx);
+        STAR(cx->sp) = (int16_t)tos(cx) - v1;
         cx->pc += CELLS;
         break;
     case 33: // m_add
-        w = do_pop(cx);
-        STAR(cx->sp) = tos(cx) + w;
+        v1 = do_pop(cx);
+        STAR(cx->sp) = (int16_t)tos(cx) + v1;
         cx->pc += CELLS;
         break;
     case 34: // m_gt
