@@ -31,9 +31,9 @@ Cソースコードはコンパイルされ、Linuxコマンド`cpnr`が生成�
 
 ## ビルド方法
 
-リポジトリ`https://github.com/tendai22/cpnr.git`を`clone`ご、`cpnr/src`に`cd`してから、(`git checkout RC`してから) `make`コマンドを実行してください。
+リポジトリ`https://github.com/tendai22/cpnr.git`を`clone`したのちに、`cpnr/src`に`cd`してから、(`git checkout RC`してから) `make`コマンドを実行してください。
 
-```shell-session
+```shell
 kuma@LizNoir:~/temp$ git clone https://github.com/tendai22/cpnr.git
 Cloning into 'cpnr'...
 remote: Enumerating objects: 1224, done.
