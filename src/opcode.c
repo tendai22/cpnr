@@ -11,6 +11,7 @@
 int machine_code(context_t *cx, word_t code)
 {
     word_t addr, *wp, w, w2, w3, n;
+    int16_t v1, v2;
     int32_t d1, d2;
     uint32_t ud1, ud2;
     mem_t *p, c;
@@ -216,23 +217,23 @@ do_run_label:
         cx->pc += CELLS;
         break;
     case 30: // m_div
-        w = do_pop(cx);
-        STAR(cx->sp) = tos(cx) / w;
+        v1 = do_pop(cx);
+        STAR(cx->sp) = (int16_t)tos(cx) / v1;
         cx->pc += CELLS;
         break;
     case 31: // m_mul
-        w = do_pop(cx);
-        STAR(cx->sp) = tos(cx) * w;
+        v1 = do_pop(cx);
+        STAR(cx->sp) = (int16_t)tos(cx) * v1;
         cx->pc += CELLS;
         break;
     case 32: // m_sub
-        w = do_pop(cx);
-        STAR(cx->sp) = tos(cx) - w;
+        v1 = do_pop(cx);
+        STAR(cx->sp) = (int16_t)tos(cx) - v1;
         cx->pc += CELLS;
         break;
     case 33: // m_add
-        w = do_pop(cx);
-        STAR(cx->sp) = tos(cx) + w;
+        v1 = do_pop(cx);
+        STAR(cx->sp) = (int16_t)tos(cx) + v1;
         cx->pc += CELLS;
         break;
     case 34: // m_gt
@@ -312,11 +313,29 @@ do_run_label:
         break;
     case 48:  // m_mmuldiv
         // ( d1 n2 n3 --- t-result )
+        v2 = do_pop(cx);
+        v1 = do_pop(cx);
+        d1 = do_dpop(cx);
+        if (STAR(DEBUG_ADDR) & 2)
+            fprintf(stderr, "d1 = %d, v1 = %d, v2 = %d -> ", d1, v1, v2);
+        d1 *= v1;
+        d1 /= v2;
+        if (STAR(DEBUG_ADDR) & 2)
+            fprintf(stderr, "result = %d(%x)\n", d1, d1);
+        do_dpush(cx, d1);
+        cx->pc += CELLS;
+        break;
+    case 66:  // m_ummuldiv
+        // ( ud1 n2 n3 --- t-result )
         w2 = do_pop(cx);
         w = do_pop(cx);
         ud1 = do_dpop(cx);
+//        if (STAR(DEBUG_ADDR) & 2)
+//            fprintf(stderr, "ud1 = %d, w = %d, w2 = %d -> ", ud1, w, w2);
         ud1 *= w;
         ud1 /= w2;
+//        if (STAR(DEBUG_ADDR) & 2)
+//            fprintf(stderr, "result = %d(%x)\n", ud1, ud1);
         do_dpush(cx, ud1);
         cx->pc += CELLS;
         break;

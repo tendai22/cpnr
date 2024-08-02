@@ -326,9 +326,9 @@ dA dA @ ( 0x43 .ps ) drop drop
    rot rot ( n3 n4 n1 n2 )
    ;
 
-: m/ \ ( ud1 n2 --- ud )
+: um/ \ ( ud1 n2 --- ud )
     1 swap ( ud1 1 n2 )
-    m*/    ( ud1/n2 )
+    um*/    ( ud1/n2 )
     ;
 
 : bitnot 
@@ -343,14 +343,14 @@ dA dA @ ( 0x43 .ps ) drop drop
    dup 0x8000 and if \ negative
       dnegate then ;
 
-: m/mod \ ( ud1 n2 --- reminder udq )
+: um/mod \ ( ud1 n2 --- reminder udq )
    2 pick 2 pick 2 pick ( ud1 n2 ud1 n2 )
-   m/  ( ud1 n2 ud1/n2 )
+   um/  ( ud1 n2 ud1/n2 )
    2dup 
    >r >r ( save ud1/n2 )
    rot ( ud1 ud1/n2 n2 )
    1   ( ud1 ud1/n2 n2 1 )
-   m*/ ( ud1 ud1/n2*n2 )
+   um*/ ( ud1 ud1/n2*n2 )
    dnegate ( ud1 -ud1/n2*n2)
    d+  ( dmod )
    drop ( mod ) \ single length reminder
@@ -399,7 +399,7 @@ dA dA @ ( 0x43 .ps ) drop drop
    10 - 0x41 + then then ;
 
 : # ( d -- n/10 )
-   #base m/mod  ( d -- d%10 d/10 ) 
+   #base um/mod  ( d -- d%10 d/10 ) 
    rot         ( d/10 d%10 )
    i2a #np c!
    #i-- ;
@@ -961,8 +961,8 @@ dA dA @ ( 0x43 .ps ) drop drop
 \ rest of double length number alithmetics
 \
 : d- dnegate d+ ;
-: d/ \ ( ud1 n2 --- ud1/n2 ) ... same as `m/` 
-  m/ ;
+: ud/ \ ( ud1 n2 --- ud1/n2 ) ... same as `m/` 
+  um/ ;
 : dmax \ ( ud1 ud2 --- ud )
    3 pick 3 pick 3 pick 3 pick ( ud1 ud2 ud1 ud2 ) 
    d<      if 2swap then 2drop ;
