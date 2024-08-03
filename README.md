@@ -2,51 +2,55 @@
 
 本リポジトリは、C言語で動くForthインタプリタ"CPNR"を提供します。
 
-## 内容物
+テキストインタプリタとスレッドコードインタプリタ(内部インタプリタ)をC言語で記述したコマンド(実行可能形式)に、最低限の機械語ワードを含む辞書を与えて起動し、Forthのコロン定義で記述したワードを辞書に追加してForth処理系を完成させます。
 
-Forth処理系、内部インタプリタと最低限の定義を実行するスレッドコードインタプリタをC言語で記述し、そのうえでコンパイル・実行できる外部インタプリタをForthのコロン定義で記述したものを含んでいます。
+この処理系は、C言語で記述された「仮想CPU」により実行されます。「仮想CPU」の命令セットはForth処理に特化しており、普通のCPUの機械語「らしくない」ものです。超多機能の1ワード命令主体で、レジスタを生かしたメモリアクセスがありません。
 
-コロン定義のコンパイルが行う必要があるため、スレッドコードインタプリタは実質的に外部インタプリタを持ちます。`WORD`, `NUMBER`, `FIND`, `EXECUTE`, 辞書領域へのデータ書き込み(`,`(カンマ))などが必要になり、初期状態で実行可能なプリミティブは結構多いです。
+レトロCPUを含むさまざまなマイコンに短時間で移植できるように、機械語依存部分を最小限として、ここのみを書き換えて新しいCPU上で動作するForth処理系を作ることができます(できるはずです……鋭意開発進行中)。
 
-外部インタプリタのコロン定義を記述するためには、`WORD`, `NUMBER`, `FIND`, `EXECUTE` を再定義します。再定義コロン定義がそろった時点で、プリミティブとして用意した`WORD`, `NUMBER`, `FIND`, `EXECUTE`などを削除して、残ったものだけをターゲットCPUの機械語で書き直すことで、ターゲットへの移植が完了するという考えです。
+ワード揃えは、過去に存在したForth標準規格に準拠していませんが、ユーザ変数、制御構造、定義語、コンパイル、テキストインタプリタを構成できるところまではそろえてあります。但し、Forth処理系なら普通に持っている、「エディタ」「アセンブラ」「2次記憶サポート(仮想メモリ)」はサポートしていません。
+
+ターゲット開発環境でC言語が使用できるのならば、ターゲットハード/CPUが持つI/O、周辺機器を制御するプリミティブをC言語で記述し、C言語main関数の中から本処理系を呼び出して、それらプリミティブと組み合わせればよいだろうという考えに基づきます。
 
 ソースコードライセンスはBSD-3clauseとします。
 
-## お試し方法
+* [動機](./MOTIVATION.md)
+* [仮想CPUレジスタ・命令表](./VIRTUALCPU.md)
+* [ワード仕様](SPECS.md)
 
-* [設計情報、「ワードリスト」](DESIGN.md)
-* ソースコードは `src`の下にあります。
-* ビルドは`build`の下で`make`コマンドを実行すればOKです。シェルスクリプト実行が必須ですので、Linux/Unix環境でお試しください。
-* Bash前提ではないので、FreeBSD上でも実行できるはずです。
-* gawk前提となってしまいました。申し訳ないです。
-* 実行はコマンド`cpnr`を起動してください
+## システム概要
 
-```
-NAME
-    cpnr - A Forth interpreter-kit for porting new CPUs
+<figure>
+<img src="img/fig01-cpnr-system-overview-anno.png">
+<figcaption>図1. システム概要
+</figure>
 
-SYNOPSIS
-    cpnr [-c config-file] file ...
+C言語版テキストインタプリタと仮想CPU実行器が、メモリ中のバイト配列上に配置した仮想CPU機械語を実行します。
 
-DESCRIPTION
-    A forth interpreter writtend C.
+Cソースコードはコンパイルされ、Linuxコマンド`cpnr`が生成されます。
 
-    It start with very limited definitions, including inner/outer 
-    interpreter, definitions of `:`(colon), `;` and some dictionary
-    handling words.
+仮想CPU機械語で書かれた部分は、仮想CPU用アセンブリ言語で記述され、アセンブル後イメージファイルに変換され、`cpnr` 起動時に引数で指定します。
 
-    files are interpreted in turn, usually the first argument 
-    specify a meaningful forth word definitions.  After parsing
-    all of the argument files, it enters an outer interpreter 
-    prompted with " OK".
+また、Forth言語ワードを定義するソースファイルも合わせて引数で指定します。この状態で`cpnr`を呼び出すと、Forth処理系がスタートします。
 
-    More detail description, available words are specified 
-    in SPECS.md'
-```
+## ビルド方法
 
-## ビルド例
+リポジトリ`https://github.com/tendai22/cpnr.git`を`clone`したのちに、`cpnr/src`に`cd`してから、(`git checkout RC`してから) `make`コマンドを実行してください。
 
-```
+```shell
+kuma@LizNoir:~/temp$ git clone https://github.com/tendai22/cpnr.git
+Cloning into 'cpnr'...
+remote: Enumerating objects: 1224, done.
+remote: Counting objects: 100% (441/441), done.
+remote: Compressing objects: 100% (288/288), done.
+remote: Total 1224 (delta 305), reused 284 (delta 152), pack-reused 783
+Receiving objects: 100% (1224/1224), 1.75 MiB | 1.37 MiB/s, done.
+Resolving deltas: 100% (914/914), done.
+kuma@LizNoir:~/temp$ cd cpnr
+kuma@LizNoir:~/temp/temp/cpnr$ git checkout RC
+Branch 'RC' set up to track remote branch 'RC' from 'origin'.
+Switched to a new branch 'RC'
+kuma@LizNoir:~/temp/cpnr$ cd src
 kuma@LizNoir:~/temp/cpnr/src$ make
 sh makeuser.sh -h 0x8000 0xf000 user.def > user.h
 cc -g -Wno-pointer-sign    -c -o main.o main.c
@@ -63,145 +67,133 @@ sh makeuser.sh -s 0x8000 0xf000 user.def > user.s
 sh makedict.sh primary.dict > primary.s
 cat user.s inner.s primary.s > dict.s
 sh as.sh dict.s > dict.list
-.equ entry_head=entry_057
-.equ entry_head=entry_057
+.equ entry_head=entry_056
+.equ entry_head=entry_056
 sh dump.sh dict.list > dict.X
 ./cpnr -o self8.bin dict.X user.f base.f cold.f dictdump.f
 dict.X: read_xfile
 read_xfile: offset = 0000
 init_org: org_addr = 8000, user_org_addr = 0000
-init_mem: org: 8000, dp: 8394, last: 8386
+init_mem: org: 8000, dp: 8380, last: 8372
 init_mem: up: f000, s0: f100, r0: f200, tib: f100
 start text interpreter
 open: user.f
 open: base.f
 
-End: A460, 2460(9312 ) bytes.
+End: A45E, 245E(9310 ) bytes.
 open: cold.f
 open: dictdump.f
-m_dictdump: begin: 8000, end: a48e, last: a47e
-savefile: self8.bin, 9358 bytes
+m_dictdump: begin: 8000, end: a48c, last: a47c
+savefile: self8.bin, 9356 bytes
 bye
 abort result = -1
 kuma@LizNoir:~/temp/cpnr/src$
 ```
 
-## 処理系起動
+## お試し方法
+
+全部入りの辞書イメージ`self8.bin`が生成されているはずですので、それを使ってForth処理系を起動します。簡単なワードを`add_one`を定義して実行します。
 
 ```
 kuma@LizNoir:~/temp/cpnr/src$ ./cpnr self8.bin
-self8.bin: dicttop = 8000, dp = a48e, last = a47e
+self8.bin: dicttop = 8000, dp = a48c, last = a47c
 init_org: org_addr = 8000, user_org_addr = f000
-init_mem: org: 8000, dp: a48e, last: a47e
+init_mem: org: 8000, dp: a48c, last: a47c
 init_mem: up: f000, s0: f100, r0: f200, tib: f100
-start cold at a486
+start cold at a484
 
 narrowForth v0.91dev
-[] OK
+[] OK : add_one 1 + ;
+[] OK 1
+[0001 ] OK add_one
+[0002 ] OK add_one
+[0003 ] OK trap: result = -1, lnum = 0
+kuma@LizNoir:~/temp/cpnr/src$
 ```
 
-これでForthワードの入力と実行、コロン定義が利用できます。
+レトロCPU界隈で人気のASCIIART(マンデルブロ図形)も実行できます。`self8.bin`を使わずにプリミティブ辞書とソースコードを引数で指定してインタプリタを起動して、ワード`asciiart`を叩いてください。
 
 ```
-[] OK 1 2 3
-[0001 0002 0003 ] OK +
-[0001 0005 ] OK +
-[0006 ] OK .
-6 [] OK : aho if 1000 else 10 then ;
-[] OK 1 aho
-[03E8 ] OK .
-1000 [] OK 0 aho
-[000A ] OK .
-10 [] OK
+kuma@LizNoir:~/temp/cpnr/src$ ./cpnr dict.X user.f base.f asciiart.f
+dict.X: read_xfile
+read_xfile: offset = 0000
+init_org: org_addr = 8000, user_org_addr = 0000
+init_mem: org: 8000, dp: 8380, last: 8372
+init_mem: up: f000, s0: f100, r0: f200, tib: f100
+start text interpreter
+open: user.f
+open: base.f
+
+End: A45E, 245E(9310 ) bytes.
+open: asciiart.f
+
+[][] ok
+asciiart
+0000001111111111111111111111222222222333334568BC6744332222221111111111100000000
+000000011111111111111111111122222222233344598C  7794333322222111111111000000000
+0000000011111111111111112222222233324444556       95543333221111111110000000000
+0000000011111111111211112222222333455665778       97655444422221111110000000000
+000001111111111112222222233333334457 AB9              787B543211111111110000000
+000111111111112222222222333333444667                       53222211111111100000
+000011111111111222333444444444555A                       9644332221111111000000
+000001111112222223345D6657 6555679                        AA4332221111111000000
+0000112222222233334569  8C  E8789                          B4332211111111000000
+1111112222223333345578D        E                            4332221111111111110
+11111222333344444789A                                      54332211111111111110
+11112233445555658A                                       C643322222211111111110
+11112                                                   97544332222111111111110
+11112233445555658A                                       C643322222211111111110
+11111222333344444789A                                      54332211111111111110
+1111112222223333345578D        E                            4332221111111111110
+0000112222222233334569  8C  E8789                          B4332211111111000000
+000001111112222223345D6657 6555679                        AA4332221111111000000
+000011111111111222333444444444555A                       9644332221111111000000
+000111111111112222222222333333444667                       53222211111111100000
+000001111111111112222222233333334457 AB9              787B543211111111110000000
+0000000011111111111211112222222333455665778       97655444422221111110000000000
+0000000011111111111111112222222233324444556       95543333221111111110000000000
+000000011111111111111111111122222222233344598C  7794333322222111111111000000000
+0000001111111111111111111111222222222333334568BC6744332222221111111111100000000
+[][] ok
+bye
+bye
+abort result = -1
+kuma@LizNoir:~/temp/temp/cpnr/src$
 ```
 
+* ソースコードは `src`の下にあります。
+* ビルドは`build`の下で`make`コマンドを実行すればOKです。シェルスクリプト実行が必須ですので、Linux/Unix環境でお試しください。
+* Bash前提ではないので、FreeBSD上でも実行できるはずです。
+* gawk前提となってしまいました。申し訳ないです。
+* 実行はコマンド`cpnr`を起動してください
 
-* [ワード仕様](SPECS.md)
+```
+NAME
+    cpnr - A Forth interpreter-kit for porting new CPUs
 
-## 動機
+SYNOPSIS
+    cpnr [-o DICTDUMP-FILE] DICT-FILE FILE...
 
-特定のCPUに依らない実装を作る。Forth処理系の場合、内部インタプリタ(または、スレッドコード(threaded code)処理系<sup>1,</sup>)を仮想的なCPUの機械語として表現する。あるターゲットCPUの機械語を使い、この仮想的なCPUエミュレータを用意すれば、さまざまなCPU上で動かすことができる。実行性能・効率はともかく。移植の立ち上がりはよいだろう。
+DESCRIPTION
+    A forth interpreter writtend C.
 
-仮想的CPUのエミュレータをC言語で記述すれば、高速なPC上でエミュレートも簡単だし、C言語が動くターゲットCPU上での動作も容易になる。C言語で開発できる環境ならForthを移植して使う必要もないやんかというツッコミも当然あるのだが、それはいったん脇に置いておく。
+    It start with very limited definitions, including inner/outer 
+    interpreter, definitions of `:`(colon), `;` and some dictionary
+    handling words.
 
-以上は単純化した「動機」であり、詳細は別途記述する([MOTIVATION.md](MOTIVATION.md))
+    files are interpreted in turn, usually the first argument file, 
+    DICT-FILE specify a meaningful forth word definitions.  After 
+    parsing(read and compile all of these *.f source file), all of
+    the argument files, it enters an outer interpreter prompted with
+    " ok".
 
-## きっかけ
+    The option '-o' specifies an output filename, DICTDUMP-FILE for 
+    dumping the latest dist image. 
 
-「奥のほそ道」版 Forth 処理系を作成している。68000用を作ってきたが、いろいろしんどいことがありました。また、今後、さまざまなCPU上で動かしたいという欲が湧いてきました。
+    More detail description, available words are specified 
+    in SPECS.md'
 
-しんどかったこと2つですが、(1) `WORD`, `NUMBER`, 外部インタプリタをアセンブラで書くのがしんどい、Cで書きたい、と(2) 自作Forth処理系の立ち上げ過程(デバッグ)を楽したい、です。
-
-#### 1. `WORD`, `NUMBER`, 外部インタプリタをアセンブリ言語で書くのがしんどい
-
-この手の処理をアセンブリ言語で書くと100行越えになってしまいます。プログラム書き始めがC言語で、アセンブリ言語での大プログラム開発体力は貧弱です。`WORD`, `NUMBER`, `.`(ピリオド: 数字出力)はがちがちの文字列処理です。文字列処理はC言語で書き倒しているので手が勝手にコードを生み出してくれるのですが、アセンブリ言語で書くと、書くこと自体にも時間がかかります。
-
-#### 2. デバッグ過程を楽したい
-
-長いプログラムを書くと、些細なことそこここで引っかかってしまいます。デバッガを整備して進めてきたのですが、C言語で書いたプログラムのデバッグに比べると手間がかかります。
-
-narrowroad-68kのときは Musashi エミュレータを改造してシングルステップ+レジスタダンプで68000CPUと機械語を勉強しながら進めました。ワード定義ができるようになると、今度はワード定義内のシングルステップとスタック+行バッファダンプが便利と分かりました。こちらは68000機械語で書くのですが、これもけっこうしんどい。
-
-narrowroad-m68k開発は、外部インタプリタまで動く状態にして、いよいよForthワード定義で立ち上げるところまで来ましたが、ワード定義デバッグ環境もm68k機械語で作るのにも疲れてきました。ワード定義デバッグ環境もC言語で書けると楽だなぁ、と考えていました。
-
-#### 3. C言語上で動くForth処理系が欲しい
-
-Forth処理系をあるCPUに移植するに際し、周辺デバイスを動かすためには、仕様書を見ながらレジスタをぽちぽち叩くのですが、このやり方では動くところまで持ってゆくのが大変です。
-
-CPUの周辺デバイス(SPI, I2C, フラッシュR/Wなど)を使うためのすぐ動くコードがC言語環境なら既に用意されています。最近の組み込み系CPUはベンダがCコンパイラと周辺デバイスをアクセスするためのライブラリを用意してくれています。提供されるサンプルコードを見ながらこのライブラリを呼び出すとすぐに動作させられます。このライブラリを呼び出して使えるようにForth処理系を作りたい、そのためには、C言語で記述するのが一番(おそらく唯一の方法)でしょうね。
-
-Forthワードの中からC言語ライブラリを呼び出せるようにするには、実行系としてC言語の枠組みをそのまま使うことが必要です。要するに、main関数の中からForth処理系を呼び出すようにするのです。forth処理系は機械語プログラムに見えます。C言語のレジスタ扱いは尊重しておけば動くはず。そういう想定を持っています。
-
-#### 参考: TILの内部インタプリタ表現を見る
-
-そもそもの発端となった、TIL(Threaded Interpreter Language)の内部インタプリタ表現を参考に上げておきます。
-
-コード自体は以下の通り。インストラクション幅は2バイト、ジャンプ命令は2+2バイトであることが分かる。
-
-    Location   Mnemonic Instruction  Comment  
-
-     0140       COLON   PSH I - RS  
-     0142               WA - I  
-     0144               JMP         ; Jump to NEXT  
-     0146               0104          
-
-     0100       SEMI    0102        ; Code address of SEMI  
-     0102               POP RS - I  
-     0104       NEXT    @I - WA  
-     0106               I = I + 2  
-     0108       RUN     @WA - CA  
-     01OA               WA = WA + 2  
-     010C               CA - PC  
-
-     0050               7E          ; Dictionary  
-     0052               XE          ; header  
-     0054               LA          ; for EXECUTE  
-     0056       EXECUTE 0058        ; Code address of  EXECUTE  
-     0058               POP SP - WA
-     005A               JMP         ; Jump to RUN
-     005C               0108  
-
-コロン定義のスレッドを実行するために必要なサポートルーチンは上記の5つだけです。
-
- |primitives|description|
- |--|--|
- |COLON|コロン定義の入り口の処理。IPをスタックに保持し、コロン定義スレッドの先頭のアドレスをIPに代入する。そのまま流れ込んだNEXTでスレッド先頭のアドレスから実行開始する。
- |SEMI|スレッド最後にこのルーチンのアドレスを置く。スタックからIPを戻し、NEXTになだれ込む。IPは、呼び出し元のスレッドの次のアドレスを指しているので、呼び出し元のスレッドの実行が継続する。
- |NEXT|IPが指す先の格納されたアドレスを取り出しそこにジャンプする(RUN)。
- |RUN|NEXT, EXECUTE共通の間接ジャンプルーチン。WAに取り出しておいた飛び先に飛び、WA, CAも更新しておく。WA, CAは機械語ワードの実行時に使用する。
- |EXECUTE|スタックトップにルーチンのアドレスが置いてある。そのアドレスのスレッドにジャンプする。
-
-
-## Forth Interpreter
-
-仮想CPUに加え、仮想デバイスとして、シリアルポート(IN/OUT)、ROM領域(起動時辞書とForthシステムを構成するプログラムを含む定義(テキスト表現)を起動時に読み込む)を持つ。RAMは読み込んだ定義をコンパイルする辞書領域と、ワークメモリ、スタック領域を保持する。シングルステップとデバッガも組み込む。
-
-Linuxコマンドとして実現し、呼び出し時にForthシステム定義(テキスト表現)とデバッガスクリプトを引数で与える。起動するとモニタモードに入り、GOコマンドでインタプリタの実行を開始する。
-
-シリアルポートエミュレーションは、キー入力の有無とデータレジスタレベルでシミュレーションする。端末ドライバはrawモードにして使う。エミュレータが暴走するとプロセスを殺してもキー入力がエコーバックしなくなることもある。その場合は、慌てず stty saneを実行しよう。
-
-インタプリタ自体は、レジスタとワークの初期化の後に、外部インタプリタとして、辞書中の`QUIT`エントリのコードを`EXECUTE`する。
-
+```
 
 # 参考文献
 
