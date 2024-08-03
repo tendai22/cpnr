@@ -1,7 +1,9 @@
-//
-// key_linux.c ... one key, raw mode, non blocking input
-//
-
+/*-
+ * SPDX-License-Identifier: BSD-3-Clause
+ *
+ * key_linux.c ... one key, raw mode, non blocking input
+ * Copyright (c) 2024, Norihiro Kumagai
+ */
 
 #include <stdio.h>
 #include <termios.h>

@@ -1,6 +1,9 @@
-//
-//
-//
+/*-
+ * SPDX-License-Identifier: BSD-3-Clause
+ *
+ * machine.c ... virual CPU execution loop for cpnr
+ * Copyright (c) 2024, Norihiro Kumagai
+ */
 
 #include <stdio.h>
 #include "machine.h"

@@ -1,7 +1,9 @@
-//
-// opcode.c: machine_code executor
-// Apr 14, 2024  Norihiro Kumagai
-//
+/*-
+ * SPDX-License-Identifier: BSD-3-Clause
+ *
+ * opcode.c: machine_code executor
+ * Copyright (c) 2024, Norihiro Kumagai
+ */
 
 #include <stdio.h>
 #include "machine.h"

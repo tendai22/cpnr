@@ -1,6 +1,9 @@
-#
-# base.dict .... makedict.sh sample dictionary template
-#
+//
+// SPDX-License-Identifier: BSD-3-Clause
+// 
+// base.dict .... makedict.sh sample dictionary template
+// Copyright (c) 2024, Norihiro Kumagai
+//
 
 //    org 0x8000
 //

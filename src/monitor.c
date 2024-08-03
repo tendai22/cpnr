@@ -1,6 +1,9 @@
-//
-// monitor.c:  cpu emulator execution and debugger
-//
+/*-
+ * SPDX-License-Identifier: BSD-3-Clause
+ *
+ * monitor.c:  cpu emulator execution and debugger
+ * Copyright (c) 2024, Norihiro Kumagai
+ */
 
 #include <stdio.h>
 #include <setjmp.h>

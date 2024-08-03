@@ -1,4 +1,8 @@
 #! /bin/sh
+#
+# SPDX-License-Identifier: BSD-3-Clause
+# Copyright (c) 2024, Norihiro Kumagai
+#
 flag="$1"
 shift
 # source code, add ORG/USER_ORG lines here

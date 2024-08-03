@@ -1,4 +1,7 @@
 \
+\ SPDX-License-Identifier: BSD-3-Clause
+\ Copyright (c) 2024, Norihiro Kumagai
+\
 \ dictdump.f ... store user area to top of dict
 \   and dictdump to "forth.bin"
 \

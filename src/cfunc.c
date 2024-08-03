@@ -1,7 +1,9 @@
-//
-// cfunc.c ... primitive (future overwritten ones)
-// Apr 1, 2024 Norihiro Kumagai
-//
+/*-
+ * SPDX-License-Identifier: BSD-3-Clause
+ *
+ * cfunc.c ... primitive (future overwritten ones)
+ * Copyright (c) 2024, Norihiro Kumagai
+ */
 
 #include <stdio.h>
 #include <string.h>

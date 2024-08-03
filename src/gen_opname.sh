@@ -1,4 +1,8 @@
 #! /bin/sh
+#
+# SPDX-License-Identifier: BSD-3-Clause
+# Copyright (c) 2024, Norihiro Kumagai
+#
 cat "$@" |
 sed '
 1i\

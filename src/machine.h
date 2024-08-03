@@ -1,6 +1,9 @@
-//
-// narrowForth C Portable machine definitions
-//  Norihiro Kumagai 2024-5-26
+/*-
+ * SPDX-License-Identifier: BSD-3-Clause
+ *
+ * machine.h ...narrowForth C Portable machine definitions
+ * Copyright (c) 2024, Norihiro Kumagai
+ */
 
 #if !defined(__MACHINE_H)
 #include <inttypes.h>

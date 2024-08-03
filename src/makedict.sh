@@ -1,6 +1,10 @@
 #! /bin/sh
-
+#
+# SPDX-License-Identifier: BSD-3-Clause
+# Copyright (c) 2024, Norihiro Kumagai
+#
 # makedic.sh ... generate Forth Dictionary assembler source file
+
 ORG=`cat "$@" |sed -n '/^[     ]*org/{
     s/^[     ]*org[     ][  ]*\([^  ][^     ]*\).*$/\1/p
     q

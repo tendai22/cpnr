@@ -1,4 +1,10 @@
 #! /bin/sh
+#
+# SPDX-License-Identifier: BSD-3-Clause
+# Copyright (c) 2024, Norihiro Kumagai
+#
+# as.sh ... pseudo CPU assembler
+#
 for f
 do  case "$f" in
     *.s)  ;;

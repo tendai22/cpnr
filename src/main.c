@@ -1,6 +1,9 @@
-// main.c ... cpnr main functions
-// March 24, 2024  Norihiro Kumagai
-//
+/*-
+ * SPDX-License-Identifier: BSD-3-Clause
+ *
+ * main.c ... cpnr main functions
+ * Copyright (c) 2024, Norihiro Kumagai
+ */
 
 #include <stdio.h>
 #include <string.h>

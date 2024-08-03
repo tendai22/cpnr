@@ -1,4 +1,7 @@
 \
+\ SPDX-License-Identifier: BSD-3-Clause
+\ Copyright (c) 2024, Norihiro Kumagai
+\
 \ asciiart.f: delived from C code on 
 \    `https://github.com/tgtakaoka/retro-bionic/tree/main`
 \

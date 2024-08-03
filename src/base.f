@@ -1,3 +1,7 @@
+\
+\ SPDX-License-Identifier: BSD-3-Clause
+\ Copyright (c) 2024, Norihiro Kumagai
+\
 \ base.f ... cpnr secondary base word definition
 
 : space 32 emit ;

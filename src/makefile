@@ -1,4 +1,7 @@
 #
+# SPDX-License-Identifier: BSD-3-Clause
+# Copyright (c) 2024, Norihiro Kumagai
+#
 # TARGET dict build
 #
 .PREFIXES: .dict .list .f .X .s
