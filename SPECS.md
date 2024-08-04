@@ -135,102 +135,94 @@
  dmax|( ud1 ud2 --- ud )|倍長整数2個のうち大きい方を残す
  dmin|( ud1 ud2 --- ud )|倍著整数2個のうち小さい方を残す
  dnegate|( d1 --- d2 )|倍長整数のマイナス値を返す
- `does>`|
- dolit
- do|
- dp|DP_ADDR ;
- drop
- dump
- dump|( addr n -- ) \ simple dump
- dup 
- else|vBRANCH @ , >mark swap >resolve ; immediate
- emit
- entry_name|( entry -- )
- exch
- execute
- exec|vexecute execute ;
- exit|SEMI_HEAD @ , ; immediate
- false|( --- 0 )
- fill|( addr n c -- )
- find|
- getline
- getline|( n addr --- )
- h++|here c@ 1+ here c! ;
- h2.|print hex number
- h4.|print hex number
- halt
- here|dp @ ;
- hex|16 BASE_ADDR ! ;
- hold|( c -- ) \ append a char to nbuf
- hptr|here dup c@ + 1+ ;
- h|dp ;
- i2a|( n -- c )
- if|vQBRANCH @ , >mark ; immediate
- immediate|last c@ 0x80 or last c! ;
- in_p|( -- addr )
- in_rest|( -- n )
- inc_p|( n -- )
- interpret|
- i|( R: index limit ret-addr)
- j|
- kbhit
- key
- last|LAST_ADDR @ ;
- leave|
- lfa|
- literal|( n --- ) ... compile literal instruction
- lnum
- loop|limit -- limit if loop remains | none if loop exits)
- m*/ mmuldiv
- m+ madd
- m/mod|( ud1 n2 --- reminder udq )
- m/|( ud1 n2 --- ud )
- max|2dup - msb and if swap then drop ;
- message|
- min|2dup - msb and not if swap then drop ;
- mod|/mod drop ;
- negate|( n -- 0000|ffff )
- nip|( x1 x2 -- x2 )
- nop
- not
- number|\ addr -- d
- or
- outer
- over
- pfa|cfa cell + ;
- pick|( +n -- x )
- quit|
- r1!||store a word in index
- r1@||
- r2@||index in a word execution
- r3@||index in a word execution
- r> r2s
- repeat|( -- )
- rot
- rp! rsp_reset
- rsp
- s"|( --- count addr )... string constant for `type`
- s->d|( n -- d ) ... sign extension
- s0|S0_HEAD @ ;
- s2r|
- s_dolit
- sign|( n xx xx - n xx xx ) \ print '-' if n is minus
- sp! sp_reset
- sp@ sp_at
- spaces|( n --- )|1 do bl emit loop ;
- space|32 emit ;
+ `does>`||定義語定義で、定義語の動作を記述する区切り, ': foo .... does> .... ;`の形式で用いる。
+ do|( limit initial --- )|定回数ループ、スタックｋら上限と初期値を取る
+ dp|( --- addr )|辞書領域末尾(先端)のアドレスを返す
+ drop|( n --- )|スタックトップを落とす
+ dump|( addr n --- )|addrからnワードをダンプする
+ dup| ( n --- n n )|スタックトップを複製する
+ else||`if ... else ... then`でelse節を導く
+ emit|( c --- )|1文字端末に出力する
+ entry_name|( addr -- )|辞書エントリ名を印字する(addrの文字列を印字する)
+ exch|( a b --- b a )|スタックトップ2ワードを入れ替える
+ execute|( xt --- )|スタックトップのxtを実行する
+ exec|( xt --- )|変数`vexecute`に格納されているxtを実行する。通常は`execute`に同じ。
+ exit|( --- )|コロン定義を終了する|
+ false|( --- 0 )|スタックにfalse(値0)を置く
+ fill|( addr n c --- )|addrからnバイトにcを埋める
+ find|( c-addr --- c-addr (0 | xt 1 | xt -1) )|カウント付き文字列`c-addr`で辞書を検索し結果を返す。見つからなければ 0, 見つかれば xt 1 or -1 の2ワードを返す。1は即値ワード、-1は通常ワードを表す。いずれにしても文字列アドレス`c-addr`は残り、次の処理に備える。
+ getline|( n addr --- )|1行入力。引数で指定したファイルから1行入力する。それが尽きるとキーボードからの入力を待つ
+ h++|( --- )|`dp`の先を1増やす
+ h2.|( n --- )|スタックトップを16進2桁で印字する。
+ h4.|( w --- )|スタックトップを16進4桁で印字する。
+ halt|( --- )|仮想CPU実行を停止し、テキストインタプリタの入力待ちに戻る
+ here|( --- addr )|辞書末尾アドレス(次にコンパイルするアドレス)を返す。
+ hex|( n --- )|数値入力、数値出力変換の基数を16とする。
+ hold|( c --- )|数値出力変換中で、文字cを出力バッファに書き込む
+ h|( --- dp )|辞書末尾(コンパイル先)アドレスを返す
+ if|( flag --- )|スタックトップの値が真であればifの次から実行し、偽であればthenの先まで飛ぶ
+ immediate|( --- )|直前に定義したワードの直値ビットをONにする
+ interpret|( --- )|行入力バッファの入力ストリームに対してインタプリタを実行する。
+ i|( --- n )|最も内側`DO ... LOOP`のインデックスの値を返す
+ j|( --- n )|一つ外側の`DO ... LOOP`のインデックスの値を返す
+ kbhit|( --- flag )|キー入力の有無を返す
+ key|( --- c )|キー入力を待ち、到着したらその文字を返す
+ last|( --- addr )|最後に定義したワード(または定義中のワード)の先頭のアドレスを返す
+ leave|( --- )|`DO ... LOOP`のインデックス値を最大値にする。次に`LOOP`に達した時点でループを抜ける
+ lfa|( addr --- addr2 )|辞書エントリのアドレスを渡すと、そのエントリのリンクフィールドアドレスを返す。
+ literal|( n --- )|スレッドコードの次のワードをスタックに乗せる。定数をコンパイルするとき、定数値の前に置かれる。
+ lnum|( --- n )|入力ストリームがファイルからの入力の際に、そのファイル中の行番号を返す。
+ loop|( --- )|`DO ... LOOP`の繰り返し部分。ループカウントを1増やして上限値と比較して、同じ値になれば抜ける。
+ m*/|( d1 n1 n2 --- d2 )|倍長整数を単長整数で割り、単長整数の商を得る。すべての値は符号付きである。
+ m+|( d1 n --- d2 )|倍長整数に単長整数を加算し、単長整数の和を得る。
+ m/|( ud1 n2 --- ud )|倍長整数を単長整数で割る。符号なし。
+ max|( n1 n2 --- n )|スタックトップ2個のうち大きい方を残す
+ message|( err --- )|変数`warning`の値が非0の場合、スタックトップのエラーコード`err`に応じたエラーメッセージを出力する。`warning`が0の場合は、`err`数値を印字するだけとなる。
+ min|( n1 n2 --- n )|スタックトップ2個のうち小さい方を残す
+ mod|( n1 n2 --- n )|n1 を n2 で割った余りを返す。
+ negate|( n -- 0000|ffff )|論理否定値を返す。非0なら0を返す。0なら-1(0xffff)を返す。
+ not|( n -- 0000|ffff )|プリミティブだが挙動は`negate`と同じ。ちょっと変かも。論理否定値を返す。非0なら0を返す。0なら-1(0xffff)を返す。
+ number|( c-addr --- d )|カウント付き文字列のアドレスを受けて、その文字列を数値に変換し、スタックトップに返す。数値に変換できない場合(変換できない文字に遭遇したとき)、`?error`を呼び出してエラーメッセージを出しテキストインタプリタを巻き戻す。
+ or|( n1 n2 --- n )|n1, n2のビット論理和の値を返す。
+ outer|( --- n )|C言語版テキストインタプリタの`outer_flag`を返す。入力ストリームがファイルから(非0)か、キー入力からか(0)を区別するフラグ変数。
+ over|( n1 n2 --- n1 n2 n1 )|スタック2番目のワードのコピーを積む。
+ pfa|( addr --- addr1 )|ワードエントリのアドレスを受け、そのエントリのパラメータフィールドアドレスを返す。
+ pick|( +n -- x )|スタックトップからn番目のワードをコピーしてスタックトップに積む。`0 pick`は`dup`と同じ。`1 pick`は`over`と同じ。
+ quit|( --- )|テキストインタプリタ開始処理、かつ、エラー発生時の脱出処理。リターンスタックをクリアし、`state`フラグを解釈実行モードに設定し、1行読み込み(accept)、その行を解釈実行(interpret)する。
+ r1!|( n --- )|リターンスタックの2つ目の要素に値 n を代入する。
+ r1@|( --- n )|スターンスタックの2つ目の要素をデータスタックに積む。
+ r2@|( --- n )|スターンスタックの3つ目の要素をデータスタックに積む。
+ r3@|( --- n )|スターンスタックの4つ目の要素をデータスタックに積む。
+ r>|( --- n )|リターンスタックトップをポップしてデータスタックにプッシュする。
+ r2s|( --- n )|リターンスタックトップの要素をポップしてデータスタックにプッシュする。
+ repeat|( -- )|`begin ... while ... repeat`構文の中で、無条件ジャンプで`begin`の直後に飛ぶ
+ rot|(n1 n2 n3 -- n2 n3 n1)|スタック3つめをスタックトップに移動させ、残り2つを一つ沈める。
+ rp!|( --- )|リターンスタックを初期位置に戻す(RSTACK_END)
+ rsp|( --- addr )|リターンスタックの値を返す
+ s"|( --- count addr )|入力ストリームから、文字"が出るまで読み込み、コロン定義の中にコンパイルする。文字列先頭アドレスaddrと文字数
+ s->d|( n -- d )|単長整数を倍長整数に増加させる。 ... sign extension
+ s0|( --- addr )|データスタック初期値、または、行入力バッファのアドレスを返す。
+ s2r|( addr --- )|データスタックトップをリターンスタックにプッシュする。
+ s_dolit|( --- )|文字列定数リテラル。
+ sign|( n xx xx - n xx xx )|スタック3つめの値がマイナスならば、数値出力バッファに`-`を置く。
+ sp!|( --- )|データスタックポインタ初期化(DSTACK_END)
+ sp@|( --- addr )|データスタックポインタの値をスタックトップに置く
+ spaces|( n --- )|空白文字n個を印字する
+ space|( --- )|空白文字1個を印字する。
  state|STATE_ADDR ;
  strict|( --- addr )|変数strictのアドレスを返す。インタプリタ実行時に都度スタックあふれチェック句をするかどうかを決める。
  strlen|( addr --- n )|ヌル終端文字列の長さを返す。
- swap
- then|>resolve ; immediate
- trap
- true|-1 ;
- type|( addr u -- ) \ print a string
- u* umul
- unloop|
- until|( flag -- )
- variable|create cell allot does> ; 
- while|( f -- )
- word|( delim -- addr|0 )
- xor
+ swap|( n1 n2 --- n2 n1 )|スタックトップ2ワードを置き換える。
+ then|( --- )|`if ... else ... then`の末尾処理を行う。前方参照を解決する。
+ trap|( --- )|trap命令を実行し仮想機械を停止する。テキストインタプリタを非常脱出する。
+ true|( --- -1 )|-1(0xffff)をスタックに積む
+ type|( addr u --- )|アドレスaddrからu文字を印字する
+ u*|( u1 u2 --- u3 )|スタック上のワード2個を乗算し結果を返す。符号なし整数として演算する。
+ um/mod|( ud1 n2 --- reminder udq )|倍長整数を単長整数で割り、単長整数の商と余りを得る。すべての値は符号無しである。(Starting-FORTHによれば`m`不要で、`u/mod`でよいらしい)
+ unloop|( --- )|現在のネスティングレベルのループパラメータを破棄します。この単語は、 `DO ... LOOP` が正常に完了するときには必要ないが、`EXIT` を呼び出して定義を抜けるときには必要です。定義を終了する前に、ループの入れ子レベルごとに 1 回の `UNLOOP` 呼び出しが必要です。
+ until|( flag --- )|`begin ... until`制御構造を占める。コンパイル時に、スタックトップの値をチェックして進ならば`begin`の位置にジャンプするコードをコンパイルする。
+ variable|( --- )|変数ワードを定義する。直後のワード文字列を切り出し新しい辞書エントリを作る。定義したワードのパラメータフィールドに1ワード確保し、このワード実行により確保した1ワードのアドレスを返す。
+ while|( f --- )|`begin ... while ... repeat`構造を作る。コンパイル時に、通常 `begin` と `while` で設定される 2 つの分岐を解決します。最も一般的な使い方では、BEGIN は制御フロースタック上に目的位置を残し、`while` は `begin` の目的位置の下に起点を置きます。次に `repeat` は、`begin` に続く目的位置への無条件後方分岐をコンパイルし、`repeat` に続く場所を `while` によって生成される前方条件分岐の目的位置アドレスとして提供します。実行時に、`begin` に続く場所への無条件後方分岐を実行します。
+ word|( delim -- c-addr |0 )|先頭の区切り文字 `delim` を読み飛ばします。 `delim` で区切られたテキストを解析します。解析されたテキストを含む一時的な場所のアドレスを、カウント文字列 `c-addr` として返します。解析領域が空であるか、区切り文字のみを含む場合、結果の文字列長は 0 です
+ xor|( n1 n2 --- n3 )|スタックトップ2ワードを排他的論理和(exclusive or)して戻す。
+ 
