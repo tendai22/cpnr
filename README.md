@@ -21,7 +21,7 @@
 ## システム概要
 
 <figure>
-<img src="img/fig01-cpnr-system-overview-anno.png">
+<img width=450 src="img/fig01-cpnr-system-overview-anno.png">
 <figcaption>図1. システム概要
 </figure>
 
@@ -162,7 +162,7 @@ kuma@LizNoir:~/temp/temp/cpnr/src$
 ```
 
 * ソースコードは `src`の下にあります。
-* ビルドは`build`の下で`make`コマンドを実行すればOKです。シェルスクリプト実行が必須ですので、Linux/Unix環境でお試しください。
+* ビルドは`src`の下で`make`コマンドを実行すればOKです。シェルスクリプト実行が必須ですので、Linux/Unix環境でお試しください。
 * Bash前提ではないので、FreeBSD上でも実行できるはずです。
 * gawk前提となってしまいました。申し訳ないです。
 * 実行はコマンド`cpnr`を起動してください

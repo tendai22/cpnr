@@ -17,12 +17,38 @@
     COLON SEMI NEXT RUN             # inner interpreter
     WORD NUMBER FIND EXECUTE        # outer interpreter
 
-これらのワードは全て処理実体をC言語関数として記述する。かつ、1仮想機械語命令1関数で用意する。その1命令だけを実行する辞書エントリを用意する。
+これらのワードは全て処理実体をC言語関数として記述する。かつ、1仮想機械語命令1関数で用意する。その1命令だけを実行する辞書エントリを用意する。プライマリワードの誕生である。
+
+> その後、Forth定義ワードを作っていく過程で、プライマリワードの入れ替わりが生じた。完成時点でのプライマリワードは以下の通り
+>
+> * outer interpreterはC言語版テキストインタプリタの中にまとめてしまった。word, number, find はプライマリワードではなく Forth定義版で用意した。この3つをプライマリとすると、あとでターゲットCPU用処理系を書くときに苦労する。これらをForth版で用意することで、複雑な処理をアセンブリ言語で書く必要がなくなる。
+> * 算術演算: 数値出力(`<# ... #>`での計算に必要な倍長整数計算を中心に追加した。
+> * 比較演算子: `>` 以外の比較演算子は、`>`, `not`, `=`(これもForthワードで定義できる)の組み合わせでForthワードで定義している。
+> * `COLON`, `SEMI`, `NEXT`, `RUN`は、ユーザ変数でアドレスを用意して使っている。辞書エントリを用意していない。
+> * `<MARK`, `<RESOLVE`, `>MARK`, `>RESOLVE`はForth版で用意できたので、プライマリワードとしなかった。
+> * `bye`: Forth処理系を止めてシェルプロンプトに戻る。
+> * `call`: 機械語サブルーチンコール。`does>`定義で使用している。
+>
+> ```
+>    + * - / /mod m*/ m+ u* um*/     # alithmetic operations
+>    .ps dd dump lnum                # debug words
+>    : ;                             # defining words
+>    '(quote) [compile]              # dictionary operations
+>    d+ d<                           # double-length
+>    dictdump getline emit key outer # i/o operations
+>    ?branch branch dolit s_dolit    # literals and branches
+>    execute                         # execution
+>    xor > and not or                # logical operations
+>    halt not trap                   # machine code words
+>    @ ! c@ c!                       # memory operation
+>    bye call                        # misc
+>    swap drop dup exch over rot     # stack operations
+>    +rsp >r r> rp! rsp sp! sp@      # stack pointer operations
+> ```
 
 実行コンテキストは、以下の要素を持つ構造体とする。
 
-    IP, WA, CA, RS, SP, PC, AH, AL: 16ビットレジスタ
-    ver[]   # ユーザ変数を保持する配列。
+    IP, WA, CA, RS, SP, PC: 16ビットレジスタ
 
 まずここまでで作ってみよう。
 
@@ -34,16 +60,19 @@
  RS|リターンスタックレジスタ
  SP|スタックポインタレジスタ
  PC|プロセッサのプログラムカウンタレジスタ
- AH,AL|アキュムレータ16bitレジスタ2本
+
+## CODEワードの例
 
 考え直して、必要なCODEワード一つに機械語命令1つを割り当ててみた
 
+> 機械語命令は、当初`c000`から割り当てていたが、ブランチ命令を用意する際に最上位1ビットで命令を識別し、残り15ビットをオペランドとした際に、`c000`開始から`7000`開始に引っ越ししてもらった。
+
  |word|instruction|description|
  |--|--|--|
- |c001|COLON|IPを保存してWAをIPにmovする
- |c002|NEXT|@IPをWAにmovして、IP +=2する(IPはスレッドの次のワードのアドレスを指す)。
- |c003|RUN|@WAをCAにmovして、WA +=2する。最後にCAをPCにmovする(現ワードCode Area番地にジャンプ(PC移動)する)
- |c004|SEMI|IPをリターンスタックから戻し、スレッドの次のワード実行に移る。
+ |7001|COLON|IPを保存してWAをIPにmovする
+ |7002|NEXT|@IPをWAにmovして、IP +=2する(IPはスレッドの次のワードのアドレスを指す)。
+ |7003|RUN|@WAをCAにmovして、WA +=2する。最後にCAをPCにmovする(現ワードCode Area番地にジャンプ(PC移動)する)
+ |7004|SEMI|IPをリターンスタックから戻し、スレッドの次のワード実行に移る。
 
 CODEワード定義は以下の通り(big endian)
 
@@ -51,39 +80,35 @@ CODEワード定義は以下の通り(big endian)
 * 機械語の最後は NEXT 命令(スレッドの次のワードの実行)
 
 ```
-    1100 012B       HEAD "+"
-    1102 10F8       LINK e_0003 //link to previous entry
-    1104 1106       DW .+2      //points 1 word later
-    1106 c020       M_ADD       //machine code 'ADD'
-    1108 C002       M_NEXT
+    entry_030:
+    e_add:
+820a        .head "+"
+820e 81fe   .dw   entry_029   // link to previous entry
+    do_add:
+8210 8212   .dw   .+2   // points 1 word later
+8212 7021   m_add       // machine code 'ADD'
+8214 fe4e   m_jmp NEXT  // jump t0 8064
 ```
 
-* ワードBRA(スレッド内無条件ジャンプ)は以下の通り  
-  機械語 M_BRA はIPを更新するが、PC自体は一つ進む。次の機械語命令としてM_NEXTを置く。
+機械語命令としてのPC手繰りと、スレッド実行としてのIP手繰りを区別する。PC手繰り中はIPは動かない。IPは `docol`,  `next`, `semi`, `branch`, `?branch` で動かす。
+
+## メモリマップ
+
+オールRAM、C言語世界では、`mem_t mem[65536];` で定義した配列を使用する。64k分確保しているが、実際には後半32kB分を使用している。辞書領域を`8000`からとし、ユーザ変数・バッファ類は`F000`からとした。
+
+立ち上げ用初期辞書エントリをバイナリファイル(`8000`番地に)読み込み後、辞書先頭の定数エリアを参照しながらC言語テキストインタプリタ初期化、C言語テキストインタプリタを起動する。
+
+辞書領域は、コロン定義を進めるごとにアドレスの大きい方に大きくなる。テキストインタプリタまでコンパイルし終えた時点で9310バイトを占めている。
 
 ```
-    110A 0342 5241  HEAD "BRA"
-    110C 2020
-    110E 1100       LINK e_0004
-    1110 1112       DW .+2
-    1112 C006       M_BRA
-    1114 C002       M_NEXT
+End: A45E, 245E(9310 ) bytes.
 ```
 
-```
-    1116 0342 4E45  HEAD "BNE"
-    111A 2020
-    111C 110A       LINK e_0005
-    111E 1120       DW .+2
-    1120 C005       M_BNE
-    1122 C002       M_NEXT
-```
+<figure>
+<img width=400 src="img/06-001-memory-map.png">
+</figure>
 
-機械語命令としてのPC手繰りと、スレッド実行としてのIP手繰りを区別する。PC手繰り中はIPは動かない。IPはCOLON, NEXT, SEMI, BRA, BNEで動かす。
-
-## メモリマップ・システム構成
-
-オールRAM、立ち上げ用初期辞書エントリをバイナリファイル読み込み後(実運用では「初期化されたデータ領域(.data)」を使用予定)、インタプリタを起動。
+## アセンブラ
 
 辞書生成のためのアセンブラを用意する。
 
@@ -131,7 +156,7 @@ FORTH用のアセンブラは、
 そのファイルに対して2パス目を掛ける。
 * 辞書ヘッダ生成、リンク生成のマクロを用意する(narrowroad-m68kで使ったものが使えるはず)
 
-### ディレクティブ
+### アセンブラのディレクティブ
 
  |directive|description|
  |--|--|
@@ -140,4 +165,5 @@ FORTH用のアセンブラは、
  m_xxxx|機械語命令、`machine_code`関数のswitch文に対応コードが置かれている。
  .org|開始アドレスを指定する。
 
- 
+ターゲットCPU用のコードを書く際には、`asxxxx`を使うつもりである。この場合、上記`.head`ディレクティブを`.db, .dw`に変換するスクリプトを用意して、アセンブルの前処理を行わせる。
+
