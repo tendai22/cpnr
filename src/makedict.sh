@@ -19,7 +19,7 @@ cat "$@" |
 sed '
 /^\/\//d
 ' |
-awk '#
+gawk '#
 /^opcode/ {
     n = NF
     if ($NF ~ /immediate/) {
@@ -33,7 +33,7 @@ awk '#
 }
 ' |
 # entry to asssembler code
-awk '#
+gawk '#
 BEGIN {
     nels = 0;
     prev_link = "0"

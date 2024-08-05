@@ -7,7 +7,7 @@ cat "$@" |
 sed 's/  */\
 /g
 ' |
-awk '
+gawk '
 $1 ~ /^=/ {
     s = "0x" substr($1,2)
     addr = strtonum(s)

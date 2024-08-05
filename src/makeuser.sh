@@ -10,7 +10,7 @@ shift
     echo "        .user_org $2"
     shift; shift;
     cat "$@" )|tee xx |
-awk '
+gawk '
 BEGIN {
     mode = "'$flag'"
     if (mode == "-h") {

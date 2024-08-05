@@ -21,7 +21,7 @@ do  case "$f" in
     /^\/\//d
     s/\/\*.*\*\// /
     ' | #cat ; exit
-    awk '#
+    gawk '#
     @include "opcode.inc"
     function expand(k,n,v){
         n = k
@@ -39,7 +39,7 @@ do  case "$f" in
     }
     function eval(s, c, n){
         gsub(/\./, pc, s)
-	    c = "awk '\''BEGIN{print " s "}'\''"
+	    c = "gawk '\''BEGIN{print " s "}'\''"
 	    c | getline n
 	    close(c)
 	    return n
