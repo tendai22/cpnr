@@ -230,9 +230,6 @@ int do_accept(context_t *cx)
     int n;
     char *buf = &mem[STAR(S0_HEAD)] + 1;
 
-    if (cx->p && cx->rest > 0) {
-        return 0;
-    }
     if (do_getline(cx, buf, 127 - 1)) {
         return EOF;
     }

@@ -64,8 +64,6 @@ typedef struct _ctx {
     int    halt_flag;
     int    ss_flag;
     // input-stream, raw c pointer
-    uint8_t *p;
-    word_t rest;
     word_t bp[BPTBL_SIZE];      // break point table
 } context_t;
 
