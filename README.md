@@ -37,6 +37,9 @@ Cソースコードはコンパイルされ、Linuxコマンド`cpnr`が生成�
 
 リポジトリ`https://github.com/tendai22/cpnr.git`を`clone`したのちに、`cpnr/src`に`cd`してから、(`git checkout RC`してから) `make`コマンドを実行してください。
 
+> GNU make/GNU awk前提となってしまっています。申し訳ないです。  
+> FreeBSDユーザは、gmake/gawkをインストールしてから、`gmake`コマンドでビルドしてください。
+
 ```shell
 kuma@LizNoir:~/temp$ git clone https://github.com/tendai22/cpnr.git
 Cloning into 'cpnr'...
